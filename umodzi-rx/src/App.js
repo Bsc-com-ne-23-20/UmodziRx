@@ -1,38 +1,37 @@
-.App {
-  text-align: center;
+import React, { Suspense, lazy } from "react";
+import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
+import { Navbar } from "./components/Navbar";
+import "tailwindcss/tailwind.css";
+
+const Home = lazy(() => import("./pages/Home"));
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const Prescriptions = lazy(() => import("./pages/Prescriptions"));
+const Verify = lazy(() => import("./pages/Verify"));
+const Auth = lazy(() => import("./pages/Auth"));
+const Login = lazy(() => import("./pages/Login")); // Add this line
+const DoctorDashboard = lazy(() => import("./pages/DoctorDashboard")); // Add this line
+const PharmacistDashboard = lazy(() => import("./pages/PharmacistDashboard")); // Add this line
+
+function App() {
+  return (
+    <Router>
+      <div className="min-h-screen bg-gray-100 text-gray-900 dark:bg-gray-900 dark:text-white">
+        <Navbar />
+        <Suspense fallback={<div className="text-center py-10">Loading...</div>}>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/prescriptions" element={<Prescriptions />} />
+            <Route path="/verify" element={<Verify />} />
+            <Route path="/auth" element={<Auth />} />
+            <Route path="/login" element={<Login />} /> {/* Add this line */}
+            <Route path="/doctor-dashboard" element={<DoctorDashboard />} /> {/* Add this line */}
+            <Route path="/pharmacist-dashboard" element={<PharmacistDashboard />} /> {/* Add this line */}
+          </Routes>
+        </Suspense>
+      </div>
+    </Router>
+  );
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
-}
-
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
-}
-
-.App-link {
-  color: #61dafb;
-}
-
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
+export default App;
