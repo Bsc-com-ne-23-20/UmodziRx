@@ -8,7 +8,7 @@ export function Navbar() {
             <li><a href="/dashboard" className="hover:underline">Dashboard</a></li>
             <li><a href="/prescriptions" className="hover:underline">Prescriptions</a></li>
             <li><a href="/verify" className="hover:underline">Verify</a></li>
-            <li><a href="/auth" className="hover:underline">Login</a></li>
+            <li><a href="/login" className="hover:underline">Login</a></li>
           </ul>
         </div>
       </nav>
