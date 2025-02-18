@@ -17,11 +17,11 @@ const PharmacistDashboard = lazy(() => import("./pages/PharmacistDashboard"));
 function App() {
   return (
     <Router>
-      {/* ✅ Ensure flexbox fills full screen height */}
+      {/* Ensure flexbox fills full screen height */}
       <div className="flex flex-col min-h-screen bg-gray-100 text-gray-900 dark:bg-gray-900 dark:text-white">
         <Navbar />
         
-        {/* ✅ Content should grow to push footer down */}
+        {/*  Content should grow to push footer down */}
         <div className="flex-grow">
           <Suspense fallback={<div className="text-center py-10">Loading...</div>}>
             <Routes>
@@ -31,8 +31,8 @@ function App() {
               <Route path="/verify" element={<Verify />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/login" element={<Login />} />
-              <Route path="/doctor-dashboard" element={<DoctorDashboard />} />
-              <Route path="/pharmacist-dashboard" element={<PharmacistDashboard />} />
+              <Route path="/doctordashboard" element={<DoctorDashboard />} />
+              <Route path="/pharmacistdashboard" element={<PharmacistDashboard />} />
             </Routes>
           </Suspense>
         </div>
