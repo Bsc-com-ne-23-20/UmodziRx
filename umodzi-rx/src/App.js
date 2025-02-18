@@ -1,27 +1,38 @@
-import React from 'react';
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
-import LandingPage from './components/LandingPage';
-import Auth from './components/Auth';
-import Dashboard from './components/Dashboard';
-import PrescriptionManagement from './components/PrescriptionManagement';
-import PrescriptionVerification from './components/PrescriptionVerification';
-import Navbar from './components/Navbar';
-import Footer from './components/Footer';
+.App {
+  text-align: center;
+}
 
-const App = () => {
-    return (
-        <Router>
-            <Navbar />
-            <Routes>
-                <Route path="/" element={<LandingPage />} />
-                <Route path="/auth" element={<Auth />} />
-                <Route path="/dashboard" element={<Dashboard role="Doctor" />} />
-                <Route path="/prescription-management" element={<PrescriptionManagement />} />
-                <Route path="/prescription-verification" element={<PrescriptionVerification />} />
-            </Routes>
-            <Footer />
-        </Router>
-    );
-};
+.App-logo {
+  height: 40vmin;
+  pointer-events: none;
+}
 
-export default App;
+@media (prefers-reduced-motion: no-preference) {
+  .App-logo {
+    animation: App-logo-spin infinite 20s linear;
+  }
+}
+
+.App-header {
+  background-color: #282c34;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(10px + 2vmin);
+  color: white;
+}
+
+.App-link {
+  color: #61dafb;
+}
+
+@keyframes App-logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
