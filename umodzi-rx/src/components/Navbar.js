@@ -5,8 +5,6 @@ export function Navbar() {
           <h1 className="text-xl font-bold"><li><a href="/" className="hover:underline">UmodziRx</a></li></h1>
           <ul className="flex space-x-4">
             <li><a href="/" className="hover:underline">Home</a></li>
-            <li><a href="/dashboard" className="hover:underline">Dashboard</a></li>
-            <li><a href="/prescriptions" className="hover:underline">Prescriptions</a></li>
             <li><a href="/login" className="hover:underline">Login</a></li>
           </ul>
         </div>
