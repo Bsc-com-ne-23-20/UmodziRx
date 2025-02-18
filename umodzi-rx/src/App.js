@@ -2,8 +2,10 @@ import React, { Suspense, lazy } from "react";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import { Navbar } from "./components/Navbar";
 import "tailwindcss/tailwind.css";
+//import LandingPage from "./components/Home";
 
-const Home = lazy(() => import("./pages/Home"));
+const Home = lazy(() => import("./pages/Home"))
+const LandingPage = lazy(() => import("./pages/LandingPage"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Prescriptions = lazy(() => import("./pages/Prescriptions"));
 const Verify = lazy(() => import("./pages/Verify"));
@@ -19,7 +21,7 @@ function App() {
         <Navbar />
         <Suspense fallback={<div className="text-center py-10">Loading...</div>}>
           <Routes>
-            <Route path="/" element={<Home />} />
+            <Route path="/" element={<LandingPage />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/prescriptions" element={<Prescriptions />} />
             <Route path="/verify" element={<Verify />} />
