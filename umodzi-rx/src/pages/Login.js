@@ -5,11 +5,11 @@ export default function Login() {
   const navigate = useNavigate();
 
   const handleDoctorLogin = () => {
-    navigate("/doctor-dashboard"); // Redirect to doctor dashboard
+    navigate("/auth"); // Redirect to doctor dashboard
   };
 
   const handlePharmacistLogin = () => {
-    navigate("/pharmacist-dashboard"); // Redirect to pharmacist dashboard
+    navigate("/auth"); // Redirect to pharmacist dashboard
   };
 
   return (
