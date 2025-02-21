@@ -1,90 +1,94 @@
-import { Link, useLocation } from "react-router-dom";
-import { useEffect, useState } from "react";
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 
-export function Navbar() {
-  const location = useLocation();
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+function Navbar() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const navigate = useNavigate();
+  const userRole = localStorage.getItem('userRole');
 
   useEffect(() => {
-    const token = localStorage.getItem("mosipToken");
-    setIsAuthenticated(!!token);
-  }, [location]);
+    setIsLoggedIn(!!localStorage.getItem('userRole'));
+  }, []);
 
   const handleLogout = () => {
-    localStorage.removeItem("mosipToken");
-    window.location.href = "/";
+    localStorage.removeItem('userRole');
+    setIsLoggedIn(false);
+    navigate('/');
   };
 
+
   return (
-    <nav className="bg-blue-600 text-white p-4 shadow-lg">
-      <div className="container mx-auto flex justify-between items-center">
-        <h1 className="text-xl font-bold">UmodziRx</h1>
-        <ul className="flex space-x-4">
-          <li>
-            <Link
-              to="/"
-              className={`hover:underline ${
-                location.pathname === "/" ? "font-bold" : ""
-              }`}
-            >
-              Home
-            </Link>
-          </li>
-          {isAuthenticated && (
-            <>
-              <li>
+    <nav className="bg-white dark:bg-gray-800 shadow">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between h-16">
+          <div className="flex">
+            <div className="flex-shrink-0">
+              <Link to="/" className="text-gray-800 dark:text-white font-bold text-xl">
+                UmodziRx
+              </Link>
+            </div>
+            <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
+              <Link
+                to="/"
+                className="text-gray-500 dark:text-gray-300 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
+              >
+                Home
+              </Link>
+              {!isLoggedIn && (
                 <Link
-                  to="/dashboard"
-                  className={`hover:underline ${
-                    location.pathname === "/dashboard" ? "font-bold" : ""
-                  }`}
+                  to="/login"
+                  className="text-gray-500 dark:text-gray-300 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
                 >
-                  Dashboard
+                  Login
                 </Link>
-              </li>
-              <li>
+              )}
+              {isLoggedIn && (
+                <button
+                  onClick={handleLogout}
+                  className="text-gray-500 dark:text-gray-300 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
+                >
+                  Logout
+                </button>
+              )}
+            </div>
+
+            <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
+              {userRole === 'doctor' && (
                 <Link
-                  to="/prescriptions"
-                  className={`hover:underline ${
-                    location.pathname === "/prescriptions" ? "font-bold" : ""
-                  }`}
+                  to="/doctor-dashboard"
+                  className="text-gray-500 dark:text-gray-300 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
                 >
-                  Prescriptions
+                  Doctor Dashboard
                 </Link>
-              </li>
-              <li>
+              )}
+              {userRole === 'pharmacist' && (
                 <Link
-                  to="/verify"
-                  className={`hover:underline ${
-                    location.pathname === "/verify" ? "font-bold" : ""
-                  }`}
+                  to="/pharmacist-dashboard"
+                  className="text-gray-500 dark:text-gray-300 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
                 >
-                  Verify
+                  Pharmacist Dashboard
                 </Link>
-              </li>
-            </>
-          )}
-        </ul>
-        <div>
-          {isAuthenticated ? (
-            <button
-              onClick={handleLogout}
-              className="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg"
-            >
-              Logout
-            </button>
-          ) : (
-            <Link
-              to="/login"
-              className={`bg-green-600 hover:bg-green-700 px-4 py-2 rounded-lg ${
-                location.pathname === "/login" ? "font-bold" : ""
-              }`}
-            >
-              Login
-            </Link>
-          )}
+              )}
+              {userRole === 'patient' && (
+                <Link
+                  to="/patient-prescriptions"
+                  className="text-gray-500 dark:text-gray-300 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
+                >
+                  My Prescriptions
+                </Link>
+              )}
+              <Link
+                to="/learn-more"
+                className="text-gray-500 dark:text-gray-300 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
+              >
+                Learn More
+              </Link>
+            </div>
+          </div>
         </div>
       </div>
     </nav>
   );
 }
+
+export default Navbar;
