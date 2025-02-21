@@ -1,72 +1,81 @@
+import React from "react";
 import { Link } from "react-router-dom";
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-gray-900">
-
-      {/* Hero Section */}
-      <div className="container mx-auto px-4 py-16 text-center">
-        <h1 className="text-4xl md:text-5xl font-bold mb-6">
-          Secure Prescription Management with UmodziRx
-        </h1>
-        <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
-
-          Blockchain-powered solution for secure, transparent, and accountable prescription management.
-        </p>
-        <div className="space-x-4">
-          <Link
-            to="/login"
-            className="inline-block bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition duration-300"
-          >
-            Get Started
-          </Link>
-          <Link
-            to="/about"
-            className="inline-block border border-blue-600 text-blue-600 px-8 py-3 rounded-lg hover:bg-blue-50 transition duration-300"
-          >
-            Learn More
-          </Link>
+    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white dark:from-gray-900 dark:to-gray-800">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+        <div className="text-center">
+          <h1 className="text-4xl font-extrabold text-gray-900 dark:text-white sm:text-5xl md:text-6xl">
+          Secure Prescription Management with
+            <span className="block text-blue-600 dark:text-blue-400 mt-3">
+            UmodziRx   
+            </span>
+          </h1>
+          <p className="mt-6 text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
+            Secure, efficient, and accessible prescription management powered by blockchain technology and MOSIP Digital ID
+          </p>
         </div>
-      </div>
 
-      {/* Features Section */}
-      <div className="bg-gray-800 py-16">
+        <div className="mt-16 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="bg-white dark:bg-gray-800 p-8 rounded-xl shadow-xl hover:scale-105 transition-transform duration-300">
+            <div className="flex justify-center">
+              <div className="flex-shrink-0">
+                <svg className="h-12 w-12 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+            </div>
+            <h2 className="mt-6 text-2xl font-bold text-gray-900 dark:text-white text-center">
+              Secure & Tamper-Proof
+            </h2>
+            <p className="mt-4 text-gray-600 dark:text-gray-300 text-center">
+              Blockchain technology ensures the integrity and security of all prescriptions
+            </p>
+          </div>
 
-        <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold text-center mb-12">Key Features</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="p-6 border rounded-lg">
-              <h3 className="text-xl font-semibold mb-3">Blockchain Security</h3>
-              <p className="text-gray-600">
-                Immutable and transparent record-keeping for all prescriptions.
-              </p>
+          <div className="bg-white dark:bg-gray-800 p-8 rounded-xl shadow-xl hover:scale-105 transition-transform duration-300">
+            <div className="flex justify-center">
+              <div className="flex-shrink-0">
+                <svg className="h-12 w-12 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+              </div>
             </div>
-            <div className="p-6 border rounded-lg">
-              <h3 className="text-xl font-semibold mb-3">Digital ID Verification</h3>
-              <p className="text-gray-600">
-                Secure authentication using MOSIP Digital ID.
-              </p>
+            <h2 className="mt-6 text-2xl font-bold text-gray-900 dark:text-white text-center">
+              Role-Based Access
+            </h2>
+            <p className="mt-4 text-gray-600 dark:text-gray-300 text-center">
+              Tailored interfaces for doctors, pharmacists, and patients
+            </p>
+          </div>
+
+          <div className="bg-white dark:bg-gray-800 p-8 rounded-xl shadow-xl hover:scale-105 transition-transform duration-300">
+            <div className="flex justify-center">
+              <div className="flex-shrink-0">
+                <svg className="h-12 w-12 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
+                </svg>
+              </div>
             </div>
-            <div className="p-6 border rounded-lg">
-              <h3 className="text-xl font-semibold mb-3">Real-time Tracking</h3>
-              <p className="text-gray-600">
-                Monitor prescription status in real-time.
-              </p>
-            </div>
+            <h2 className="mt-6 text-2xl font-bold text-gray-900 dark:text-white text-center">
+              QR Code Integration
+            </h2>
+            <p className="mt-4 text-gray-600 dark:text-gray-300 text-center">
+              Quick and secure access using QR code technology
+            </p>
           </div>
         </div>
-      </div>
 
-      {/* Call to Action */}
-      <div className="bg-blue-900 py-16">
-
-        <div className="container mx-auto px-4 text-center">
-          <h2 className="text-3xl font-bold mb-6">Ready to Transform Prescription Management?</h2>
+        <div className="mt-16 text-center">
           <Link
             to="/login"
-            className="inline-block bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition duration-300"
+            className="inline-flex items-center px-8 py-4 border border-transparent text-xl font-semibold rounded-full text-white bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 transition-colors duration-200 shadow-lg"
           >
-            Start Now
+            Get Started
+            <svg className="ml-3 -mr-1 h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+            </svg>
           </Link>
         </div>
       </div>
