@@ -19,13 +19,16 @@
     "stream-http": "^3.2.0",
     "url": "^0.11.4",
     "util": "^0.12.5",
-    "web-vitals": "^2.1.4"
+    "web-vitals": "^2.1.4",
+    "new-package": "^1.0.0"  // Added new package
   },
   "scripts": {
     "start": "react-app-rewired start",
     "build": "react-app-rewired build",
-    "test": "react-app-rewired test",
-    "eject": "react-app-rewired eject"
+    "test": "react-app-rewired test --coverage --watchAll",
+    "test:ci": "react-app-rewired test --coverage",
+    "eject": "react-app-rewired eject",
+    "new-script": "echo 'This is a new script'" // Added new script
   },
   "eslintConfig": {
     "extends": [
@@ -50,6 +53,15 @@
     "customize-cra": "^1.0.0",
     "postcss": "^8.5.2",
     "react-app-rewired": "^2.2.1",
-    "tailwindcss": "^3.4.1"
+    "tailwindcss": "^3.4.1",
+    "msw": "^2.2.13",
+    "@types/jest": "^29.5.12",
+    "jest-environment-jsdom": "^29.7.0",
+    "jest-watch-typeahead": "^2.2.2"
+  },
+  "jest": {
+    "coverageReporters": ["text", "lcov"],
+    "testEnvironment": "jsdom",
+    "setupFilesAfterEnv": ["<rootDir>/src/setupTests.js"]
   }
 }
