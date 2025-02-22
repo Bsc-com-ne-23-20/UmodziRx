@@ -63,11 +63,11 @@ function Login() {
           {/* Left Section - Avatar and MOSIP Info */}
           <div className="flex flex-col items-center justify-center space-y-4">
             <div 
-              className="w-24 h-24 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center"
+              className="w-50 h-50 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center"
               aria-label="User avatar"
             >
               <svg 
-                className="w-16 h-16 text-blue-600 dark:text-blue-400" 
+                className="w-40 h-40 text-blue-600 dark:text-blue-400" 
                 fill="none" 
                 stroke="currentColor" 
                 viewBox="0 0 24 24"
@@ -148,7 +148,7 @@ function Login() {
             <button
               onClick={() => alert("Login with inji or esignet")}
               aria-label="Login with inji or esignet"
-              className="w-full bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-white px-3 py-2 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 transition duration-200 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 text-sm"
+              className="w-full bg-gray-100 dark:bg-gray-700 text-blue-600 dark:text-white px-3 py-2 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 transition duration-200 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 text-sm"
             >
               Login with inji or esignet
             </button>
