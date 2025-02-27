@@ -7,9 +7,6 @@ function Login() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [isRegistering, setIsRegistering] = useState(false);
-  const [newUsername, setNewUsername] = useState("");
-  const [newPassword, setNewPassword] = useState("");
 
   const handleLoginSubmit = useCallback(async (e) => {
     e.preventDefault();
@@ -41,25 +38,6 @@ function Login() {
     }
   }, [username, password, navigate]);
 
-  const handleRegisterSubmit = useCallback(async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError("");
-
-    try {
-      console.log("Registering user:", { newUsername, newPassword });
-      setNewUsername("");
-      setNewPassword("");
-      setIsRegistering(false);
-      alert("Registration successful! You can now log in.");
-    } catch (error) {
-      setError("Registration failed. Please try again.");
-      console.error(error);
-    } finally {
-      setLoading(false);
-    }
-  }, [newUsername, newPassword]);
-
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
       <div className="flex items-center justify-center min-h-screen px-4">
@@ -90,48 +68,84 @@ function Login() {
 
           {/* Right Section - Login Form */}
           <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-lg">
-            <h2 className="text-xl font-bold mb-4 text-gray-800 dark:text-white">{isRegistering ? "Register" : "Login"}</h2>
+            <h2 className="text-xl font-bold mb-4 text-gray-800 dark:text-white">Login</h2>
             
-            {error && <p className="text-red-500 mb-4">{error}</p>}
+            {error && (
+              <div className="bg-red-100 dark:bg-red-200 border border-red-400 text-red-700 px-3 py-2 rounded mb-3 text-sm">
+                {error}
+              </div>
+            )}
 
-            <form onSubmit={isRegistering ? handleRegisterSubmit : handleLoginSubmit}>
-              <div className="mb-4">
-                <label className="block text-gray-700 dark:text-gray-300 mb-1">{isRegistering ? "New Username" : "Username"}</label>
+            <form onSubmit={handleLoginSubmit} className="space-y-3">
+              <div>
+                <label htmlFor="username" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Username
+                </label>
                 <input
                   type="text"
-                  value={isRegistering ? newUsername : username}
-                  onChange={(e) => isRegistering ? setNewUsername(e.target.value) : setUsername(e.target.value)}
-                  className="w-full p-2 border border-gray-300 rounded"
+                  id="username"
+                  aria-label="Username"
+                  aria-required="true"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  className="w-full px-2 py-1 border rounded-md focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  placeholder="Enter username"
                   required
                 />
               </div>
 
-              <div className="mb-4">
-                <label className="block text-gray-700 dark:text-gray-300 mb-1">{isRegistering ? "New Password" : "Password"}</label>
+              <div>
+                <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Password
+                </label>
                 <input
                   type="password"
-                  value={isRegistering ? newPassword : password}
-                  onChange={(e) => isRegistering ? setNewPassword(e.target.value) : setPassword(e.target.value)}
-                  className="w-full p-2 border border-gray-300 rounded"
+                  id="password"
+                  aria-label="Password"
+                  aria-required="true"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full px-2 py-1 border rounded-md focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  placeholder="Enter password"
                   required
                 />
               </div>
 
               <button
                 type="submit"
-                className="w-full bg-blue-500 text-white py-2 rounded"
+                aria-label="Submit login form"
                 disabled={loading}
+                className="w-full bg-blue-600 text-white px-3 py-2 rounded-md hover:bg-blue-700 transition duration-200 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 text-sm"
               >
-                {loading ? "Processing..." : isRegistering ? "Register" : "Login"}
+                {loading ? "Logging in..." : "Login"}
               </button>
             </form>
 
+            <div className="my-4 flex items-center">
+              <div className="flex-grow border-t border-gray-300 dark:border-gray-600"></div>
+              <span className="mx-3 text-gray-500 dark:text-gray-400 text-sm">OR</span>
+              <div className="flex-grow border-t border-gray-300 dark:border-gray-600"></div>
+            </div>
+
             <button
-              onClick={() => setIsRegistering(!isRegistering)}
-              className="w-full text-blue-500 mt-4"
+              onClick={() => alert("This feature is under development")}
+              aria-label="Login with inji or esignet"
+              className="w-full bg-gray-100 dark:bg-gray-700 text-blue-600 dark:text-white px-3 py-2 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 transition duration-200 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 text-sm"
             >
-              {isRegistering ? "Already have an account? Login" : "Need an account? Register"}
+              Login with inji or esignet
             </button>
+
+            <div className="mt-4 text-center">
+              <p className="text-xs text-gray-600 dark:text-gray-300">
+                New user?{" "}
+                <button
+                  onClick={() => navigate("/register")}
+                  className="text-blue-600 dark:text-blue-400 hover:underline"
+                >
+                  Create credentials
+                </button>
+              </p>
+            </div>
           </div>
         </div>
       </div>
@@ -140,4 +154,5 @@ function Login() {
 }
 
 export default Login;
+
 
