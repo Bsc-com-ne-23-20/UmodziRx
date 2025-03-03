@@ -1,12 +1,10 @@
-import React, { useState, useCallback, lazy } from "react";
+import React, { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-
 
 function Login() {
   const navigate = useNavigate();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [showQRScanner, setShowQRScanner] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -39,22 +37,6 @@ function Login() {
       setLoading(false);
     }
   }, [username, password, navigate]);
-
-  const handleQRScan = useCallback(async (data) => {
-    try {
-      const qrData = JSON.parse(data);
-      if (qrData.username && qrData.password) {
-        setUsername(qrData.username);
-        setPassword(qrData.password);
-        await handleLoginSubmit(new Event("submit"));
-      } else {
-        throw new Error("Invalid QR code data");
-      }
-    } catch (error) {
-      setError("Failed to process QR code. Please try again.");
-      console.error(error);
-    }
-  }, [handleLoginSubmit]);
 
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
@@ -96,7 +78,7 @@ function Login() {
 
             <form onSubmit={handleLoginSubmit} className="space-y-3">
               <div>
-                <label htmlFor="username" className="block text-sm font-medium text-gray-7 00 dark:text-gray-300 mb-1">
+                <label htmlFor="username" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Username
                 </label>
                 <input
@@ -121,7 +103,7 @@ function Login() {
                   id="password"
                   aria-label="Password"
                   aria-required="true"
-                  value="password"
+                  value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="w-full px-2 py-1 border rounded-md focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                   placeholder="Enter password"
@@ -153,10 +135,15 @@ function Login() {
               Login with inji or esignet
             </button>
 
-
             <div className="mt-4 text-center">
               <p className="text-xs text-gray-600 dark:text-gray-300">
-                New user? <span className="text-blue-600 dark:text-blue-400 cursor-not-allowed">Create credentials</span>
+                New user?{" "}
+                <button
+                  onClick={() => navigate("/register")}
+                  className="text-blue-600 dark:text-blue-400 hover:underline"
+                >
+                  Create credentials
+                </button>
               </p>
             </div>
           </div>
@@ -167,3 +154,5 @@ function Login() {
 }
 
 export default Login;
+
+
