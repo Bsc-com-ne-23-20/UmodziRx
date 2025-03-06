@@ -2,6 +2,9 @@ import React, { useState, useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
+import { TABS } from "./pages/Constants";
+import ViewPatientPrescriptions from "./pages/ViewPatientPrescriptions";
+import CreatePrescription from "./pages/CreatePrescription";
 import DoctorDashboard from "./pages/DoctorDashboard";
 import PharmacistDashboard from "./pages/PharmacistDashboard";
 import PatientPrescriptions from "./pages/PatientPrescriptions";
@@ -28,6 +31,8 @@ function App() {
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login />} />
+            <Route path="/view-patient-prescriptions" element={<ViewPatientPrescriptions />} />
+            <Route path="/create-prescription" element={<CreatePrescription />} />
             <Route path="/doctor-dashboard" element={<DoctorDashboard />} />
             <Route path="/pharmacist-dashboard" element={<PharmacistDashboard />} />
             <Route path="/patient-prescriptions" element={<PatientPrescriptions />} />
