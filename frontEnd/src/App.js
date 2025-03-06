@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import RoleSelection from "./pages/RoleSelection";
+
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import { TABS } from "./pages/Constants";
@@ -30,7 +32,9 @@ function App() {
         <div className="container mx-auto px-4 py-8">
           <Routes>
             <Route path="/" element={<Home />} />
+            <Route path="/role-selection" element={<RoleSelection />} />
             <Route path="/login" element={<Login />} />
+
             <Route path="/view-patient-prescriptions" element={<ViewPatientPrescriptions />} />
             <Route path="/create-prescription" element={<CreatePrescription />} />
             <Route path="/doctor-dashboard" element={<DoctorDashboard />} />
