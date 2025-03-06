@@ -1,70 +1,110 @@
-# Getting Started with Create React App
+# UmodziRx Implementation
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+## Overview
+UmodziRx is a comprehensive web application designed to manage patient prescriptions and healthcare services, integrating with MOSIP for identity management and utilizing blockchain technology for secure data handling.
 
-## Available Scripts
+## Expanded Tech Stack & Implementation Details
 
-In the project directory, you can run:
+### 1. Frontend Development
+**Technologies:**
+- **Core:**
+  - HTML5: Semantic markup for accessibility (ARIA labels, `<main>`, `<section>`).
+  - CSS3: Grid/Flexbox for layouts; CSS Variables for theming.
+  - JavaScript (ES6+): Async/await for IPFS/PRE API calls.
+- **Framework:** React.js with TypeScript for type safety.
+- **State Management:** Redux Toolkit with RTK Query for API caching.
+- **UI Library:** Material-UI + Tailwind CSS for utility-first styling.
 
-### `npm start`
+**MOSIP Integration:**
+- MOSIP Web SDK: Embeddable biometric auth components.
+- e-Signet React Components: Prebuilt OIDC login flows.
+- Blockchain Interaction: Web3.js + Hyperledger Fabric Client SDK.
+- Form Handling: React Hook Form with Yup validation.
+- Security: CSP Headers (Content Security Policy) via Next.js config.
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+**HTML Templates:**
+- Prescription form with `<input type="date">` for validity, `<datalist>` for drug autocomplete.
+- Consent management table (`<table>`) with checkboxes for access grants.
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+**CSS:**
+- Media queries for mobile-responsive prescription cards.
+- Print-friendly stylesheets (`@media print`) for physical prescription copies.
 
-### `npm test`
+**Component Library:**
+- Reusable `<MOSIPBioAuth>` component (integrates MOSIP’s biometric modal).
+- `<PrescriptionViewer>`: Decrypts/IPFS fetches data via Web3.js.
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+### 2. Backend Development
+**Technologies:**
+- **Runtime:** Node.js v18 (LTS) with Express.js or NestJS.
+- **Database:** PostgreSQL (patient-MOSIP ID mappings) + CouchDB (blockchain state).
 
-### `npm run build`
+**APIs:**
+- **REST:** Prescription metadata, audit logs.
+- **GraphQL:** Complex queries (e.g., "Fetch all prescriptions for MOSIP ID X").
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+**MOSIP Integration:**
+- MOSIP Kernel APIs: ID authentication (`/v1/auth/`), credential issuance (`/v1/kyc/`).
+- ABHA (Health ID) Service: Link MOSIP IDs to prescriptions.
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+**Encryption:**
+- libsodium (AES-256-GCM for IPFS data).
+- Umbral (Proxy Re-Encryption).
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+**Queueing:** RabbitMQ for async tasks (IPFS uploads, blockchain writes).
 
-### `npm run eject`
+**API Endpoints:**
+- **POST /prescriptions:**
+  - Input: Encrypted file, MOSIP ID, doctor’s license hash.
+  - Process: Validate MOSIP ID → Encrypt → IPFS upload → Write to Fabric.
+  
+- **GET /consent/delegate:**
+  - Generates PRE re-encryption key via Umbral; stores in Redis with MOSIP ID TTL.
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+**Database Schema:**
+- **patients:** 
+  - `mosip_id_hash` (varchar), `public_key` (text), `created_at` (timestamp).
+  
+- **access_grants:** 
+  - `patient_id` (FK), `pharmacy_id` (FK), `pre_key` (text), `expires_at` (timestamp).
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+**Middleware:**
+- Helmet.js: Secure headers (HSTS, XSS Protection).
+- Rate limiting: 100 requests/min per MOSIP ID.
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+### 3. MOSIP Integration
+**Technologies:**
+- ID Authentication: `/idauthentication/v1/` (biometric/OTP auth).
+- ID Repository: Store hashed health IDs.
+- Credential Service: Issue verifiable medical credentials to providers.
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+### 4. Blockchain Development
+**Technologies:**
+- Hyperledger Fabric v2.5:
+  - Orderer: Raft consensus (crash fault-tolerant).
+  - Peers: 3 organizations (hospitals, pharmacies, regulators).
+  - Chaincode: Go (for performance) with CouchDB state storage.
 
-## Learn More
+### 5. DevOps & Cloud
+**Technologies:**
+- Infra as Code: Terraform (AWS: EC2, S3, VPC).
+- CI/CD: GitHub Actions + ArgoCD (GitOps).
+- Monitoring: Prometheus + Grafana.
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+### 6. Security & Compliance
+**Technologies:**
+- Private Data Collections: Encrypt patient-pharmacy mappings (AES-256) for Attribution Channel.
+- Compliance: Chef Inspec for HIPAA/GDPR audits.
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+### 7. Testing
+**Technologies:**
+- Unit Tests: Jest (frontend), Go’s testing package (chaincode).
+- E2E: Cypress (frontend), Hyperledger Behave (blockchain).
 
-### Code Splitting
+### 8. Documentation
+**Technologies:**
+- Swagger/OpenAPI: REST API specs.
+- MkDocs: User guides (deployed to GitHub Pages).
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+## Conclusion
+This README provides an overview of the UmodziRx implementation, detailing the technologies and tasks involved in both frontend and backend development, as well as integration with MOSIP and blockchain technologies. For further granularity, please refer to the respective README files in the frontend and backend directories.
