@@ -81,7 +81,7 @@ export default function Home() {
                 Learn More
               </Link>
               <Link
-                to="/login"
+                to="/role-selection"
                 className="inline-flex items-center px-8 py-4 border border-transparent text-xl font-semibold rounded-full text-white bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 transition-colors duration-200 shadow-lg"
               >
                 Get Started
