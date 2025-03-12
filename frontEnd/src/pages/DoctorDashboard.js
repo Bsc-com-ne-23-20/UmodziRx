@@ -2,9 +2,11 @@ import React, { useState } from 'react';
 import { TABS } from './Constants.ts';
 import CreatePrescription from './CreatePrescription';
 import ViewPatientPrescriptions from './ViewPatientPrescriptions';
+import { useNavigate } from 'react-router-dom'; // Import useNavigate for logout functionality
 
 const DoctorDashboard = () => {
     const [activeTab, setActiveTab] = useState(TABS.CREATE);
+    const navigate = useNavigate(); // Initialize useNavigate
 
     const renderContent = () => {
         switch (activeTab) {
@@ -17,8 +19,24 @@ const DoctorDashboard = () => {
         }
     };
 
+    // Logout function
+    const handleLogout = () => {
+        localStorage.removeItem('userRole'); // Remove userRole from localStorage
+        navigate('/'); // Redirect to the login page
+    };
+
     return (
         <div className="p-8 bg-gray-100 min-h-screen">
+            {/* Logout Button */}
+            <div className="flex justify-end mb-4">
+                <button
+                    onClick={handleLogout}
+                    className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition duration-200 focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                >
+                    Logout
+                </button>
+            </div>
+
             <h1 className="text-3xl font-bold text-gray-800 mb-8">Doctor Dashboard</h1>
 
             {/* Tab Navigation */}

@@ -19,7 +19,8 @@ function Login() {
       const credentials = {
         doctor: { username: "doctor", password: "doctor", role: "doctor", redirect: "/doctor-dashboard" },
         pharmacist: { username: "pharmacist", password: "pharmacist", role: "pharmacist", redirect: "/pharmacist-dashboard" },
-        patient: { username: "patient", password: "patient", role: "patient", redirect: "/patient-prescriptions" }
+        patient: { username: "patient", password: "patient", role: "patient", redirect: "/patient-prescriptions" },
+        admin: { username: "admin", password: "admin", role: "admin", redirect: "/admin-dashboard" }, // Added admin credentials
       };
 
       const user = Object.values(credentials).find(

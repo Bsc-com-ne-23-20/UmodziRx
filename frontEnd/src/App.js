@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import RoleSelection from "./pages/RoleSelection";
-
 import Home from "./pages/Home";
 import Login from "./pages/Login";
-import { TABS } from "./pages/Constants";
 import ViewPatientPrescriptions from "./pages/ViewPatientPrescriptions";
 import CreatePrescription from "./pages/CreatePrescription";
+import AdminDashboard from "./pages/AdminDashboard";
 import DoctorDashboard from "./pages/DoctorDashboard";
 import PharmacistDashboard from "./pages/PharmacistDashboard";
 import PatientPrescriptions from "./pages/PatientPrescriptions";
@@ -15,7 +14,7 @@ import Navbar from "./components/Navbar";
 import "./App.css";
 
 function App() {
-  const [darkMode, setDarkMode] = useState(false);
+  const [darkMode] = useState(false);
 
   useEffect(() => {
     if (darkMode) {
@@ -34,9 +33,9 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/role-selection" element={<RoleSelection />} />
             <Route path="/login" element={<Login />} />
-
-            <Route path="/view-patient-prescriptions" element={<ViewPatientPrescriptions />} />
+            <Route path="/view-patient-prescriptions" element={<ViewPatientPrescriptions />} />	
             <Route path="/create-prescription" element={<CreatePrescription />} />
+	    <Route path="/admin-dashboard" element={<AdminDashboard />} />
             <Route path="/doctor-dashboard" element={<DoctorDashboard />} />
             <Route path="/pharmacist-dashboard" element={<PharmacistDashboard />} />
             <Route path="/patient-prescriptions" element={<PatientPrescriptions />} />
