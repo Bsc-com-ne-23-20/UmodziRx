@@ -39,6 +39,7 @@ function Login() {
       // Redirect user to the correct dashboard
 
       navigate(redirect || "/dashboard");
+      
 
     } catch (error) {
       setError("Login failed. Please check your credentials.");
