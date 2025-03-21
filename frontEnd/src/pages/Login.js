@@ -33,9 +33,13 @@ function Login() {
   
       // Store authentication details
       localStorage.setItem("token", token);
+      console.log("Token stored:", localStorage.getItem("token"));
+
   
       // Redirect user to the correct dashboard
-      navigate(redirect);
+
+      navigate(redirect || "/dashboard");
+
     } catch (error) {
       setError("Login failed. Please check your credentials.");
       console.error(error);

@@ -1,11 +1,8 @@
-// User model definition
-// Define the structure for user data here
-
 const { mysqlConnection } = require('../config/db');
 
 class User {
   static async create(userData) {
-    const { username, password, role } = userData;
+    const { username, password, tenantId } = userData;
     const query = `
       INSERT INTO users (username, password, role)
       VALUES (?, ?, ?);

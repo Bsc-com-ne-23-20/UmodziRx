@@ -1,16 +1,13 @@
-// Handles authentication-related requests
-// Define functions for login, registration, and token management here
-
 const User = require('../models/User');
 const { generateToken } = require('../utils/auth');
 
 class AuthController {
   static async login(req, res) {
-    const { username, password } = req.body;
+      const { username, password, tenantId } = req.body;
     try {
       const user = await User.findByUsername(username);
       if (!user || user.password !== password) {
-        return res.status(401).json({ message: 'Invalid credentials aseh' });
+        return res.status(401).json({ message: 'Invalid credentials' });
       }
       const token = generateToken(user);
       let redirect;
@@ -21,7 +18,7 @@ class AuthController {
       } else if (user.role === 'pharmacist') {
           redirect = '/pharmacist-dashboard';
       } else {
-          redirect = '/user-dashboard'; // Default
+          redirect = '/patient-dashboard'; // Default
       }
 
 
