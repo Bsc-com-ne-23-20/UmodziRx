@@ -3,6 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+//ledger v1
 
 'use strict';
 const { Contract } = require('fabric-contract-api');
@@ -16,13 +17,36 @@ class UmodziLedger extends Contract {
         console.log('UmodziLedger Smart Contract Instantiated');
     }
 
+    async beforeTransaction(ctx) {
+        const methodName = ctx.stub.getFunctionAndParameters().fcn;
+    
+        if (methodName === 'issuePrescription') {
+            const params = ctx.stub.getFunctionAndParameters().params;
+    
+            if (params.length < 7) {
+                throw new Error('Missing required parameters. Expected: prescriptionId, doctorId, patientId, medication, dosagePerDose, dosesPerDay, quantityDispensed.');
+            }
+    
+            const [prescriptionId, doctorId, patientId, medication, dosagePerDose, dosesPerDay, quantityDispensed] = params;
+    
+            if (!doctorId || !patientId) {
+                throw new Error('Doctor ID, Patient ID are required.');
+            }
+    
+            if (doctorId === patientId) {
+                throw new Error('A doctor cannot issue a prescription to themselves.');
+            }
+    
+            if (quantityDispensed <= 0 || dosagePerDose <= 0 || dosesPerDay <= 0) {
+                throw new Error('Invalid prescription details: Ensure all numeric values are greater than zero.');
+            }
+        }
+    }
+    
+
     async issuePrescription(ctx, prescriptionId, doctorId, patientId, medication, dosagePerDose, dosesPerDay, quantityDispensed) {
         console.info('Issuing new prescription:', prescriptionId);
-        
-        if (quantityDispensed <= 0 || dosagePerDose <= 0 || dosesPerDay <= 0) {
-            throw new Error('Invalid prescription details: Ensure all numeric values are greater than zero.');
-        }
-        
+
         const prescription = {
             prescriptionId,
             doctorId,
@@ -86,6 +110,10 @@ class UmodziLedger extends Contract {
         }
         await iterator.close();
         return JSON.stringify(history);
+    }
+
+    async afterTransaction(ctx){
+        // notifications
     }
 }
 
