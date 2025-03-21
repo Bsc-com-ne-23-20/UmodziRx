@@ -1,6 +1,3 @@
-// Prescription routes
-// Define routes for managing prescriptions here
-
 const express = require('express');
 const PrescriptionController = require('../controllers/prescriptionController');
 
