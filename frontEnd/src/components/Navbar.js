@@ -4,14 +4,14 @@ import { Link, useNavigate } from 'react-router-dom';
 function Navbar() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const navigate = useNavigate();
-  const userRole = localStorage.getItem('userRole');
+  const userRole = localStorage.getItem('Login');
 
   useEffect(() => {
-    setIsLoggedIn(!!localStorage.getItem('userRole'));
+    setIsLoggedIn(!!localStorage.getItem('Login'));
   }, []);
 
   const handleLogout = () => {
-    localStorage.removeItem('userRole');
+    localStorage.removeItem('user role');
     setIsLoggedIn(false);
     navigate('/');
   };
@@ -36,7 +36,7 @@ function Navbar() {
             </Link>
             {!isLoggedIn && (
               <Link
-                to="/role-selection"
+                to="/login"
                 className="text-blue-500 dark:text-gray-300 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
               >
                 Login
