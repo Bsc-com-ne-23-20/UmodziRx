@@ -1,0 +1,25 @@
+{
+  "name": "umodzi-rx-backend",
+  "version": "1.0.0",
+  "description": "Backend for UmodziRx application",
+  "main": "config/server.js",
+  "scripts": {
+    "start": "node config/server.js",
+    "dev": "nodemon config/server.js"
+  },
+  "dependencies": {
+    "amqplib": "^0.10.3",
+    "axios": "^1.6.2",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "express-rate-limit": "^6.8.1",
+    "helmet": "^7.1.0",
+    "libsodium-wrappers": "^0.7.11",
+    "nano": "^10.1.4",
+    "pg": "^8.11.3",
+    "promised-io": "^0.3.6"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  }
+}
