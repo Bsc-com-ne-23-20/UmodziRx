@@ -1,65 +1,121 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import axios from 'axios';
+
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || "http://localhost:5000";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("addUser");
-  const [digitalID, setDigitalID] = useState("");
-  const [role, setRole] = useState("");
-  const [userName, setUserName] = useState("");  // New state for user name
-  const [viewUserID, setViewUserID] = useState("");
-  const [users, setUsers] = useState([]); // Simulate list of users
+  const [formData, setFormData] = useState({
+    digitalID: "",
+    role: "",
+    userName: "",
+    viewUserID: "",
+  });
+  const [users, setUsers] = useState([]);
+  const [viewedUsers, setViewedUsers] = useState([]);
   const [error, setError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
-  // Handle form submission for adding a user
+  // Fetch users on component mount
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
+  // Reusable API request function
+  const apiRequest = async (method, endpoint, data = null) => {
+    try {
+      const response = await axios({ method, url: `${API_BASE_URL}${endpoint}`, data });
+      return response.data;
+    } catch (error) {
+      console.error(`API Error: ${error.response?.data?.message || error.message}`);
+      throw error;
+    }
+  };
+
+  // Fetch all users
+  const fetchUsers = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const data = await apiRequest('get', '/api/users');
+      setUsers(data);
+    } catch (error) {
+      setError('Failed to fetch users.');
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  // Handle input changes
+  const handleInputChange = (e) => {
+    const { id, value } = e.target;
+    setFormData((prev) => ({ ...prev, [id]: value }));
+  };
+
+  // Add a new user
   const handleAddUser = async (e) => {
     e.preventDefault();
+    const { digitalID, role, userName } = formData;
+
     if (!digitalID || !role || !userName) {
-      setError("Please provide all fields: digital ID, role, and user name.");
+      setError("All fields are required.");
       return;
     }
-    // Add user logic here (e.g., API call to add user)
-    setUsers([...users, { digitalID, role, userName }]); // Example of adding a new user to the list
-    setError("");
-    setDigitalID("");
-    setRole("");
-    setUserName("");  // Clear userName input after submission
-  };
 
-  // Handle viewing all users or a specific user
-  const handleViewUsers = (e) => {
-    e.preventDefault();
-    if (viewUserID) {
-      const user = users.find((user) => user.digitalID === viewUserID);
-      if (user) {
-        alert(`User found: ${JSON.stringify(user)}`);
-      } else {
-        alert("User not found");
-      }
-    } else {
-      alert("Viewing all users:\n" + JSON.stringify(users));
+    try {
+      await apiRequest('post', '/api/users', { digitalID, role, userName });
+      setSuccessMessage(`User ${userName} added successfully!`);
+      setError("");
+      setFormData({ digitalID: "", role: "", userName: "", viewUserID: "" });
+      fetchUsers();
+    } catch (error) {
+      setError(error.response?.data?.message || "Failed to add user.");
     }
   };
 
-  // Handle deleting a user
-  const handleDeleteUser = (e) => {
+  // View users (all or specific)
+  const handleViewUsers = async (e) => {
     e.preventDefault();
+    const { viewUserID } = formData;
+
+    try {
+      const endpoint = viewUserID ? `/api/users/${viewUserID}` : '/api/users';
+      const data = await apiRequest('get', endpoint);
+      setViewedUsers(viewUserID ? [data] : data);
+      setError("");
+    } catch (error) {
+      setError(error.response?.data?.message || 'Failed to fetch user data.');
+      setViewedUsers([]);
+    }
+  };
+
+  // Delete a user
+  const handleDeleteUser = async (e) => {
+    e.preventDefault();
+    const { digitalID } = formData;
+
     if (!digitalID) {
       setError("Please provide a digital ID to delete.");
       return;
     }
-    setUsers(users.filter((user) => user.digitalID !== digitalID));
-    setDigitalID("");
-    setError("");
+
+    try {
+      await apiRequest('delete', `/api/users/${digitalID}`);
+      setSuccessMessage("User deleted successfully!");
+      setError("");
+      setFormData({ digitalID: "", role: "", userName: "", viewUserID: "" });
+      fetchUsers();
+    } catch (error) {
+      setError(error.response?.data?.message || 'Failed to delete user.');
+    }
   };
 
-  // Handle logout and redirect to home page
+  // Logout
   const handleLogout = () => {
-    // Clear any relevant local storage items (like token)
     localStorage.removeItem("token");
     localStorage.removeItem("userRole");
-    
-    // Redirect to the home page
     navigate("/");
   };
 
@@ -67,7 +123,6 @@ const AdminDashboard = () => {
     <div className="min-h-screen bg-teal-50 flex items-center justify-center px-4">
       <div className="bg-white shadow-lg rounded-2xl p-8 max-w-4xl w-full">
         <div className="flex justify-end mb-6">
-          {/* Logout Button with Red Background */}
           <button
             onClick={handleLogout}
             className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700"
@@ -80,79 +135,68 @@ const AdminDashboard = () => {
           Admin Dashboard
         </h2>
 
-        {/* Tab Navigation */}
+        {successMessage && <p className="text-green-600 text-center">{successMessage}</p>}
+        {error && <p className="text-red-600 text-center">{error}</p>}
+
         <div className="flex justify-center space-x-8 mb-6">
-          <button
-            className={`px-4 py-2 ${activeTab === "addUser" ? "bg-teal-600 text-white" : "bg-teal-100"} rounded-lg`}
-            onClick={() => setActiveTab("addUser")}
-          >
-            Add User
-          </button>
-          <button
-            className={`px-4 py-2 ${activeTab === "viewUsers" ? "bg-teal-600 text-white" : "bg-teal-100"} rounded-lg`}
-            onClick={() => setActiveTab("viewUsers")}
-          >
-            View Users
-          </button>
-          <button
-            className={`px-4 py-2 ${activeTab === "deleteUser" ? "bg-teal-600 text-white" : "bg-teal-100"} rounded-lg`}
-            onClick={() => setActiveTab("deleteUser")}
-          >
-            Delete User
-          </button>
+          {["addUser", "viewUsers", "deleteUser"].map((tab) => (
+            <button
+              key={tab}
+              className={`px-4 py-2 ${activeTab === tab ? "bg-teal-600 text-white" : "bg-teal-100"} rounded-lg`}
+              onClick={() => setActiveTab(tab)}
+            >
+              {tab === "addUser" ? "Add User" : tab === "viewUsers" ? "View Users" : "Delete User"}
+            </button>
+          ))}
         </div>
 
-        {/* Add User Section */}
         {activeTab === "addUser" && (
-          <div>
-            <h3 className="text-xl font-semibold mb-4">Add User</h3>
-            <form onSubmit={handleAddUser} className="space-y-4">
-              <div>
-                <label htmlFor="userName" className="block text-sm font-medium text-gray-700">User Name</label>
-                <input
-                  type="text"
-                  id="userName"
-                  value={userName}
-                  onChange={(e) => setUserName(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-lg"
-                  required
-                />
-              </div>
-              <div>
-                <label htmlFor="digitalID" className="block text-sm font-medium text-gray-700">Digital ID</label>
-                <input
-                  type="text"
-                  id="digitalID"
-                  value={digitalID}
-                  onChange={(e) => setDigitalID(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-lg"
-                  required
-                />
-              </div>
-              <div>
-                <label htmlFor="role" className="block text-sm font-medium text-gray-700">Role</label>
-                <select
-                  id="role"
-                  value={role}
-                  onChange={(e) => setRole(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-lg"
-                  required
-                >
-                  <option value="">Select Role</option>
-                  <option value="admin">Admin</option>
-                  <option value="doctor">Doctor</option>
-                  <option value="pharmacist">Pharmacist</option>
-                </select>
-              </div>
-              <button type="submit" className="w-full bg-teal-600 text-white px-3 py-2 rounded-lg hover:bg-teal-700">Add User</button>
-            </form>
-          </div>
+          <form onSubmit={handleAddUser} className="space-y-4">
+            <div>
+              <label htmlFor="userName" className="block text-sm font-medium text-gray-700">User Name</label>
+              <input
+                type="text"
+                id="userName"
+                value={formData.userName}
+                onChange={handleInputChange}
+                className="w-full px-3 py-2 border rounded-lg"
+                required
+              />
+            </div>
+            <div>
+              <label htmlFor="digitalID" className="block text-sm font-medium text-gray-700">Digital ID</label>
+              <input
+                type="text"
+                id="digitalID"
+                value={formData.digitalID}
+                onChange={handleInputChange}
+                className="w-full px-3 py-2 border rounded-lg"
+                required
+              />
+            </div>
+            <div>
+              <label htmlFor="role" className="block text-sm font-medium text-gray-700">Role</label>
+              <select
+                id="role"
+                value={formData.role}
+                onChange={handleInputChange}
+                className="w-full px-3 py-2 border rounded-lg"
+                required
+              >
+                <option value="">Select Role</option>
+                <option value="admin">Admin</option>
+                <option value="doctor">Doctor</option>
+                <option value="pharmacist">Pharmacist</option>
+              </select>
+            </div>
+            <button type="submit" className="w-full bg-teal-600 text-white px-3 py-2 rounded-lg hover:bg-teal-700">
+              Add User
+            </button>
+          </form>
         )}
 
-        {/* View Users Section */}
         {activeTab === "viewUsers" && (
           <div>
-            <h3 className="text-xl font-semibold mb-4">View Users</h3>
             <form onSubmit={handleViewUsers} className="space-y-4">
               <div>
                 <button
@@ -167,8 +211,8 @@ const AdminDashboard = () => {
                 <input
                   type="text"
                   id="viewUserID"
-                  value={viewUserID}
-                  onChange={(e) => setViewUserID(e.target.value)}
+                  value={formData.viewUserID}
+                  onChange={handleInputChange}
                   className="w-1/2 px-3 py-2 border rounded-lg"
                   placeholder="Enter Digital ID"
                 />
@@ -180,36 +224,53 @@ const AdminDashboard = () => {
                 </button>
               </div>
             </form>
-          </div>
-        )}
-
-        {/* Delete User Section */}
-        {activeTab === "deleteUser" && (
-          <div>
-            <h3 className="text-xl font-semibold mb-4">Delete User</h3>
-            <form onSubmit={handleDeleteUser} className="space-y-4">
-              <div>
-                <label htmlFor="deleteUserID" className="block text-sm font-medium text-gray-700">Digital ID</label>
-                <input
-                  type="text"
-                  id="deleteUserID"
-                  value={digitalID}
-                  onChange={(e) => setDigitalID(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-lg"
-                  required
-                />
+            {viewedUsers.length > 0 && (
+              <div className="mt-4">
+                <h4 className="text-lg font-semibold">Users:</h4>
+                <table className="min-w-full border-collapse border border-gray-200">
+                  <thead>
+                    <tr>
+                      <th className="border border-gray-300 px-4 py-2">Name</th>
+                      <th className="border border-gray-300 px-4 py-2">Digital ID</th>
+                      <th className="border border-gray-300 px-4 py-2">Role</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {viewedUsers.map((user) => (
+                      <tr key={user.digitalID}>
+                        <td className="border border-gray-300 px-4 py-2">{user.name}</td>
+                        <td className="border border-gray-300 px-4 py-2">{user.digitalID}</td>
+                        <td className="border border-gray-300 px-4 py-2">{user.role}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
-              <button
-                type="submit"
-                className="w-full bg-red-600 text-white px-3 py-2 rounded-lg hover:bg-red-700"
-              >
-                Delete User
-              </button>
-            </form>
+            )}
           </div>
         )}
 
-        {error && <p className="mt-4 text-red-600">{error}</p>}
+        {activeTab === "deleteUser" && (
+          <form onSubmit={handleDeleteUser} className="space-y-4">
+            <div>
+              <label htmlFor="deleteUserID" className="block text-sm font-medium text-gray-700">Digital ID</label>
+              <input
+                type="text"
+                id="digitalID"
+                value={formData.digitalID}
+                onChange={handleInputChange}
+                className="w-full px-3 py-2 border rounded-lg"
+                required
+              />
+            </div>
+            <button
+              type="submit"
+              className="w-full bg-red-600 text-white px-3 py-2 rounded-lg hover:bg-red-700"
+            >
+              Delete User
+            </button>
+          </form>
+        )}
       </div>
     </div>
   );
