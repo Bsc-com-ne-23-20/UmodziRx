@@ -1,8 +1,3 @@
-// Server configuration
-// Define the server settings and middleware here
-
-// TODO: Integrate with Hyperledger Fabric to send blocks of transactions
-
 require('dotenv').config(); // Load environment variables.
 const express = require('express');
 const cors = require("cors");  // Import CORS

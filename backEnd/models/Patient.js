@@ -1,6 +1,3 @@
-// Patient model definition
-// Define the structure for patient data here
-
 const { pgClient } = require('../config/db');
 
 class Patient {

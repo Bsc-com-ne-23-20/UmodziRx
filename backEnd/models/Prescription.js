@@ -1,6 +1,3 @@
-// Prescription model definition
-// Define the structure for prescription data here
-
 const { pgClient } = require('../config/db');
 
 class Prescription {

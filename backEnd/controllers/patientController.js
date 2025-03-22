@@ -1,6 +1,3 @@
-// Handles patient-related requests
-// Define functions for managing patient data here
-
 const Patient = require('../models/Patient');
 
 class PatientController {
