@@ -43,6 +43,7 @@ const AdminDashboard = () => {
       setUsers(data);
     } catch (error) {
       setError('Failed to fetch users.');
+      setTimeout(() => setError(""), 3000); // Clear error after 3 seconds
     } finally {
       setIsLoading(false);
     }
@@ -61,17 +62,20 @@ const AdminDashboard = () => {
 
     if (!digitalID || !role || !userName) {
       setError("All fields are required.");
+      setTimeout(() => setError(""), 3000); // Clear error after 3 seconds
       return;
     }
 
     try {
       await apiRequest('post', '/api/users', { digitalID, role, userName });
       setSuccessMessage(`User ${userName} added successfully!`);
+      setTimeout(() => setSuccessMessage(""), 3000); // Clear success message after 3 seconds
       setError("");
       setFormData({ digitalID: "", role: "", userName: "", viewUserID: "" });
       fetchUsers();
     } catch (error) {
       setError(error.response?.data?.message || "Failed to add user.");
+      setTimeout(() => setError(""), 3000); // Clear error after 3 seconds
     }
   };
 
@@ -87,6 +91,7 @@ const AdminDashboard = () => {
       setError("");
     } catch (error) {
       setError(error.response?.data?.message || 'Failed to fetch user data.');
+      setTimeout(() => setError(""), 3000); // Clear error after 3 seconds
       setViewedUsers([]);
     }
   };
@@ -98,17 +103,20 @@ const AdminDashboard = () => {
 
     if (!digitalID) {
       setError("Please provide a digital ID to delete.");
+      setTimeout(() => setError(""), 3000); // Clear error after 3 seconds
       return;
     }
 
     try {
       await apiRequest('delete', `/api/users/${digitalID}`);
       setSuccessMessage("User deleted successfully!");
+      setTimeout(() => setSuccessMessage(""), 3000); // Clear success message after 3 seconds
       setError("");
       setFormData({ digitalID: "", role: "", userName: "", viewUserID: "" });
       fetchUsers();
     } catch (error) {
       setError(error.response?.data?.message || 'Failed to delete user.');
+      setTimeout(() => setError(""), 3000); // Clear error after 3 seconds
     }
   };
 
@@ -135,8 +143,12 @@ const AdminDashboard = () => {
           Admin Dashboard
         </h2>
 
-        {successMessage && <p className="text-green-600 text-center">{successMessage}</p>}
-        {error && <p className="text-red-600 text-center">{error}</p>}
+        {successMessage && (
+          <p className="text-green-600 text-center mb-4">{successMessage}</p>
+        )}
+        {error && (
+          <p className="text-red-600 text-center mb-4">{error}</p>
+        )}
 
         <div className="flex justify-center space-x-8 mb-6">
           {["addUser", "viewUsers", "deleteUser"].map((tab) => (
