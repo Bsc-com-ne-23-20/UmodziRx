@@ -29,16 +29,20 @@ function Login() {
       }
   
       const data = await response.json();
-      const { token, redirect } = data; // Get `redirect` from backend response
+      const { token, redirect,role} = data; // Get `redirect` from backend response
   
-      // Store authentication details
+      //Store authentication details
       localStorage.setItem("token", token);
-      console.log("Token stored:", localStorage.getItem("token"));
+      localStorage.setItem("userRole", role); // Store user role
+
+      console.log("Stored Token:", localStorage.getItem("token"));
+      console.log("Stored Role:", localStorage.getItem("userRole"));
+
 
   
       // Redirect user to the correct dashboard
 
-      navigate(redirect || "/dashboard");
+      navigate(redirect);
       
 
     } catch (error) {

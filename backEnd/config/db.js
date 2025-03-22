@@ -1,7 +1,7 @@
-const mysql = require('mysql2');
+const mysql = require('mysql2/promise');
 
 // MySQL configuration with hardcoded credentials for testing
-const mysqlConnection = mysql.createConnection({
+const pool = mysql.createPool({
   host: 'localhost',
   user: 'root',
   database: 'staff',
@@ -10,12 +10,13 @@ const mysqlConnection = mysql.createConnection({
 });
 
 // Connect to MySQL
-mysqlConnection.connect(err => {
-  if (err) {
-    console.error('MySQL connection error', err);
-  } else {
+pool.getConnection()
+  .then(connection => {
     console.log('Connected to MySQL');
-  }
-});
+    connection.release(); // Release the connection back to the pool
+  })
+  .catch(err => {
+    console.error('MySQL connection error', err);
+  });
 
-module.exports = { mysqlConnection };
+module.exports = { pool };
