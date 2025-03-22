@@ -33,26 +33,25 @@ function App() {
           <Routes>
             {/* Public Routes */}
             <Route path="/" element={<Home />} />
-            <Route path="/role-selection" element={<RoleSelection />} />
             <Route path="/login" element={<Login />} />
             <Route path="/learn-more" element={<LearnMore />} />
 
             {/* Protected Routes (Require Authentication) */}
             <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
-              <Route path="/admin-dashboard" element={<AdminDashboard />} />
+              <Route path="/admin" element={<AdminDashboard />} />
             </Route>
 
             <Route element={<ProtectedRoute allowedRoles={["doctor"]} />}>
-              <Route path="/doctor-dashboard" element={<DoctorDashboard />} />
+              <Route path="/doctor" element={<DoctorDashboard />} />
               <Route path="/create-prescription" element={<CreatePrescription />} />
             </Route>
 
             <Route element={<ProtectedRoute allowedRoles={["pharmacist"]} />}>
-              <Route path="/pharmacist-dashboard" element={<PharmacistDashboard />} />
+              <Route path="/pharmacist" element={<PharmacistDashboard />} />
             </Route>
 
             <Route element={<ProtectedRoute allowedRoles={["patient"]} />}>
-              <Route path="/patient-prescriptions" element={<PatientPrescriptions />} />
+              <Route path="/patient" element={<PatientPrescriptions />} />
               <Route path="/view-patient-prescriptions" element={<ViewPatientPrescriptions />} />
             </Route>
 
