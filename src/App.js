@@ -56,7 +56,9 @@ function App() {
               <Route path="/view-patient-prescriptions" element={<ViewPatientPrescriptions />} />
             </Route>
 
+            <Route path="/register" element={<Register />} /> {/* Registration Route */}
             {/* Redirect all unknown routes to login */}
+
             <Route path="*" element={<Navigate to="/login" replace />} />
           </Routes>
         </div>
