@@ -1,10 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
-import RoleSelection from "./pages/RoleSelection";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import ViewPatientPrescriptions from "./pages/ViewPatientPrescriptions";
-import CreatePrescription from "./pages/CreatePrescription";
 import AdminDashboard from "./pages/AdminDashboard";
 import DoctorDashboard from "./pages/DoctorDashboard";
 import PharmacistDashboard from "./pages/PharmacistDashboard";
@@ -43,7 +41,6 @@ function App() {
 
             <Route element={<ProtectedRoute allowedRoles={["doctor"]} />}>
               <Route path="/doctor" element={<DoctorDashboard />} />
-              <Route path="/create-prescription" element={<CreatePrescription />} />
             </Route>
 
             <Route element={<ProtectedRoute allowedRoles={["pharmacist"]} />}>
