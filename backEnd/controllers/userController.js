@@ -36,7 +36,7 @@ class UserController {
           role VARCHAR(50) NOT NULL
         )
       `);
-      console.log('Table checked/created successfully.');
+     //Table checked/created successfully
     } catch (error) {
       console.error('Error ensuring table exists:', error);
       throw error; // Re-throw the error to handle it in the calling function
