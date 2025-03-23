@@ -6,7 +6,7 @@ import ViewPatientPrescriptions from "./pages/ViewPatientPrescriptions";
 import AdminDashboard from "./pages/AdminDashboard";
 import DoctorDashboard from "./pages/DoctorDashboard";
 import PharmacistDashboard from "./pages/PharmacistDashboard";
-import PatientPrescriptions from "./pages/PatientPrescriptions";
+import PatientPrescriptions from "./pages/PatientDashboard";
 import LearnMore from "./pages/LearnMore";
 import Navbar from "./components/Navbar";
 import ProtectedRoute from "./components/ProtectedRoute"; // Import ProtectedRoute
