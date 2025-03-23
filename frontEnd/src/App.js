@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import RoleSelection from "./pages/RoleSelection";
+import Register from "./pages/Register";
+
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import ViewPatientPrescriptions from "./pages/ViewPatientPrescriptions";
@@ -36,6 +38,8 @@ function App() {
             <Route path="/role-selection" element={<RoleSelection />} />
             <Route path="/login" element={<Login />} />
             <Route path="/learn-more" element={<LearnMore />} />
+            <Route path="/register" element={<Register />} />
+
 
             {/* Protected Routes (Require Authentication) */}
             <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
