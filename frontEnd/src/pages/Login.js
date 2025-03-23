@@ -1,6 +1,5 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import eSignetIcon from "./esignet.png";
 import prescriptionImage from "./Prescription_medication.jpeg";
 
 function Login() {
@@ -9,6 +8,29 @@ function Login() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (window.signInWithEsignet) {
+      window.signInWithEsignet.init({
+        idcConfig: {
+          acr_values: "generated_code",
+          claims: "given_name family_name picture",
+          client_id: "[CLIENT_ID]", // Replace with your actual client ID
+          redirect_uri: "http://localhost:5000/profile",
+          authorize_url: "http://localhost:3000/authorize",
+          // Additional IDC configuration parameters if needed
+        },
+        buttonConfig: {
+          shape: "rectangular",
+          theme: "filled_blue",
+          size: "medium",
+          type: "standard",
+          label: "Sign in with e-Signet"
+        },
+        signInElement: "esignet-button" // The ID of the div where the button should be rendered
+      });
+    }
+  }, []);
 
   const handleLoginSubmit = useCallback(async (e) => {
     e.preventDefault();
@@ -20,7 +42,7 @@ function Login() {
         doctor: { username: "doctor", password: "doctor", role: "doctor", redirect: "/doctor-dashboard" },
         pharmacist: { username: "pharmacist", password: "pharmacist", role: "pharmacist", redirect: "/pharmacist-dashboard" },
         patient: { username: "patient", password: "patient", role: "patient", redirect: "/patient-prescriptions" },
-        admin: { username: "admin", password: "admin", role: "admin", redirect: "/admin-dashboard" }, // Added admin credentials
+        admin: { username: "admin", password: "admin", role: "admin", redirect: "/admin-dashboard" },
       };
 
       const user = Object.values(credentials).find(
@@ -49,11 +71,11 @@ function Login() {
           <img 
             src={prescriptionImage} 
             alt="Prescription and Medication" 
-            className="w-64 h-64 object-cover rounded-full" // Enlarged avatar
+            className="w-64 h-64 object-cover rounded-full"
           />
           <div className="text-center"> 
             <h2 className="block text-teal-600 dark:text-teal-400 text-3xl font-bold mt-4">UmodziRx</h2>
-            <p className=" block text-lg text-teal-600 max-w-xs font-bold mt-2">
+            <p className="block text-lg text-teal-600 max-w-xs font-bold mt-2">
               Secure Prescription Management.
             </p>
           </div>
@@ -121,20 +143,14 @@ function Login() {
             <hr className="flex-grow border-t border-gray-300" />
           </div>
 
-          {/* Login with eSignet Button */}
+          {/* Login with eSignet */}
           <div className="text-center">
-            <button
-              className="w-full bg-gray-200 text-teal-700 px-3 py-2 rounded-lg hover:bg-gray-300 transition duration-200 focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 flex items-center justify-center"
-              onClick={() => alert("Login with eSignet is under development")}
-            >
-              <img src={eSignetIcon} alt="eSignet" className="w-6 h-6 mr-2" />
-              Login with eSignet
-            </button>
+            <div id="esignet-button"></div>
           </div>
 
           <div className="mt-4 text-center">
             <p className="text-sm text-gray-600">
-              New user? {" "}
+              New user?{" "}
               <button
                 onClick={() => navigate("/register")}
                 className="text-teal-600 hover:underline"
