@@ -7,6 +7,7 @@ const DoctorDashboard = () => {
     const [activeTab, setActiveTab] = useState(TABS.CREATE);
     const [formData, setFormData] = useState({
         doctor_id: '',
+        patient_name: '',
         patient_id: '',
         medications: [{ medication: '', dosage: '', instructions: '' }]
     });
@@ -22,9 +23,9 @@ const DoctorDashboard = () => {
             const response = await axios.get(`http://localhost:5000/prescriptions/${patientID}`);
             setPrescription(response.data);
             console.log(JSON.stringify(response.data, null, 2));
-            console.log("accessed backend: no error");
+            console.log("Accessed backend: no error");
         } catch (err) {
-            setError('Error fetching prescription ,,,,',err);
+            setError('Error fetching prescription: ' + err.message);
             setTimeout(() => setError(""), 3000);
             console.error('Error:', err);
         }
@@ -55,22 +56,26 @@ const DoctorDashboard = () => {
         setError(null);
 
         try {
-            // Send the entire formData (including the medications array) to the backend
             const response = await axios.post('http://localhost:5000/prescriptions', formData);
             alert('Prescription created successfully');
-            // Reset the form after successful submission
             setFormData({
                 doctor_id: '',
+                patient_name: '',
                 patient_id: '',
                 medications: [{ medication: '', dosage: '', instructions: '' }]
             });
         } catch (err) {
-            setError('Error creating prescription');
+            setError('Error creating prescription: ' + err.message);
             setTimeout(() => setError(""), 4000);
             console.error('Error:', err);
         } finally {
             setLoading(false);
         }
+    };
+
+    const handleLogout = () => {
+        localStorage.removeItem('Login');
+        navigate('/');
     };
 
     const renderContent = () => {
@@ -82,14 +87,26 @@ const DoctorDashboard = () => {
                         {error && <p className="text-red-600">{error}</p>}
                         <form className="space-y-4" onSubmit={handleSubmit}>
                             <div>
-                                <label className="block text-gray-700">Doctor Name</label>
+                                <label className="block text-gray-700">Doctor DigitalID</label>
                                 <input 
                                     type="text" 
                                     name="doctor_id" 
                                     value={formData.doctor_id} 
                                     onChange={(e) => setFormData({ ...formData, doctor_id: e.target.value })} 
                                     className="w-full p-2 border rounded-lg" 
-                                    placeholder="Enter your name" 
+                                    placeholder="Enter your ID" 
+                                    required 
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-gray-700">Patient Name</label>
+                                <input 
+                                    type="text" 
+                                    name="patient_name" 
+                                    value={formData.patient_name} 
+                                    onChange={(e) => setFormData({ ...formData, patient_name: e.target.value })} 
+                                    className="w-full p-2 border rounded-lg" 
+                                    placeholder="Enter Patient Name" 
                                     required 
                                 />
                             </div>
@@ -191,6 +208,7 @@ const DoctorDashboard = () => {
                             <div>
                                 <h3>Prescription ID: {prescription.id}</h3>
                                 <p><strong>Doctor:</strong> {prescription.doctor_id}</p>
+                                <p><strong>Patient Name:</strong> {prescription.patient_name}</p>
                                 <p><strong>Patient ID:</strong> {prescription.patient_id}</p>
                                 <p><strong>Medication:</strong> {prescription.medication}</p>
                                 <p><strong>Dosage:</strong> {prescription.dosage}</p>
@@ -206,6 +224,8 @@ const DoctorDashboard = () => {
         }
     };
 
+
+=======
     const handleLogout = () => {
         localStorage.removeItem('userRole'); // Remove userRole from localStorage
          localStorage.removeItem('Login');
