@@ -48,9 +48,10 @@ class PrescriptionController {
   }
 
   static async getPrescription(req, res) {
+    const { prescriptionId } = req.params;
     try {
       const response = await axios.get(
-        'https://u0zy6vfzce-u0xgnn6gvm-connect.us0-aws-ws.kaleido.io/transactions/3f8bae104040b3a732eb1dc3e99682071baf4e0fb370c6fc643c62b389f378d3?fly-channel=default-channel&fly-signer=user1',
+        `https://u0zy6vfzce-u0xgnn6gvm-connect.us0-aws-ws.kaleido.io/transactions/${prescriptionId}?fly-channel=default-channel&fly-signer=user1`,
         {
           headers: {
             'accept': 'application/json',
