@@ -25,6 +25,7 @@ const patientRoutes = require('../routes/patientRoutes');
 const prescriptionRoutes = require('../routes/prescriptionRoutes');
 const userRoutes = require('../routes/userRoutes'); // Import user routes
 
+
 // Routes
 app.use('/auth', authRoutes);
 app.use('/patients', patientRoutes);
