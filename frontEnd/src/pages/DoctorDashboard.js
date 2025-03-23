@@ -224,6 +224,16 @@ const DoctorDashboard = () => {
         }
     };
 
+
+=======
+    const handleLogout = () => {
+        localStorage.removeItem('userRole'); // Remove userRole from localStorage
+         localStorage.removeItem('Login');
+        navigate('/'); // Redirect to the login page
+        
+
+    };
+
     return (
         <div className="p-8 bg-gray-100 min-h-screen">
             <div className="flex justify-between items-center mb-4">
