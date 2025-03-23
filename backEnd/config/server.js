@@ -23,11 +23,13 @@ app.use(limiter);
 const authRoutes = require('../routes/authRoutes');
 const patientRoutes = require('../routes/patientRoutes');
 const prescriptionRoutes = require('../routes/prescriptionRoutes');
+const userRoutes = require('../routes/userRoutes'); // Import user routes
 
 // Routes
 app.use('/auth', authRoutes);
 app.use('/patients', patientRoutes);
 app.use('/prescriptions', prescriptionRoutes);
+app.use('/api', userRoutes); // Use user routes with base path /api
 
 app.get('/', (req, res) => {
   res.send('UmodziRx Backend is running');
