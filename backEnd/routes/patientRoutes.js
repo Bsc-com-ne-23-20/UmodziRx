@@ -1,6 +1,3 @@
-// Patient routes
-// Define routes for managing patient data here
-
 const express = require('express');
 const PatientController = require('../controllers/patientController');
 

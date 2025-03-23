@@ -1,12 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
-import RoleSelection from "./pages/RoleSelection";
-import Register from "./pages/Register";
-
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import ViewPatientPrescriptions from "./pages/ViewPatientPrescriptions";
-import CreatePrescription from "./pages/CreatePrescription";
 import AdminDashboard from "./pages/AdminDashboard";
 import DoctorDashboard from "./pages/DoctorDashboard";
 import PharmacistDashboard from "./pages/PharmacistDashboard";
@@ -35,7 +31,6 @@ function App() {
           <Routes>
             {/* Public Routes */}
             <Route path="/" element={<Home />} />
-            <Route path="/role-selection" element={<RoleSelection />} />
             <Route path="/login" element={<Login />} />
             <Route path="/learn-more" element={<LearnMore />} />
             <Route path="/register" element={<Register />} />
@@ -43,20 +38,19 @@ function App() {
 
             {/* Protected Routes (Require Authentication) */}
             <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
-              <Route path="/admin-dashboard" element={<AdminDashboard />} />
+              <Route path="/admin" element={<AdminDashboard />} />
             </Route>
 
             <Route element={<ProtectedRoute allowedRoles={["doctor"]} />}>
-              <Route path="/doctor-dashboard" element={<DoctorDashboard />} />
-              <Route path="/create-prescription" element={<CreatePrescription />} />
+              <Route path="/doctor" element={<DoctorDashboard />} />
             </Route>
 
             <Route element={<ProtectedRoute allowedRoles={["pharmacist"]} />}>
-              <Route path="/pharmacist-dashboard" element={<PharmacistDashboard />} />
+              <Route path="/pharmacist" element={<PharmacistDashboard />} />
             </Route>
 
             <Route element={<ProtectedRoute allowedRoles={["patient"]} />}>
-              <Route path="/patient-prescriptions" element={<PatientPrescriptions />} />
+              <Route path="/patient" element={<PatientPrescriptions />} />
               <Route path="/view-patient-prescriptions" element={<ViewPatientPrescriptions />} />
             </Route>
 

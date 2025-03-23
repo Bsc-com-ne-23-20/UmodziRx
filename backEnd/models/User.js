@@ -1,7 +1,4 @@
-// User model definition
-// Define the structure for user data here
-
-const { mysqlConnection } = require('../config/db');
+const { pool } = require('../config/db'); // Use the connection pool from db.js
 
 class User {
   static async create(userData) {
@@ -11,19 +8,19 @@ class User {
       VALUES (?, ?, ?);
     `;
     const values = [username, password, role];
-    const [result] = await mysqlConnection.promise().query(query, values);
+    const [result] = await pool.query(query, values); // Use pool.query for promise-based queries
     return result.insertId; // Return the ID of the newly created user
   }
 
   static async findByUsername(username) {
     const query = 'SELECT * FROM users WHERE username = ?';
-    const [rows] = await mysqlConnection.promise().query(query, [username]);
+    const [rows] = await pool.query(query, [username]); // Use pool.query
     return rows[0];
   }
 
   static async findById(userId) {
     const query = 'SELECT * FROM users WHERE id = ?';
-    const [rows] = await mysqlConnection.promise().query(query, [userId]);
+    const [rows] = await pool.query(query, [userId]); // Use pool.query
     return rows[0];
   }
 
@@ -35,13 +32,13 @@ class User {
       WHERE id = ?;
     `;
     const values = [username, password, role, userId];
-    const [result] = await mysqlConnection.promise().query(query, values);
+    const [result] = await pool.query(query, values); // Use pool.query
     return result.affectedRows > 0; // Return true if the update was successful
   }
 
   static async delete(userId) {
     const query = 'DELETE FROM users WHERE id = ?';
-    const [result] = await mysqlConnection.promise().query(query, [userId]);
+    const [result] = await pool.query(query, [userId]); // Use pool.query
     return result.affectedRows > 0; // Return true if the deletion was successful
   }
 }

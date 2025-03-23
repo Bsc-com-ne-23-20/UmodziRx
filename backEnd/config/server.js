@@ -1,8 +1,3 @@
-// Server configuration
-// Define the server settings and middleware here
-
-// TODO: Integrate with Hyperledger Fabric to send blocks of transactions
-
 require('dotenv').config(); // Load environment variables.
 const express = require('express');
 const cors = require("cors");  // Import CORS
@@ -28,11 +23,14 @@ app.use(limiter);
 const authRoutes = require('../routes/authRoutes');
 const patientRoutes = require('../routes/patientRoutes');
 const prescriptionRoutes = require('../routes/prescriptionRoutes');
+const userRoutes = require('../routes/userRoutes'); // Import user routes
+
 
 // Routes
 app.use('/auth', authRoutes);
 app.use('/patients', patientRoutes);
 app.use('/prescriptions', prescriptionRoutes);
+app.use('/api', userRoutes); // Use user routes with base path /api
 
 app.get('/', (req, res) => {
   res.send('UmodziRx Backend is running');

@@ -50,29 +50,42 @@ function Login() {
     renderButton();
   }, [navigate]);
 
+
   const handleLoginSubmit = useCallback(async (e) => {
     e.preventDefault();
     setLoading(true);
     setError("");
-
+  
     try {
-      const credentials = {
-        doctor: { username: "doctor", password: "doctor", role: "doctor", redirect: "/doctor-dashboard" },
-        pharmacist: { username: "pharmacist", password: "pharmacist", role: "pharmacist", redirect: "/pharmacist-dashboard" },
-        patient: { username: "patient", password: "patient", role: "patient", redirect: "/patient-prescriptions" },
-        admin: { username: "admin", password: "admin", role: "admin", redirect: "/admin-dashboard" },
-      };
 
-      const user = Object.values(credentials).find(
-        cred => cred.username === username && cred.password === password
-      );
-
-      if (user) {
-        localStorage.setItem("userRole", user.role);
-        navigate(user.redirect);
-      } else {
-        throw new Error("Invalid credentials");
+      const response = await fetch("http://localhost:5000/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password }),
+      });
+  
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Invalid credentials");
       }
+  
+      const data = await response.json();
+      const { token, redirect,role} = data; // Get `redirect` from backend response
+  
+      //Store authentication details
+      localStorage.setItem("token", token);
+      localStorage.setItem("userRole", role); // Store user role
+
+      console.log("Stored Token:", localStorage.getItem("token"));
+      console.log("Stored Role:", localStorage.getItem("userRole"));
+
+
+  
+      // Redirect user to the correct dashboard
+
+      navigate(redirect);
+      
+
     } catch (error) {
       setError("Login failed. Please check your credentials.");
       console.error(error);
@@ -80,6 +93,13 @@ function Login() {
       setLoading(false);
     }
   }, [username, password, navigate]);
+  
+
+
+
+
+
+
 
   return (
     <div className="min-h-screen bg-teal-50 flex items-center justify-center px-4">
