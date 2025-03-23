@@ -17,10 +17,12 @@ const mockPrescriptions = [
 
 export default function Dashboard() {
   const navigate = useNavigate(); // Initialize useNavigate
+  const patientName = localStorage.getItem('patientName') || 'Dashboard'; // Get patient's name
 
   // Logout function
   const handleLogout = () => {
     localStorage.removeItem('userRole'); // Remove userRole from localStorage
+    localStorage.removeItem('patientName'); // Remove patient's name from localStorage
     navigate('/'); // Redirect to the login page
   };
 
@@ -36,7 +38,7 @@ export default function Dashboard() {
         </button>
       </div>
 
-      <h2 className="text-2xl font-bold">Dashboard</h2>
+      <h2 className="text-2xl font-bold">{patientName} Dashboard</h2>
       <p className="mt-4">Manage your prescriptions and verify issued ones.</p>
 
       {/* Example: Display mock prescriptions */}
