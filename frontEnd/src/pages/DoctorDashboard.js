@@ -82,14 +82,14 @@ const DoctorDashboard = () => {
                         {error && <p className="text-red-600">{error}</p>}
                         <form className="space-y-4" onSubmit={handleSubmit}>
                             <div>
-                                <label className="block text-gray-700">Doctor Name</label>
+                                <label className="block text-gray-700">Doctor DigitalID</label>
                                 <input 
                                     type="text" 
                                     name="doctor_id" 
                                     value={formData.doctor_id} 
                                     onChange={(e) => setFormData({ ...formData, doctor_id: e.target.value })} 
                                     className="w-full p-2 border rounded-lg" 
-                                    placeholder="Enter your name" 
+                                    placeholder="Enter your ID" 
                                     required 
                                 />
                             </div>
