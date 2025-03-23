@@ -1,5 +1,5 @@
+import { useNavigate } from 'react-router-dom';
 import React, { useState, useCallback, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import prescriptionImage from "./Prescription_medication.jpeg";
 
 function Login() {
@@ -8,29 +8,47 @@ function Login() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
-    if (window.signInWithEsignet) {
-      window.signInWithEsignet.init({
+    // Initialize eSignet button
+    const renderButton = () => {
+      window.SignInWithEsignetButton?.init({
         idcConfig: {
-          acr_values: "generated_code",
-          claims: "given_name family_name picture",
-          client_id: "[CLIENT_ID]", // Replace with your actual client ID
-          redirect_uri: "http://localhost:5000/profile",
-          authorize_url: "http://localhost:3000/authorize",
-          // Additional IDC configuration parameters if needed
+          client_id: 'IIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEApQwK2', // Replace with your actual client ID
+          redirect_uri: 'http://localhost:3002/*callback', // Callback URL after eSignet authentication
+          acr_values: 'generated_code',
+          claims_locales: 'en',
+          display: 'page',
+          nonce: 'RANDOM_NONCE',
+          prompt: 'consent',
+          scope: 'openid profile',
+          state: 'RANDOM_STATE',
+          authorize_url: 'http://localhost:3000/*', // Replace with eSignet's authorize URL
+          ui_locales: 'en'
         },
         buttonConfig: {
-          shape: "rectangular",
-          theme: "filled_blue",
-          size: "medium",
-          type: "standard",
-          label: "Sign in with e-Signet"
+          labelText: 'Sign in with eSignet',
+          shape: 'soft_edges',
+          theme: 'filled_orange',
+          type: 'standard'
         },
-        signInElement: "esignet-button" // The ID of the div where the button should be rendered
+        signInElement: document.getElementById('esignet-button'),
+        onSuccess: (response) => {
+          // Handle successful eSignet authentication
+          console.log('eSignet authentication successful:', response);
+          // Redirect to a specific route or perform additional actions
+          navigate('/dashboard'); // Example: Redirect to dashboard after successful login
+        },
+        onFailure: (error) => {
+          // Handle eSignet authentication failure
+          console.error('eSignet authentication failed:', error);
+          setError('eSignet authentication failed. Please try again.');
+        }
       });
-    }
-  }, []);
+    };
+    renderButton();
+  }, [navigate]);
 
   const handleLoginSubmit = useCallback(async (e) => {
     e.preventDefault();
@@ -113,17 +131,26 @@ function Login() {
               <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
                 Password
               </label>
-              <input
-                type="password"
-                id="password"
-                aria-label="Password"
-                aria-required="true"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500 bg-gray-50"
-                placeholder="Enter password"
-                required
-              />
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  id="password"
+                  aria-label="Password"
+                  aria-required="true"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500 bg-gray-50"
+                  placeholder="Enter password"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-sm leading-5"
+                >
+                  {showPassword ? "🙈" : "👁️"}
+                </button>
+              </div>
             </div>
 
             <button
@@ -135,6 +162,16 @@ function Login() {
               {loading ? "Logging in..." : "Login"}
             </button>
           </form>
+
+          {/* Forgot Password Link */}
+          <div className="mt-3 text-right">
+            <button
+              onClick={() => navigate("/forgot-password")}
+              className="text-sm text-teal-600 hover:underline"
+            >
+              Forgot Password?
+            </button>
+          </div>
 
           {/* Divider with "or" */}
           <div className="flex items-center my-6">
