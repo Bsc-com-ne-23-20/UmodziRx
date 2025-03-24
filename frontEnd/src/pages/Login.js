@@ -14,18 +14,19 @@ function Login() {
     // Initialize eSignet button
     const renderButton = () => {
       window.SignInWithEsignetButton?.init({
-        idcConfig: {
-          client_id: 'IIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEApQwK2', // Replace with your actual client ID
-          redirect_uri: 'http://localhost:3002/*callback', // Callback URL after eSignet authentication
-          acr_values: 'generated_code',
+        oidcConfig: {
+          acr_values: 'mosip:idp:acr:generated-code mosip:idp:acr:biometrics mosip:idp:acr:static-code mosip:idp:acr:password ',
+          // authorize_url: 'http://localhost:3000/authorize', // Replace with eSignet's authorize URL
           claims_locales: 'en',
+          client_id: 'IIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEApQwK2', // Replace with your actual client ID
+          redirect_uri: 'http://localhost:13130/userprofile', // Callback URL after eSignet authentication
           display: 'page',
           nonce: 'RANDOM_NONCE',
           prompt: 'consent',
           scope: 'openid profile',
-          state: 'RANDOM_STATE',
-          authorize_url: 'http://localhost:3000/*', // Replace with eSignet's authorize URL
-          ui_locales: 'en'
+          state: 'RANDOM_STATE', 
+          ui_locales: 'en',
+          authorizeUri: 'http://localhost:3000/authorize',
         },
         buttonConfig: {
           labelText: 'Sign in with eSignet',
@@ -34,17 +35,17 @@ function Login() {
           type: 'standard'
         },
         signInElement: document.getElementById('esignet-button'),
-        onSuccess: (response) => {
-          // Handle successful eSignet authentication
-          console.log('eSignet authentication successful:', response);
-          // Redirect to a specific route or perform additional actions
-          navigate('/dashboard'); // Example: Redirect to dashboard after successful login
-        },
-        onFailure: (error) => {
-          // Handle eSignet authentication failure
-          console.error('eSignet authentication failed:', error);
-          setError('eSignet authentication failed. Please try again.');
-        }
+        // onSuccess: (response) => {
+        //   // Handle successful eSignet authentication
+        //   console.log('eSignet authentication successful:', response);
+        //   // Redirect to a specific route or perform additional actions
+        //   navigate('/dashboard'); // Example: Redirect to dashboard after successful login
+        // },
+        // onFailure: (error) => {
+        //   // Handle eSignet authentication failure
+        //   console.error('eSignet authentication failed:', error);
+        //   setError('eSignet authentication failed. Please try again.');
+        // }
       });
     };
     renderButton();
