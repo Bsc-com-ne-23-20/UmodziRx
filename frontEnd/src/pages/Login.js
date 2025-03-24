@@ -15,10 +15,10 @@ function Login() {
     const renderButton = () => {
       window.SignInWithEsignetButton?.init({
         oidcConfig: {
-          acr_values: 'mosip:idp:acr:generated-code mosip:idp:acr:biometrics mosip:idp:acr:static-code mosip:idp:acr:password ',
+          acr_values: 'mosip:idp:acr:generated-code mosip:idp:acr:biometricr:static-code mosip:idp:acr:password ',
           // authorize_url: 'http://localhost:3000/authorize', // Replace with eSignet's authorize URL
           claims_locales: 'en',
-          client_id: 'IIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEApQwK2', // Replace with your actual client ID
+          client_id: 'IIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAidbBg', // Replace with your actual client ID
           redirect_uri: 'http://localhost:13130/userprofile', // Callback URL after eSignet authentication
           display: 'page',
           nonce: 'RANDOM_NONCE',

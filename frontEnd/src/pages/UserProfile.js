@@ -1,80 +1,94 @@
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import axios from 'axios';
+
+const states = {
+  LOADING: 'loading',
+  LOADED: 'loaded',
+  ERROR: 'error',
+};
 
 const UserProfile = () => {
   const [userInfo, setUserInfo] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [status, setStatus] = useState(states.LOADING);
   const [error, setError] = useState(null);
 
+  const [searchParams] = useSearchParams();
+
+  // Handle login API integration
+  const getUserDetails = async (authcode) => {
+    setError(null);
+    setUserInfo(null);
+
+    try {
+      const endpoint = `http://localhost:8088/delegate/fetchUserInfo?code=${authcode}`;
+      const response = await axios.get(endpoint, {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      setUserInfo(response.data);
+      setStatus(states.LOADED);
+    } catch (err) {
+      setError({ errorCode: "", errormsg: err.message });
+      setStatus(states.ERROR);
+    }
+  };
+
   useEffect(() => {
-    const fetchUserInfo = async () => {
-      const urlParams = new URLSearchParams(window.location.search);
-      const code = urlParams.get('code');
+    const getQueryParams = async () => {
+      let authcode = searchParams.get("code");
+      let errorcode = searchParams.get("error");
+      let error_desc = searchParams.get("error_description");
 
-      if (code) {
-        try {
-          setLoading(true);
-          setError(null);
+      if (errorcode) {
+        setError({
+          errorCode: errorcode,
+          errormsg: error_desc || "Authorization error",
+        });
+        setStatus(states.ERROR);
+        return;
+      }
 
-          console.log(`🚀 Exchanging code: ${code} for user info...`);
-
-          // Exchange code for access token and user info
-          const response = await axios.post('http://localhost:5000/token', { code });
-          
-          console.log("✅ User info fetched:", response.data);
-
-          setUserInfo(response.data);
-          localStorage.setItem('userInfo', JSON.stringify(response.data)); // Optional: Save to localStorage
-        } catch (error) {
-          console.error('❌ Error fetching user info:', error);
-          setError('Failed to fetch user info. Please try again.');
-        } finally {
-          setLoading(false);
-        }
+      if (authcode) {
+        getUserDetails(authcode);
       } else {
-        console.warn("⚠️ No code found in URL");
-        setLoading(false);
+        setError({
+          errorCode: "authcode_missing",
+          errormsg: "Authorization code is missing",
+        });
+        setStatus(states.ERROR);
       }
     };
 
-    fetchUserInfo();
-  }, []);
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p>Loading user info...</p>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen flex items-center justify-center text-red-500">
-        <p>{error}</p>
-      </div>
-    );
-  }
-
-  if (!userInfo) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p>No user info available.</p>
-      </div>
-    );
-  }
+    getQueryParams();
+  }, [searchParams]);
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
-      <div className="bg-white shadow-md rounded-lg p-6 w-full max-w-md">
-        <h2 className="text-2xl font-bold mb-4 text-teal-700">User Profile</h2>
-        <div className="space-y-2">
-          <p><strong>Name:</strong> {userInfo.name || 'N/A'}</p>
-          <p><strong>Email:</strong> {userInfo.email || 'N/A'}</p>
-          {userInfo.phone && <p><strong>Phone:</strong> {userInfo.phone}</p>}
-          {/* Add more user info fields as needed */}
+    <div>
+      <div className="header">Welcome {userInfo?.name}</div>
+
+      {status === states.LOADING && <div>Loading Please Wait...</div>}
+
+      {status === states.LOADED && (
+        <div>
+          <div className="card">
+            <img src={userInfo?.picture} alt="Profile" style={{ width: '100%' }} />
+            <div className="color-black mt-5 mb-10">{userInfo?.email}</div>
+            <div className="color-black mb-10">
+              DoB: <span className="title color-black">{userInfo?.birthdate}</span>
+            </div>
+            <div className="color-black mb-10">
+              Ph: <span className="title color-black">{userInfo?.phone_number}</span>
+            </div>
+          </div>
         </div>
-      </div>
+      )}
+
+      {status === states.ERROR && (
+        <div>Oops, there is some error. Please try again later.</div>
+      )}
     </div>
   );
 };
