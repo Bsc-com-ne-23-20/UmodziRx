@@ -8,9 +8,12 @@ import DoctorDashboard from "./pages/DoctorDashboard";
 import PharmacistDashboard from "./pages/PharmacistDashboard";
 import PatientPrescriptions from "./pages/PatientDashboard";
 import LearnMore from "./pages/LearnMore";
+import UserProfile from "./pages/UserProfile";
+import Register from "./pages/Register";
 import Navbar from "./components/Navbar";
 import ProtectedRoute from "./components/ProtectedRoute"; // Import ProtectedRoute
 import "./App.css";
+
 
 function App() {
   const [darkMode] = useState(false);
@@ -33,7 +36,9 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login />} />
             <Route path="/learn-more" element={<LearnMore />} />
-            {/* <Route path="/register" element={<Register />} /> */}
+
+            <Route path="/register" element={<Register />} />
+            <Route path="/user-profile" element={<UserProfile />} />
 
 
             {/* Protected Routes (Require Authentication) */}

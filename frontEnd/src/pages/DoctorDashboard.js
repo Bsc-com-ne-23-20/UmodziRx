@@ -8,6 +8,7 @@ const TABS = {
 };
 
 const DoctorDashboard = () => {
+
   const [activeTab, setActiveTab] = useState(TABS.CREATE);
   const [formData, setFormData] = useState({
     doctorId: 'doctor1',
@@ -27,6 +28,7 @@ const DoctorDashboard = () => {
       fetchPrescription();
     }
   }, [activeTab]);
+
 
   const fetchPrescription = async () => {
     if (!patientIdSearch) {
@@ -62,6 +64,7 @@ const DoctorDashboard = () => {
       medications: [...formData.medications, { medicationName: '', dosage: '', instructions: '' }]
     });
   };
+
 
   const handleRemoveMedication = (index) => {
     const medications = [...formData.medications];
@@ -103,6 +106,7 @@ const DoctorDashboard = () => {
     localStorage.removeItem('Login');
     navigate('/');
   };
+
 
   return (
     <div className="min-h-screen bg-gray-100 p-6">
