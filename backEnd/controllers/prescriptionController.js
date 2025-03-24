@@ -1,89 +1,165 @@
 const axios = require('axios');
+const { URLSearchParams } = require('url');
 
 class PrescriptionController {
   static async createPrescription(req, res) {
-    const { doctor_id, patient_id, medications } = req.body;
+    const { patientId, doctorId, patientName, prescriptions } = req.body;
 
-    // Validate the medications array
-    if (!medications || !Array.isArray(medications)) {
-        return res.status(400).json({ message: 'Invalid medications data' });
+    // Validate request
+    if (!patientId || !doctorId || !patientName || !prescriptions) {
+      return res.status(400).json({ 
+        error: 'Missing required fields',
+        details: { patientId, doctorId, patientName, prescriptions }
+      });
     }
 
     try {
-        // Prepare the arguments for the blockchain transaction
-        const args = [
-            `pres-${Date.now()}-${Math.floor(Math.random() * 1000)}`, // Unique Prescription ID
-            doctor_id,
-            patient_id,
-            JSON.stringify(medications), // Send all medications as a JSON string
-            "24" ,// Example additional argument
-            "additionalArg1" ,// Placeholder for the 6th argument
-            "additionalArg2"  // Placeholder for the 7th argument
-        ];
+      // Prepare blockchain request
+      const requestData = new URLSearchParams();
+      requestData.append('channelid', 'mychannel');
+      requestData.append('chaincodeid', 'basic');
+      requestData.append('function', 'CreateAsset');
+      requestData.append('args', patientId);
+      requestData.append('args', doctorId);
+      requestData.append('args', patientName);
+      requestData.append('args', JSON.stringify(prescriptions.map(p => ({
+        MedicationName: p.medicationName || p.medication || 'Unknown',
+        Dosage: p.dosage,
+        Instructions: p.instructions,
+        DoctorId: doctorId
+      }))));
 
-        const requestData = {
-            headers: {
-                type: "SendTransaction",
-                signer: "user1",
-                channel: "default-channel",
-                chaincode: "chaincode_js"
-            },
-            func: "issuePrescription",
-            args: args,
-            init: false
-        };
+      // Send to blockchain
+      const blockchainResponse = await axios.post(
+        'http://localhost:45000/invoke', 
+        requestData,
+        { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
+      );
 
-        // Send the transaction to the blockchain
-        const response = await axios.post(
-            'https://u0zy6vfzce-u0xgnn6gvm-connect.us0-aws-ws.kaleido.io/transactions',
-            requestData,
-            {
-                headers: {
-                    'accept': '*/*',
-                    'Content-Type': 'application/json',
-                    'Authorization': 'Basic dTBkNjkyZ3hmaTpCb2tqQ3JreXIzNk1qZnowZDc4WkIyWmx5RGRDejdaczk1UDhIYnBQdzNF'
-                }
-            }
-        );
-
-        res.status(201).json({
-            message: 'Prescription created successfully on blockchain',
-            data: response.data
-        });
+      // Return formatted response
+      res.status(201).json({
+        success: true,
+        message: 'Prescription created successfully',
+        data: {
+          id: patientId,
+          doctorId,
+          patientId,
+          patientName,
+          prescriptions: prescriptions.map(p => ({
+            medicationName: p.medicationName || p.medication || 'Unknown',
+            dosage: p.dosage,
+            instructions: p.instructions
+          })),
+          txId: blockchainResponse.data.txId,
+          createdAt: new Date().toISOString()
+        }
+      });
     } catch (error) {
-        console.error('Error creating prescription:', error.response ? error.response.data : error.message);
-        res.status(500).json({ message: 'Failed to create prescription' });
+      console.error('Error:', error.response?.data || error.message);
+      res.status(500).json({ 
+        error: 'Failed to create prescription',
+        details: error.response?.data || error.message
+      });
     }
   }
 
   static async getPrescription(req, res) {
-    try {
-        const response = await axios.get(
-            'https://u0zy6vfzce-u0xgnn6gvm-connect.us0-aws-ws.kaleido.io/transactions/b4859309cd0da161b96be016aa06ba49eb61f5bb016d8dac72b8c212e2f9e2fc?fly-channel=default-channel&fly-signer=user1',
-            {
-                headers: {
-                    'accept': 'application/json',
-                    'Authorization': 'Basic  dTBkNjkyZ3hmaTpSV1ZOUGI1LUhkNnZZRzJYX2xidGx3djNPUTlmMDRiRGxfT0VpeGZ2bHZR'
-                }
-            }
-        );
+    const { patientId } = req.query;
 
-        // Log the response before returning
-        console.log("Prescription Response:", JSON.stringify(response.data, null, 2));
-
-        // Send the response
-        res.json({ message: 'Prescription retrieved successfully', data: response.data });
-    } catch (error) {
-        console.error('Error fetching prescription:', error.response ? error.response.data : error.message);
-
-        res.status(500).json({ 
-            message: 'Failed to retrieve prescription', 
-            error: error.response ? error.response.data : error.message
-        });
+    if (!patientId) {
+      return res.status(400).json({ error: "Patient ID is required" });
     }
-}
 
-}
+    try {
+      // Query blockchain
+      const response = await axios.get("http://localhost:45000/query", {
+        params: {
+          channelid: "mychannel",
+          chaincodeid: "basic",
+          function: "GetAssetHistory",
+          args: patientId,
+        },
+      });
 
+      // Check if response contains valid data
+      if (!response.data || response.data.error) {
+        return res.status(404).json({
+          success: false,
+          error: "Prescription not found",
+        });
+      }
+
+      let rawData = response.data;
+
+      // If response is a string starting with "Response: ", extract the JSON part
+      if (typeof rawData === "string" && rawData.startsWith("Response: ")) {
+        rawData = rawData.replace("Response: ", "").trim();
+      }
+
+      let historyData;
+      try {
+        historyData = JSON.parse(rawData); // Attempt JSON parsing
+      } catch (err) {
+        return res.status(500).json({
+          success: false,
+          error: "Failed to parse blockchain response",
+          details: err.message,
+        });
+      }
+
+      // Validate that historyData is an array
+      if (!Array.isArray(historyData)) {
+        return res.status(500).json({
+          success: false,
+          error: "Unexpected response format from blockchain",
+        });
+      }
+
+      // Process prescription history
+      const prescriptionsForPatient = [];
+      historyData.forEach(entry => {
+        if (entry.patientId === patientId && entry.prescriptions) {
+          entry.prescriptions.forEach(prescription => {
+            prescriptionsForPatient.push({
+              medicationName: prescription.MedicationName || "Unknown",
+              dosage: prescription.Dosage || "N/A",
+              instructions: prescription.Instructions || "N/A",
+              doctorId: prescription.DoctorId || "N/A",
+              timestamp: prescription.Timestamp ? 
+                new Date(prescription.Timestamp.seconds * 1000).toISOString() : 
+                new Date().toISOString(),
+            });
+          });
+        }
+      });
+
+      if (prescriptionsForPatient.length === 0) {
+        return res.status(404).json({
+          success: false,
+          error: "No valid prescription found",
+        });
+      }
+
+      // Format the response
+      const formattedData = {
+        patientId: patientId,
+        patientName: historyData[0]?.patientName || "N/A",
+        prescriptions: prescriptionsForPatient,
+      };
+
+      return res.status(200).json({
+        success: true,
+        data: formattedData,
+      });
+    } catch (error) {
+      console.error("Error:", error.response?.data || error.message);
+      return res.status(500).json({
+        success: false,
+        error: "Failed to retrieve prescription",
+        details: error.response?.data || error.message,
+      });
+    }
+  }
+}
 
 module.exports = PrescriptionController;
