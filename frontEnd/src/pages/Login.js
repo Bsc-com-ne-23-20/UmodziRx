@@ -2,6 +2,16 @@ import { useNavigate } from 'react-router-dom';
 import React, { useState, useCallback, useEffect } from "react";
 import prescriptionImage from "./Prescription_medication.jpeg";
 
+// generate random nonce and state
+function generateRandomString(length) {
+  const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  let randomString = '';
+  for (let i = 0; i < length; i++) {
+    randomString += charset.charAt(Math.floor(Math.random() * charset.length));
+  }
+  return randomString;
+}
+
 function Login() {
   const navigate = useNavigate();
   const [username, setUsername] = useState("");
@@ -12,19 +22,22 @@ function Login() {
 
   useEffect(() => {
     // Initialize eSignet button
+    const nonce = generateRandomString(16);
+    const state = generateRandomString(16);
+
     const renderButton = () => {
       window.SignInWithEsignetButton?.init({
         oidcConfig: {
           acr_values: 'mosip:idp:acr:generated-code mosip:idp:acr:biometricr:static-code mosip:idp:acr:password ',
           // authorize_url: 'http://localhost:3000/authorize', // Replace with eSignet's authorize URL
           claims_locales: 'en',
-          client_id: 'IIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAidbBg', // Replace with your actual client ID
-          redirect_uri: 'http://localhost:13130/userprofile', // Callback URL after eSignet authentication
+          client_id: 'IIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAipD8m', // Replace with your actual client ID
+          redirect_uri: 'http://localhost:5000/auth/login', // Callback URL after eSignet authentication
           display: 'page',
-          nonce: 'RANDOM_NONCE',
+          nonce: nonce ,
           prompt: 'consent',
           scope: 'openid profile',
-          state: 'RANDOM_STATE', 
+          state: state ,
           ui_locales: 'en',
           authorizeUri: 'http://localhost:3000/authorize',
         },

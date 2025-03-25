@@ -33,6 +33,7 @@ app.use('/auth', authRoutes);
 //app.use('/oidc', oidcRoutes);
 app.use('/patients', patientRoutes);
 app.use('/prescriptions', prescriptionRoutes);
+
 app.use('/api', userRoutes); // Use user routes with base path /api
 
 app.get('/', (req, res) => {
