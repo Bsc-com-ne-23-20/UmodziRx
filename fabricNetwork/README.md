@@ -1,7 +1,7 @@
 # Go Chaincode/Smartcontract for UmodziRx
 
 ## Overview 
-This is a Go Chaincode for UmodziRx, a blockchain-based platform for managing medical supplies. The chaincode facilitates secure storage and retrieval of prescription data on a permissioned blockchain network.
+This is a Go Chaincode for UmodziRx, a blockchain-based platform for managing prescriptions. The chaincode facilitates secure storage and retrieval of prescription data on a permissioned blockchain network.
 
 ## Features
 - Role-based Access Control. Only authorized users can access and modify prescription data. 
