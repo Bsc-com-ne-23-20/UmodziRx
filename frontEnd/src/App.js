@@ -36,9 +36,13 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login />} />
             <Route path="/learn-more" element={<LearnMore />} />
-
+              
             <Route path="/register" element={<Register />} />
             <Route path="/userprofile" element={<UserProfile />} />
+
+            <Route path="/register" element={<Register />} />
+            <Route path="/user-profile" element={<UserProfile />} />
+
 
 
             {/* Protected Routes (Require Authentication) */}
