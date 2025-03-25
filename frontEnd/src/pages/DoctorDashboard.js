@@ -8,6 +8,10 @@ const TABS = {
 };
 
 const DoctorDashboard = () => {
+<<<<<<< HEAD
+=======
+
+>>>>>>> 025e4b0dc9d1a498cd16da7c0c589938a649dbc2
   const [activeTab, setActiveTab] = useState(TABS.CREATE);
   const [formData, setFormData] = useState({
     doctorId: 'doctor1',
@@ -27,6 +31,7 @@ const DoctorDashboard = () => {
       fetchPrescription();
     }
   }, [activeTab]);
+
 
   const fetchPrescription = async () => {
     if (!patientIdSearch) {
@@ -63,6 +68,10 @@ const DoctorDashboard = () => {
     });
   };
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> 025e4b0dc9d1a498cd16da7c0c589938a649dbc2
   const handleRemoveMedication = (index) => {
     const medications = [...formData.medications];
     medications.splice(index, 1);
@@ -104,6 +113,10 @@ const DoctorDashboard = () => {
     navigate('/');
   };
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> 025e4b0dc9d1a498cd16da7c0c589938a649dbc2
   return (
     <div className="min-h-screen bg-gray-100 p-6">
       <div className="max-w-6xl mx-auto">
