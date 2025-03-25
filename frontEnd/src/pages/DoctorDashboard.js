@@ -198,6 +198,7 @@ const DoctorDashboard = () => {
                             className="w-full p-2 border rounded"
                             required
                           />
+
                         </div>
                         <div>
                           <label className="block text-gray-700 mb-1">Dosage</label>
@@ -211,6 +212,7 @@ const DoctorDashboard = () => {
                           />
                         </div>
                         <div>
+
                           <label className="block text-gray-700 mb-1">Instructions</label>
                           <input
                             type="text"
