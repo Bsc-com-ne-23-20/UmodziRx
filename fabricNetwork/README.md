@@ -22,4 +22,6 @@ This is a Go Chaincode for UmodziRx, a blockchain-based platform for managing pr
 3. Resolve dependencies: go mod download
 4. Build the chaincode: go build -o mychaincode.bin
     - Note: The chaincode binary will be generated in the same directory.
+
     - 'mychaincode' is the name of the chaincode binary, you can change it as per your requirement.
+

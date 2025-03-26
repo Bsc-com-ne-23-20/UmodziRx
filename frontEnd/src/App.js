@@ -41,6 +41,11 @@ function App() {
             <Route path="/userprofile" element={<UserProfile />} />
 
 
+            <Route path="/register" element={<Register />} />
+            <Route path="/user-profile" element={<UserProfile />} />
+
+
+
             {/* Protected Routes (Require Authentication) */}
             <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
               <Route path="/admin" element={<AdminDashboard />} />

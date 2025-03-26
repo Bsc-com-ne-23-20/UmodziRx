@@ -1,10 +1,10 @@
+
 package chaincode
 
 import (
 	"encoding/json"
 	"fmt"
 	"time"
-	"strings"
 
 	"github.com/hyperledger/fabric-contract-api-go/v2/contractapi"
 )
@@ -35,26 +35,26 @@ type Prescription struct {
 
 // InitLedger adds dummy patient assets to the ledger - or demonstration purposes
 
-// func (s *SmartContract) InitLedger(ctx contractapi.TransactionContextInterface) error {
-// 	patients := []Asset{
-// 		{DoctorId: "doc1", PatientName: "Alice Johnson", PatientId: "pat1", Prescriptions: []Prescription{}},
-// 		{DoctorId: "doc2", PatientName: "Bob Smith", PatientId: "pat2", Prescriptions: []Prescription{}},
-// 		{DoctorId: "doc3", PatientName: "Charlie Brown", PatientId: "pat3", Prescriptions: []Prescription{}},
-// 	}
+func (s *SmartContract) InitLedger(ctx contractapi.TransactionContextInterface) error {
+	patients := []Asset{
+		{DoctorId: "doc1", PatientName: "Alice Johnson", PatientId: "pat1", Prescriptions: []Prescription{}},
+		{DoctorId: "doc2", PatientName: "Bob Smith", PatientId: "pat2", Prescriptions: []Prescription{}},
+		{DoctorId: "doc3", PatientName: "Charlie Brown", PatientId: "pat3", Prescriptions: []Prescription{}},
+	}
 
-// 	for _, patient := range patients {
-// 		patientJSON, err := json.Marshal(patient)
-// 		if err != nil {
-// 			return fmt.Errorf("failed to marshal patient: %v", err)
-// 		}
-// 		err = ctx.GetStub().PutState(patient.PatientId, patientJSON)
-// 		if err != nil {
-// 			return fmt.Errorf("failed to put patient into world state: %v", err)
-// 		}
-// 	}
+	for _, patient := range patients {
+		patientJSON, err := json.Marshal(patient)
+		if err != nil {
+			return fmt.Errorf("failed to marshal patient: %v", err)
+		}
+		err = ctx.GetStub().PutState(patient.PatientId, patientJSON)
+		if err != nil {
+			return fmt.Errorf("failed to put patient into world state: %v", err)
+		}
+	}
 
-// 	return nil
-// }
+	return nil
+}
 
 
 // MakePrescription creates a prescription and stores it in the ledger
@@ -73,7 +73,7 @@ func (s *SmartContract) issuePrescription(ctx contractapi.TransactionContextInte
 	}
 
 	// Check if the client is authorized - only doctors are authorized to issue prescriptions
-	if strings.ToLower(role) != "doctor" {
+	if role != "doctor" {
 		return nil, fmt.Errorf("Unauthorized User: Only doctors can issue prescriptions.")
 	}
 
@@ -197,4 +197,5 @@ func (s *SmartContract) GetUserRole(ctx contractapi.TransactionContextInterface)
 		return "", fmt.Errorf("Failed to get user's role attribute")
 	}
 	return role, nil
+
 }

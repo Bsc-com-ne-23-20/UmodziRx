@@ -9,6 +9,9 @@ const TABS = {
 
 const DoctorDashboard = () => {
 
+
+
+
   const [activeTab, setActiveTab] = useState(TABS.CREATE);
   const [formData, setFormData] = useState({
     doctorId: 'doctor1',
