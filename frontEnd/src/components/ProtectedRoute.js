@@ -1,25 +1,50 @@
 import { Navigate, Outlet } from "react-router-dom";
 
-/**
- * ProtectedRoute component to restrict access based on authentication and role.
- * @param {Array} allowedRoles - List of roles allowed to access the route.
- */
 const ProtectedRoute = ({ allowedRoles }) => {
-  // Retrieve authentication token and user role from localStorage
   const token = localStorage.getItem("token");
   const userRole = localStorage.getItem("userRole");
 
-  // If no token exists, redirect to login page
+  console.log("Token in ProtectedRoute:", token);
+  console.log("User Role in ProtectedRoute:", userRole);
+  console.log("Allowed Roles:", allowedRoles);
+
+  // No token found, redirect to login
   if (!token) {
+    console.log("No token found, redirecting to login.");
     return <Navigate to="/login" replace />;
   }
 
-  // If user role is not in the allowedRoles list, redirect to unauthorized page
-  if (!allowedRoles.includes(userRole)) {
+  try {
+    // Decode the JWT to check its expiry
+    const decodedToken = JSON.parse(atob(token.split(".")[1])); // Decode JWT payload
+    const currentTime = Math.floor(Date.now() / 1000);
+
+    console.log("Decoded Token Expiry:", decodedToken.exp);
+    console.log("Current Time:", currentTime);
+
+    // Check if token has expired
+    if (decodedToken.exp < currentTime) {
+      console.log("Token expired, redirecting to login.");
+      localStorage.removeItem("token");
+      localStorage.removeItem("userRole");
+      return <Navigate to="/login" replace />;
+    }
+  } catch (error) {
+    console.error("Invalid token format", error);
+    localStorage.removeItem("token");
+    localStorage.removeItem("userRole");
+    return <Navigate to="/login" replace />;
+  }
+
+  // Ensure the user role exists and is allowed
+  if (!userRole || !allowedRoles.includes(userRole.trim())) {
+    console.log(`Unauthorized Role: ${userRole}, Redirecting to /unauthorized`);
     return <Navigate to="/unauthorized" replace />;
   }
 
-  // If authentication and role check pass, allow access to the route
+  console.log("Navigating to protected resource...");
+
+  // All checks passed, render the protected route
   return <Outlet />;
 };
 

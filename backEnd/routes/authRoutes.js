@@ -3,7 +3,10 @@ const AuthController = require('../controllers/authController');
 
 const router = express.Router();
 
-router.post('/login', AuthController.login);
+// Use static methods directly
+router.get('/login', AuthController.login);
 router.post('/register', AuthController.register);
+
+
 
 module.exports = router;

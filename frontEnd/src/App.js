@@ -1,18 +1,19 @@
 import React, { useState, useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
-import RoleSelection from "./pages/RoleSelection";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import ViewPatientPrescriptions from "./pages/ViewPatientPrescriptions";
-import CreatePrescription from "./pages/CreatePrescription";
 import AdminDashboard from "./pages/AdminDashboard";
 import DoctorDashboard from "./pages/DoctorDashboard";
 import PharmacistDashboard from "./pages/PharmacistDashboard";
-import PatientPrescriptions from "./pages/PatientPrescriptions";
+import PatientPrescriptions from "./pages/PatientDashboard";
 import LearnMore from "./pages/LearnMore";
+import UserProfile from "./pages/UserProfile";
+import Register from "./pages/Register";
 import Navbar from "./components/Navbar";
 import ProtectedRoute from "./components/ProtectedRoute"; // Import ProtectedRoute
 import "./App.css";
+
 
 function App() {
   const [darkMode] = useState(false);
@@ -33,26 +34,33 @@ function App() {
           <Routes>
             {/* Public Routes */}
             <Route path="/" element={<Home />} />
-            <Route path="/role-selection" element={<RoleSelection />} />
             <Route path="/login" element={<Login />} />
             <Route path="/learn-more" element={<LearnMore />} />
 
+            <Route path="/register" element={<Register />} />
+            <Route path="/userprofile" element={<UserProfile />} />
+
+
+            <Route path="/register" element={<Register />} />
+            <Route path="/user-profile" element={<UserProfile />} />
+
+
+
             {/* Protected Routes (Require Authentication) */}
             <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
-              <Route path="/admin-dashboard" element={<AdminDashboard />} />
+              <Route path="/admin" element={<AdminDashboard />} />
             </Route>
 
             <Route element={<ProtectedRoute allowedRoles={["doctor"]} />}>
-              <Route path="/doctor-dashboard" element={<DoctorDashboard />} />
-              <Route path="/create-prescription" element={<CreatePrescription />} />
+              <Route path="/doctor" element={<DoctorDashboard />} />
             </Route>
 
             <Route element={<ProtectedRoute allowedRoles={["pharmacist"]} />}>
-              <Route path="/pharmacist-dashboard" element={<PharmacistDashboard />} />
+              <Route path="/pharmacist" element={<PharmacistDashboard />} />
             </Route>
 
             <Route element={<ProtectedRoute allowedRoles={["patient"]} />}>
-              <Route path="/patient-prescriptions" element={<PatientPrescriptions />} />
+              <Route path="/patient" element={<PatientPrescriptions />} />
               <Route path="/view-patient-prescriptions" element={<ViewPatientPrescriptions />} />
             </Route>
 
