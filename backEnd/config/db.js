@@ -1,6 +1,5 @@
 const mysql = require('mysql2/promise');
 
-// MySQL configuration with hardcoded credentials for testing
 const pool = mysql.createPool({
   host: 'localhost',
   user: 'root',
@@ -9,14 +8,17 @@ const pool = mysql.createPool({
   port: 3306,
 });
 
-// Connect to MySQL
-pool.getConnection()
-  .then(connection => {
-    console.log('Connected to MySQL');
-    connection.release(); // Release the connection back to the pool
-  })
-  .catch(err => {
-    console.error('MySQL connection error', err);
-  });
+// Add this function
+const connectDB = async () => {
+  try {
+    const connection = await pool.getConnection();
+    console.log('✅ Connected to MySQL database');
+    connection.release();
+    return pool;
+  } catch (err) {
+    console.error('❌ Database connection error:', err);
+    throw err;
+  }
+};
 
-module.exports = { pool };
+module.exports = { pool, connectDB }; // Export both
