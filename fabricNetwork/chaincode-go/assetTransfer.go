@@ -1,3 +1,5 @@
+
+
 /*
 SPDX-License-Identifier: Apache-2.0
 */
@@ -21,3 +23,4 @@ func main() {
 		log.Panicf("Error starting asset-transfer-basic chaincode: %v", err)
 	}
 }
+

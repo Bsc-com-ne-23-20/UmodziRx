@@ -10,6 +10,8 @@ const TABS = {
 const DoctorDashboard = () => {
 
 
+
+
   const [activeTab, setActiveTab] = useState(TABS.CREATE);
   const [formData, setFormData] = useState({
     doctorId: 'doctor1',
@@ -65,6 +67,7 @@ const DoctorDashboard = () => {
       medications: [...formData.medications, { medicationName: '', dosage: '', instructions: '' }]
     });
   };
+
 
   const handleRemoveMedication = (index) => {
     const medications = [...formData.medications];
@@ -198,6 +201,7 @@ const DoctorDashboard = () => {
                             className="w-full p-2 border rounded"
                             required
                           />
+
                         </div>
                         <div>
                           <label className="block text-gray-700 mb-1">Dosage</label>
@@ -211,6 +215,7 @@ const DoctorDashboard = () => {
                           />
                         </div>
                         <div>
+
                           <label className="block text-gray-700 mb-1">Instructions</label>
                           <input
                             type="text"
