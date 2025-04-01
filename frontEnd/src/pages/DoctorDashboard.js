@@ -211,9 +211,7 @@ const DoctorDashboard = () => {
               {/* eSignet button moved to left margin */}
               <div className="mb-6 flex items-center">
                 <div id="esignet-verify-button" className="mr-4"></div>
-                <p className="text-sm text-gray-500">
-                  Verify patient identity using eSignet before creating prescription
-                </p>
+                
               </div>
 
               {verifiedPatient && (
