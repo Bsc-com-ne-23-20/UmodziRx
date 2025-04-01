@@ -1,25 +1,22 @@
 import { Navigate, Outlet } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
-/**
- * ProtectedRoute component to restrict access based on authentication and role.
- * @param {Array} allowedRoles - List of roles allowed to access the route.
- */
 const ProtectedRoute = ({ allowedRoles }) => {
-  // Retrieve authentication token and user role from localStorage
-  const token = localStorage.getItem("token");
-  const userRole = localStorage.getItem("userRole");
+  const { authState, loading } = useAuth();
+  const { token, user } = authState;
 
-  // If no token exists, redirect to login page
+  if (loading) {
+    return <div className="flex justify-center items-center h-screen text-lg">Loading...</div>;
+  }
+
   if (!token) {
     return <Navigate to="/login" replace />;
   }
 
-  // If user role is not in the allowedRoles list, redirect to unauthorized page
-  if (!allowedRoles.includes(userRole)) {
+  if (!user?.role || !allowedRoles.includes(user.role)) {
     return <Navigate to="/unauthorized" replace />;
   }
 
-  // If authentication and role check pass, allow access to the route
   return <Outlet />;
 };
 

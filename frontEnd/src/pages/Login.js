@@ -1,7 +1,16 @@
-import React, { useState, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
-import eSignetIcon from "./esignet.png";
+import { useNavigate } from 'react-router-dom';
+import React, { useState, useCallback, useEffect } from "react";
 import prescriptionImage from "./Prescription_medication.jpeg";
+
+// generate random nonce and state
+function generateRandomString(length) {
+  const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  let randomString = '';
+  for (let i = 0; i < length; i++) {
+    randomString += charset.charAt(Math.floor(Math.random() * charset.length));
+  }
+  return randomString;
+}
 
 function Login() {
   const navigate = useNavigate();
@@ -9,6 +18,51 @@ function Login() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+
+  useEffect(() => {
+    // Initialize eSignet button
+    const nonce = generateRandomString(16);
+    const state = generateRandomString(16);
+
+    const renderButton = () => {
+      window.SignInWithEsignetButton?.init({
+        oidcConfig: {
+          acr_values: 'mosip:idp:acr:generated-code mosip:idp:acr:biometricr:static-code mosip:idp:acr:password ',
+          // authorize_url: 'http://localhost:3000/authorize', // Replace with eSignet's authorize URL
+          claims_locales: 'en',
+          client_id: 'IIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAkua38', // Replace with your actual client ID
+          redirect_uri: 'http://localhost:5000/auth/login', // Callback URL after eSignet authentication
+          display: 'page',
+          nonce: nonce ,
+          prompt: 'consent',
+          scope: 'openid profile',
+          state: state ,
+          ui_locales: 'en',
+          authorizeUri: 'http://localhost:3000/authorize',
+        },
+        buttonConfig: {
+          labelText: 'Sign in with eSignet',
+          shape: 'soft_edges',
+          theme: 'filled_orange',
+          type: 'standard'
+        },
+        signInElement: document.getElementById('esignet-button'),
+        // onSuccess: (response) => {
+        //   // Handle successful eSignet authentication
+        //   console.log('eSignet authentication successful:', response);
+        //   // Redirect to a specific route or perform additional actions
+        //   navigate('/dashboard'); // Example: Redirect to dashboard after successful login
+        // },
+        // onFailure: (error) => {
+        //   // Handle eSignet authentication failure
+        //   console.error('eSignet authentication failed:', error);
+        //   setError('eSignet authentication failed. Please try again.');
+        // }
+      });
+    };
+    renderButton();
+  }, [navigate]);
 
 
   const handleLoginSubmit = useCallback(async (e) => {
@@ -17,6 +71,7 @@ function Login() {
     setError("");
   
     try {
+
       const response = await fetch("http://localhost:5000/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -29,16 +84,20 @@ function Login() {
       }
   
       const data = await response.json();
-      const { token, redirect } = data; // Get `redirect` from backend response
+      const { token, redirect,role} = data; // Get `redirect` from backend response
   
-      // Store authentication details
+      //Store authentication details
       localStorage.setItem("token", token);
-      console.log("Token stored:", localStorage.getItem("token"));
+      localStorage.setItem("userRole", role); // Store user role
+
+      console.log("Stored Token:", localStorage.getItem("token"));
+      console.log("Stored Role:", localStorage.getItem("userRole"));
+
 
   
       // Redirect user to the correct dashboard
 
-      navigate(redirect || "/dashboard");
+      navigate(redirect);
       
 
     } catch (error) {
@@ -64,11 +123,11 @@ function Login() {
           <img 
             src={prescriptionImage} 
             alt="Prescription and Medication" 
-            className="w-64 h-64 object-cover rounded-full" // Enlarged avatar
+            className="w-64 h-64 object-cover rounded-full"
           />
           <div className="text-center"> 
             <h2 className="block text-teal-600 dark:text-teal-400 text-3xl font-bold mt-4">UmodziRx</h2>
-            <p className=" block text-lg text-teal-600 max-w-xs font-bold mt-2">
+            <p className="block text-lg text-teal-600 max-w-xs font-bold mt-2">
               Secure Prescription Management.
             </p>
           </div>
@@ -106,17 +165,26 @@ function Login() {
               <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
                 Password
               </label>
-              <input
-                type="password"
-                id="password"
-                aria-label="Password"
-                aria-required="true"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500 bg-gray-50"
-                placeholder="Enter password"
-                required
-              />
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  id="password"
+                  aria-label="Password"
+                  aria-required="true"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500 bg-gray-50"
+                  placeholder="Enter password"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-sm leading-5"
+                >
+                  {showPassword ? "🙈" : "👁️"}
+                </button>
+              </div>
             </div>
 
             <button
@@ -129,6 +197,16 @@ function Login() {
             </button>
           </form>
 
+          {/* Forgot Password Link */}
+          <div className="mt-3 text-right">
+            <button
+              onClick={() => navigate("/forgot-password")}
+              className="text-sm text-teal-600 hover:underline"
+            >
+              Forgot Password?
+            </button>
+          </div>
+
           {/* Divider with "or" */}
           <div className="flex items-center my-6">
             <hr className="flex-grow border-t border-gray-300" />
@@ -136,20 +214,14 @@ function Login() {
             <hr className="flex-grow border-t border-gray-300" />
           </div>
 
-          {/* Login with eSignet Button */}
+          {/* Login with eSignet */}
           <div className="text-center">
-            <button
-              className="w-full bg-gray-200 text-teal-700 px-3 py-2 rounded-lg hover:bg-gray-300 transition duration-200 focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 flex items-center justify-center"
-              onClick={() => alert("Login with eSignet is under development")}
-            >
-              <img src={eSignetIcon} alt="eSignet" className="w-6 h-6 mr-2" />
-              Login with eSignet
-            </button>
+            <div id="esignet-button"></div>
           </div>
 
           <div className="mt-4 text-center">
             <p className="text-sm text-gray-600">
-              New user? {" "}
+              New user?{" "}
               <button
                 onClick={() => navigate("/register")}
                 className="text-teal-600 hover:underline"
