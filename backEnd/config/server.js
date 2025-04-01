@@ -1,49 +1,40 @@
-require('dotenv').config(); // Load environment variables.
+require('dotenv').config();
 const express = require('express');
-const cors = require("cors");  // Import CORS
-const helmet = require('helmet');
-const rateLimit = require('express-rate-limit');
-const { pgClient, couch } = require('./db');
+const cors = require('cors');
+const cookieParser = require('cookie-parser');
+const authRoutes = require('../routes/authRoutes');
+const { connectDB } = require('../config/db'); 
 
-const app = express();  // Initialize app FIRST
+const app = express();
 
 // Middleware
-app.use(cors());  // Now apply CORS middleware AFTER initializing app
-app.use(helmet());
+// In your backend (app.js or server.js)
+app.use(cors({
+  origin: process.env.FRONTEND_BASE_URL,
+  methods: ['GET', 'POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type'],
+  credentials: true,
+  maxAge: 600
+}));
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
 
-// Rate limiting
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // Limit each IP to 100 requests per windowMs
-});
-app.use(limiter);
-
-// Import routes
-const authRoutes = require('../routes/authRoutes');
-const patientRoutes = require('../routes/patientRoutes');
-const prescriptionRoutes = require('../routes/prescriptionRoutes');
-//const oidc = require('../routes/oidcRoutes');
-
-const userRoutes = require('../routes/userRoutes'); // Import user routes
-
+// Database Connection
+connectDB();
 
 // Routes
 app.use('/auth', authRoutes);
-//app.use('/oidc', oidcRoutes);
-app.use('/patients', patientRoutes);
-app.use('/prescriptions', prescriptionRoutes);
 
-app.use('/api', userRoutes); // Use user routes with base path /api
-
-app.get('/', (req, res) => {
-  res.send('UmodziRx Backend is running');
+// Health Check
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'OK' });
 });
 
-// Error handling
+// Error Handling Middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);
-  res.status(500).send('Something broke!');
+  res.status(500).json({ error: 'Internal Server Error' });
 });
 
 const PORT = process.env.PORT || 5000;
