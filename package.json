@@ -1,6 +1,8 @@
 {
   "dependencies": {
+    "crypto-browserify": "^3.12.1",
     "crypto-js": "^4.2.0",
+    "jsonwebtoken": "^9.0.2",
     "jwk-to-pem": "^2.0.7"
   }
 }

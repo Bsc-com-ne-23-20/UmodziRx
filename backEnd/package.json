@@ -12,6 +12,7 @@
     "axios": "^1.6.2",
     "base64url": "^3.0.1",
     "cons": "^0.0.2",
+    "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "crypto-js": "^4.2.0",
     "dotenv": "^16.3.1",
