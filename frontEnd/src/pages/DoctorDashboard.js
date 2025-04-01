@@ -2,34 +2,97 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
+// generate random nonce and state
+function generateRandomString(length) {
+  const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  let randomString = '';
+  for (let i = 0; i < length; i++) {
+    randomString += charset.charAt(Math.floor(Math.random() * charset.length));
+  }
+  return randomString;
+}
+
 const TABS = {
   CREATE: 'CREATE',
   VIEW: 'VIEW'
 };
 
 const DoctorDashboard = () => {
-
-
   const [activeTab, setActiveTab] = useState(TABS.CREATE);
   const [formData, setFormData] = useState({
     doctorId: 'doctor1',
-    patientId: 'patient1',
-    patientName: 'John Doe',
-    medications: [{ medicationName: 'Paracetamol', dosage: '500mg', instructions: 'Take twice daily' }]
+    patientId: '',
+    patientName: '',
+    medications: [{ medicationName: '', dosage: '', instructions: '' }]
   });
   const [patientIdSearch, setPatientIdSearch] = useState('patient1');
   const [prescriptionHistory, setPrescriptionHistory] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
+  const [verifiedPatient, setVerifiedPatient] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
     if (activeTab === TABS.VIEW) {
       fetchPrescription();
     }
-  }, [activeTab]);
+    
+    // Initialize eSignet button when component mounts
+    const nonce = generateRandomString(16);
+    const state = generateRandomString(16);
 
+    const renderButton = () => {
+      window.SignInWithEsignetButton?.init({
+        oidcConfig: {
+          acr_values: 'mosip:idp:acr:generated-code mosip:idp:acr:biometric:static-code',
+          claims_locales: 'en',
+          client_id: 'IIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAiUIju',
+          redirect_uri: 'http://localhost:5000/auth/doctor-verify',
+          display: 'page',
+          nonce: nonce,
+          prompt: 'consent',
+          scope: 'openid profile',
+          state: state,
+          ui_locales: 'en',
+          authorizeUri: 'http://localhost:3000/authorize',
+        },
+        buttonConfig: {
+          labelText: 'Verify Patient with eSignet',
+          shape: 'soft_edges',
+          theme: 'filled_blue',
+          type: 'standard'
+        },
+        signInElement: document.getElementById('esignet-verify-button'),
+        onSuccess: (response) => {
+          console.log('Patient verification successful:', response);
+          const verifiedPatientData = {
+            patientId: response.sub || response.patientId,
+            patientName: response.name || 'Verified Patient'
+          };
+          setVerifiedPatient(verifiedPatientData);
+          setFormData({
+            ...formData,
+            patientId: verifiedPatientData.patientId,
+            patientName: verifiedPatientData.patientName
+          });
+        },
+        onFailure: (error) => {
+          console.error('Patient verification failed:', error);
+          setError('Patient verification failed. Please try again.');
+        }
+      });
+    };
+
+    if (!window.SignInWithEsignetButton) {
+      const script = document.createElement('script');
+      script.src = 'https://esignet.sdk.url';
+      script.onload = renderButton;
+      document.body.appendChild(script);
+    } else {
+      renderButton();
+    }
+  }, [activeTab, formData]);
 
   const fetchPrescription = async () => {
     if (!patientIdSearch) {
@@ -107,7 +170,6 @@ const DoctorDashboard = () => {
     navigate('/');
   };
 
-
   return (
     <div className="min-h-screen bg-gray-100 p-6">
       <div className="max-w-6xl mx-auto">
@@ -146,6 +208,30 @@ const DoctorDashboard = () => {
               {error && <div className="mb-4 p-3 bg-red-100 text-red-700 rounded">{error}</div>}
               {success && <div className="mb-4 p-3 bg-green-100 text-green-700 rounded">{success}</div>}
               
+              {/* eSignet button moved to left margin */}
+              <div className="mb-6 flex items-center">
+                <div id="esignet-verify-button" className="mr-4"></div>
+                <p className="text-sm text-gray-500">
+                  Verify patient identity using eSignet before creating prescription
+                </p>
+              </div>
+
+              {verifiedPatient && (
+                <div className="bg-blue-50 p-4 rounded-lg mb-6">
+                  <h3 className="font-semibold text-lg mb-2">Verified Patient Information</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-gray-600">Patient ID:</p>
+                      <p className="font-medium">{verifiedPatient.patientId}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-600">Patient Name:</p>
+                      <p className="font-medium">{verifiedPatient.patientName}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
@@ -168,6 +254,7 @@ const DoctorDashboard = () => {
                       onChange={(e) => setFormData({...formData, patientId: e.target.value})}
                       className="w-full p-2 border rounded"
                       required
+                      disabled={verifiedPatient}
                     />
                   </div>
                   <div>
@@ -179,6 +266,7 @@ const DoctorDashboard = () => {
                       onChange={(e) => setFormData({...formData, patientName: e.target.value})}
                       className="w-full p-2 border rounded"
                       required
+                      disabled={verifiedPatient}
                     />
                   </div>
                 </div>
@@ -245,7 +333,7 @@ const DoctorDashboard = () => {
                   </button>
                   <button
                     type="submit"
-                    disabled={loading}
+                    disabled={loading || !verifiedPatient}
                     className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:bg-blue-300"
                   >
                     {loading ? 'Submitting...' : 'Create Prescription'}
