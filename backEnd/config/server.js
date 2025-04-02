@@ -3,7 +3,9 @@ const express = require('express');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const authRoutes = require('../routes/authRoutes');
+const prescriptionRoutes = require('../routes/prescriptionRoutes');
 const { connectDB } = require('../config/db'); 
+const PrescriptionController = require('../controllers/prescriptionController');
 
 const app = express();
 
@@ -25,6 +27,7 @@ connectDB();
 
 // Routes
 app.use('/auth', authRoutes);
+app.use('/', prescriptionRoutes);
 
 // Health Check
 app.get('/health', (req, res) => {
