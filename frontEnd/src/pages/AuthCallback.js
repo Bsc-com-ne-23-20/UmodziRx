@@ -44,11 +44,19 @@ const AuthCallback = () => {
         setLoading(false);
 
         if (role === "admin") {
+          localStorage.setItem("adminName",user.name);
+          localStorage.setItem("adminId",user.id);
           setRoles(["admin", "patient"]);
         } else if (role === "doctor") {
+          localStorage.setItem("doctorName",user.name);
+          localStorage.setItem("doctorId",user.id);
           setRoles(["doctor", "patient"]);
         } else if (role === "pharmacist") {
+          localStorage.setItem("pharmaName",user.name);
+          localStorage.setItem("pharmaId",user.id);
           setRoles(["pharmacist", "patient"]);
+          localStorage.setItem("patientName",user.name);
+          localStorage.setItem("patientId",user.id);
         } else {
           console.log("[AuthCallback] Navigating to patient dashboard");
           handleOIDCCallback(token, user);
