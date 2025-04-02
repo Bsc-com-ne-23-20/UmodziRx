@@ -190,7 +190,7 @@ const DoctorDashboard = () => {
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold text-gray-800">modziRx</h1>
           <div className="flex items-center space-x-4">
-            <span className="text-gray-700">Doctor Dashboard</span>
+            <span className="text-3xl font-bold text-gray-800">Dr {localStorage.getItem("doctorName")}</span>
             <button
               onClick={handleLogout}
               className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition"
