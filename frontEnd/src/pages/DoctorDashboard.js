@@ -120,6 +120,7 @@ const DoctorDashboard = () => {
       setPrescriptionHistory(response.data.data);
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to fetch prescription');
+      setTimeout(() => setError(null), 3000);
       setPrescriptionHistory(null);
     } finally {
       setLoading(false);
