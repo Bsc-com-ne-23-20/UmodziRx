@@ -25,7 +25,7 @@ const DoctorDashboard = () => {
   const [formData, setFormData] = useState({
     medications: [{ medicationName: '', dosage: '', instructions: '' }]
   });
-  const [patientIdSearch, setPatientIdSearch] = useState('patient1');
+  const [patientIdSearch, setPatientIdSearch] = useState(localStorage.getItem('patientId') || '');
   const [prescriptionHistory, setPrescriptionHistory] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -49,10 +49,6 @@ const DoctorDashboard = () => {
       }
     }
 
-    if (activeTab === TABS.VIEW) {
-      fetchPrescription();
-    }
-    
     // Initialize eSignet button when component mounts
     const nonce = generateRandomString(16);
     const state = generateRandomString(16);
@@ -87,6 +83,8 @@ const DoctorDashboard = () => {
             birthday: response.birthdate || 'N/A'
           };
           setVerifiedPatient(verifiedPatientData);
+          localStorage.setItem('patientId', verifiedPatientData.patientId);
+          setPatientIdSearch(verifiedPatientData.patientId);
         },
         onFailure: (error) => {
           console.error('Patient verification failed:', error);
@@ -107,7 +105,8 @@ const DoctorDashboard = () => {
 
   const fetchPrescription = async () => {
     if (!patientIdSearch) {
-      setError('Please enter a Patient ID');
+      setError('No patient ID found');
+      setTimeout(() => setError(null), 2000);
       return;
     }
 
@@ -182,6 +181,7 @@ const DoctorDashboard = () => {
   const handleLogout = () => {
     localStorage.removeItem('userRole');
     localStorage.removeItem('Login');
+    localStorage.removeItem('patientId');
     navigate('/');
   };
 
@@ -191,7 +191,7 @@ const DoctorDashboard = () => {
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold text-gray-800">modziRx</h1>
           <div className="flex items-center space-x-4">
-            <span className="text-3xl font-bold text-gray-800">Dr {localStorage.getItem("doctorName")}</span>
+            <span className="text-2xl font-bold text-gray-800">Dr {localStorage.getItem("doctorName")}</span>
             <button
               onClick={handleLogout}
               className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition"
@@ -326,24 +326,29 @@ const DoctorDashboard = () => {
             </>
           ) : (
             <>
-              <h2 className="text-2xl font-semibold mb-4">View Prescription History</h2>
+              <h2 className="text-2xl font-semibold mb-4">View Patient Prescription History</h2>
               {error && <div className="mb-4 p-3 bg-red-100 text-red-700 rounded">{error}</div>}
-              
               <div className="mb-6">
                 <div className="flex space-x-2">
                   <input
                     type="text"
-                    value={patientIdSearch}
-                    onChange={(e) => setPatientIdSearch(e.target.value)}
-                    placeholder="Enter Patient ID"
-                    className="flex-1 p-2 border rounded"
+                    value={verifiedPatient?.patientId || patientFromUrl?.id || patientIdSearch}
+                    readOnly
+                    className="flex-1 p-2 border rounded bg-gray-100"
+                    placeholder={!verifiedPatient && !patientFromUrl ? "Please verify patient first" : ""}
                   />
                   <button
                     onClick={fetchPrescription}
-                    disabled={loading}
-                    className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:bg-blue-300"
+                    disabled={loading || !(verifiedPatient?.patientId || patientFromUrl?.id || patientIdSearch)}
+                    className={`px-4 py-2 rounded text-white ${
+                      loading 
+                        ? 'bg-blue-300' 
+                        : (verifiedPatient?.patientId || patientFromUrl?.id || patientIdSearch) 
+                          ? 'bg-blue-600 hover:bg-blue-700' 
+                          : 'bg-gray-400 cursor-not-allowed'
+                    }`}
                   >
-                    Search
+                    {loading ? 'Searching...' : 'Search'}
                   </button>
                 </div>
               </div>
