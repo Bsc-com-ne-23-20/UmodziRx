@@ -26,8 +26,8 @@ export default function PharmacistDashboard() {
                 oidcConfig: {
                     acr_values: 'mosip:idp:acr:generated-code mosip:idp:acr:biometric:static-code',
                     claims_locales: 'en',
-                    client_id: 'IIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAiUIju', // Replace with your actual client ID
-                    redirect_uri: 'http://localhost:5000/auth/pharmacist-verify', // Callback URL after verification
+                    client_id: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789', // Replace with your actual client ID
+                    redirect_uri: 'http://localhost:5000/veripatient', // Callback URL after verification
                     display: 'page',
                     nonce: nonce,
                     prompt: 'consent',
