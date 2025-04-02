@@ -1,0 +1,194 @@
+    const axios = require('axios');
+    const { URLSearchParams } = require('url');
+    const dotenv = require('dotenv');
+    const jwkToPem = require('jwk-to-pem');
+    const crypto = require('crypto');
+    const jwt = require('jsonwebtoken');
+
+
+
+    const TOKEN_EXPIRATION = parseInt(process.env.TOKEN_EXPIRATION_SEC || '300', 10);
+    const CODE_EXPIRY_MINUTES = parseInt(process.env.CODE_EXPIRY_MINUTES || '5', 10);
+
+    dotenv.config();
+
+    const decodeJWT = (token) => {
+    const [header, payload] = token.split('.');
+    return {
+        header: JSON.parse(Buffer.from(header, 'base64').toString()),
+        payload: JSON.parse(Buffer.from(payload, 'base64').toString()),
+    };
+    };
+    let PRIVATE_KEY_PEM;
+    try {
+    const PRIVATE_KEY_JWK = JSON.parse(process.env.PRIVATE_KEY_JWK);
+    PRIVATE_KEY_PEM = jwkToPem(PRIVATE_KEY_JWK, { private: true });
+    } catch (error) {
+    console.error('[AUTH] Failed to initialize private key:', error);
+    process.exit(1);
+    }
+
+    const createClientAssertion = async () => {
+      const now = Math.floor(Date.now() / 1000);
+      const payload = {
+        iss: process.env.CLIENT_ID,
+        sub: process.env.CLIENT_ID,
+        aud: `${process.env.ISSUER}${process.env.TOKEN_PATH}`,
+        jti: crypto.randomBytes(16).toString('hex'),
+        exp: now + TOKEN_EXPIRATION,
+        iat: now
+      };
+      return jwt.sign(payload, PRIVATE_KEY_PEM, { algorithm: 'RS256' });
+    };
+
+class phamarcistController{
+    static async getPrescription(req, res) {
+        const { patientId } = req.query;
+    
+        if (!patientId) {
+          return res.status(400).json({ error: "Patient ID is required" });
+        }
+    
+        try {
+          // Query blockchain
+          const response = await axios.get("http://localhost:45000/query", {
+            params: {
+              channelid: "mychannel",
+              chaincodeid: "basic",
+              function: "GetAssetHistory",
+              args: patientId,
+            },
+          });
+    
+          // Check if response contains valid data
+          if (!response.data || response.data.error) {
+            return res.status(404).json({
+              success: false,
+              error: "Prescription not found",
+            });
+          }
+    
+          let rawData = response.data;
+    
+          // If response is a string starting with "Response: ", extract the JSON part
+          if (typeof rawData === "string" && rawData.startsWith("Response: ")) {
+            rawData = rawData.replace("Response: ", "").trim();
+          }
+    
+          let historyData;
+          try {
+            historyData = JSON.parse(rawData); // Attempt JSON parsing
+          } catch (err) {
+            return res.status(500).json({
+              success: false,
+              error: "Failed to parse blockchain response",
+              details: err.message,
+            });
+          }
+    
+          // Validate that historyData is an array
+          if (!Array.isArray(historyData)) {
+            return res.status(500).json({
+              success: false,
+              error: "Unexpected response format from blockchain",
+            });
+          }
+    
+          // Process prescription history
+          const prescriptionsForPatient = [];
+          historyData.forEach(entry => {
+            if (entry.patientId === patientId && entry.prescriptions) {
+              entry.prescriptions.forEach(prescription => {
+                prescriptionsForPatient.push({
+                  medicationName: prescription.MedicationName || "Unknown",
+                  dosage: prescription.Dosage || "N/A",
+                  instructions: prescription.Instructions || "N/A",
+                  doctorId: prescription.DoctorId || "N/A",
+                  timestamp: prescription.Timestamp ? 
+                    new Date(prescription.Timestamp.seconds * 1000).toISOString() : 
+                    new Date().toISOString(),
+                });
+              });
+            }
+          });
+    
+          if (prescriptionsForPatient.length === 0) {
+            return res.status(404).json({
+              success: false,
+              error: "No valid prescription found",
+            });
+          }
+    
+          // Format the response
+          const formattedData = {
+            patientId: patientId,
+            patientName: historyData[0]?.patientName || "N/A",
+            prescriptions: prescriptionsForPatient,
+          };
+    
+          return res.status(200).json({
+            success: true,
+            data: formattedData,
+          });
+        } catch (error) {
+          console.error("Error:", error.response?.data || error.message);
+          return res.status(500).json({
+            success: false,
+            error: "Failed to retrieve prescription",
+            details: error.response?.data || error.message,
+          });
+        }
+      }
+
+      static  verifyPatientAtPharmancy = async (req, res) => {
+          const { code, state } = req.query;
+          console.log("verifypatient called,,,,");
+          try {
+            if (!code) throw new Error('Authorization code required');
+        
+            const clientAssertion = await createClientAssertion();
+            const tokenResponse = await axios.post(
+              `${process.env.ISSUER}${process.env.TOKEN_PATH}`,
+              new URLSearchParams({
+                grant_type: 'authorization_code',
+                code,
+                client_id: process.env.CLIENT_ID,
+                client_assertion_type: 'urn:ietf:params:oauth:client-assertion-type:jwt-bearer',
+                client_assertion: clientAssertion,
+                redirect_uri: "http://localhost:5000/veripatient"
+              }),
+              { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
+            );
+        
+            const userInfo = decodeJWT(
+              (await axios.get(
+                `${process.env.ISSUER}${process.env.USERINFO_PATH}`,
+                { headers: { Authorization: `Bearer ${tokenResponse.data.access_token}` } }
+              )).data
+            ).payload;
+        
+           
+            
+            const patient ={ 
+              id: userInfo.phone_number, 
+              name: userInfo.name , 
+              birthday:userInfo.birthdate
+             }
+        
+              console.log('patient', patient);
+             console.log("redirectin to doctor dashboard")
+            const encodedPatient = Buffer.from(JSON.stringify(patient)).toString('base64');
+            const redirectUrl = new URL("/doctor","http://localhost:13130");
+            redirectUrl.searchParams.append('patient',encodedPatient);
+         
+        
+            return res.redirect(redirectUrl.toString());
+          } catch (error) {
+            console.error('[AUTH] Login error:', error);
+            return res.redirect(`${process.env.FRONTEND_ERROR_PATH}?error=authentication_failed`);
+          }
+        };
+      
+      
+      
+}module.exports = phamarcistController;
