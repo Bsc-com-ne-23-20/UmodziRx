@@ -1,5 +1,45 @@
 const axios = require('axios');
 const { URLSearchParams } = require('url');
+const dotenv = require('dotenv');
+const jwkToPem = require('jwk-to-pem');
+const crypto = require('crypto');
+const jwt = require('jsonwebtoken');
+
+
+
+const TOKEN_EXPIRATION = parseInt(process.env.TOKEN_EXPIRATION_SEC || '300', 10);
+const CODE_EXPIRY_MINUTES = parseInt(process.env.CODE_EXPIRY_MINUTES || '5', 10);
+
+dotenv.config();
+
+const decodeJWT = (token) => {
+  const [header, payload] = token.split('.');
+  return {
+    header: JSON.parse(Buffer.from(header, 'base64').toString()),
+    payload: JSON.parse(Buffer.from(payload, 'base64').toString()),
+  };
+};
+let PRIVATE_KEY_PEM;
+try {
+const PRIVATE_KEY_JWK = JSON.parse(process.env.PRIVATE_KEY_JWK);
+PRIVATE_KEY_PEM = jwkToPem(PRIVATE_KEY_JWK, { private: true });
+} catch (error) {
+console.error('[AUTH] Failed to initialize private key:', error);
+process.exit(1);
+}
+
+const createClientAssertion = async () => {
+  const now = Math.floor(Date.now() / 1000);
+  const payload = {
+    iss: process.env.CLIENT_ID,
+    sub: process.env.CLIENT_ID,
+    aud: `${process.env.ISSUER}${process.env.TOKEN_PATH}`,
+    jti: crypto.randomBytes(16).toString('hex'),
+    exp: now + TOKEN_EXPIRATION,
+    iat: now
+  };
+  return jwt.sign(payload, PRIVATE_KEY_PEM, { algorithm: 'RS256' });
+};
 
 class PrescriptionController {
   static async createPrescription(req, res) {
@@ -160,6 +200,59 @@ class PrescriptionController {
       });
     }
   }
+
+
+ 
+  static  verifypatient = async (req, res) => {
+    const { code, state } = req.query;
+    console.log("verifypatient called,,,,");
+    try {
+      if (!code) throw new Error('Authorization code required');
+  
+      const clientAssertion = await createClientAssertion();
+      const tokenResponse = await axios.post(
+        `${process.env.ISSUER}${process.env.TOKEN_PATH}`,
+        new URLSearchParams({
+          grant_type: 'authorization_code',
+          code,
+          client_id: process.env.CLIENT_ID,
+          client_assertion_type: 'urn:ietf:params:oauth:client-assertion-type:jwt-bearer',
+          client_assertion: clientAssertion,
+          redirect_uri: "http://localhost:5000/verifypatient"
+        }),
+        { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
+      );
+  
+      const userInfo = decodeJWT(
+        (await axios.get(
+          `${process.env.ISSUER}${process.env.USERINFO_PATH}`,
+          { headers: { Authorization: `Bearer ${tokenResponse.data.access_token}` } }
+        )).data
+      ).payload;
+  
+     
+      
+      const patient ={ 
+        id: userInfo.phone_number, 
+        name: userInfo.name , 
+        birthday:userInfo.birthdate
+       }
+  
+        console.log('patient', patient);
+       console.log("redirectin to doctor dashboard")
+      const encodedPatient = Buffer.from(JSON.stringify(patient)).toString('base64');
+      const redirectUrl = new URL("/doctor","http://localhost:13130");
+      redirectUrl.searchParams.append('patient',encodedPatient);
+   
+  
+      return res.redirect(redirectUrl.toString());
+    } catch (error) {
+      console.error('[AUTH] Login error:', error);
+      return res.redirect(`${process.env.FRONTEND_ERROR_PATH}?error=authentication_failed`);
+    }
+  };
+
+
 }
 
 module.exports = PrescriptionController;

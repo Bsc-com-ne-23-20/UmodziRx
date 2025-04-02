@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 
-// generate random nonce and state
+// Generate random nonce and state
 function generateRandomString(length) {
   const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
   let randomString = '';
@@ -18,11 +18,11 @@ const TABS = {
 };
 
 const DoctorDashboard = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [patientFromUrl, setPatientFromUrl] = useState(null);
   const [activeTab, setActiveTab] = useState(TABS.CREATE);
   const [formData, setFormData] = useState({
-    doctorId: 'doctor1',
-    patientId: '',
-    patientName: '',
     medications: [{ medicationName: '', dosage: '', instructions: '' }]
   });
   const [patientIdSearch, setPatientIdSearch] = useState('patient1');
@@ -31,9 +31,24 @@ const DoctorDashboard = () => {
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
   const [verifiedPatient, setVerifiedPatient] = useState(null);
-  const navigate = useNavigate();
 
   useEffect(() => {
+    // Parse patient data from URL when component mounts
+    const urlParams = new URLSearchParams(window.location.search);
+    const encodedPatient = urlParams.get('patient');
+
+    if (encodedPatient) {
+      try {
+        // Decode the base64 URL-safe string
+        const decodedString = atob(encodedPatient.replace(/-/g, '+').replace(/_/g, '/'));
+        const patient = JSON.parse(decodedString);
+        setPatientFromUrl(patient);
+        console.log('Patient from URL:', patient);
+      } catch (e) {
+        console.error('Error parsing patient data:', e);
+      }
+    }
+
     if (activeTab === TABS.VIEW) {
       fetchPrescription();
     }
@@ -47,8 +62,8 @@ const DoctorDashboard = () => {
         oidcConfig: {
           acr_values: 'mosip:idp:acr:generated-code mosip:idp:acr:biometric:static-code',
           claims_locales: 'en',
-          client_id: 'IIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAiUIju',
-          redirect_uri: 'http://localhost:5000/auth/doctor-verify',
+          client_id: 'IIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAoZYt3',
+          redirect_uri: 'http://localhost:5000/verifypatient',
           display: 'page',
           nonce: nonce,
           prompt: 'consent',
@@ -68,14 +83,10 @@ const DoctorDashboard = () => {
           console.log('Patient verification successful:', response);
           const verifiedPatientData = {
             patientId: response.sub || response.patientId,
-            patientName: response.name || 'Verified Patient'
+            patientName: response.name || 'Verified Patient',
+            birthday: response.birthdate || 'N/A'
           };
           setVerifiedPatient(verifiedPatientData);
-          setFormData({
-            ...formData,
-            patientId: verifiedPatientData.patientId,
-            patientName: verifiedPatientData.patientName
-          });
         },
         onFailure: (error) => {
           console.error('Patient verification failed:', error);
@@ -92,7 +103,7 @@ const DoctorDashboard = () => {
     } else {
       renderButton();
     }
-  }, [activeTab, formData]);
+  }, [activeTab]);
 
   const fetchPrescription = async () => {
     if (!patientIdSearch) {
@@ -142,10 +153,14 @@ const DoctorDashboard = () => {
     setSuccess(null);
 
     try {
+      if (!verifiedPatient && !patientFromUrl) {
+        throw new Error('Please verify patient first');
+      }
+
+      const patientData = verifiedPatient || patientFromUrl;
       const payload = {
-        patientId: formData.patientId,
-        doctorId: formData.doctorId,
-        patientName: formData.patientName,
+        patientId: patientData.id || patientData.patientId,
+        patientName: patientData.name || patientData.patientName,
         prescriptions: formData.medications
       };
 
@@ -153,12 +168,11 @@ const DoctorDashboard = () => {
       
       setSuccess('Prescription created successfully!');
       setFormData({
-        ...formData,
         medications: [{ medicationName: '', dosage: '', instructions: '' }]
       });
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
-      setError(err.response?.data?.error || 'Failed to create prescription');
+      setError(err.response?.data?.error || err.message || 'Failed to create prescription');
     } finally {
       setLoading(false);
     }
@@ -208,67 +222,37 @@ const DoctorDashboard = () => {
               {error && <div className="mb-4 p-3 bg-red-100 text-red-700 rounded">{error}</div>}
               {success && <div className="mb-4 p-3 bg-green-100 text-green-700 rounded">{success}</div>}
               
-              {/* eSignet button moved to left margin */}
               <div className="mb-6 flex items-center">
                 <div id="esignet-verify-button" className="mr-4"></div>
-                
               </div>
 
-              {verifiedPatient && (
+              {(verifiedPatient || patientFromUrl) && (
                 <div className="bg-blue-50 p-4 rounded-lg mb-6">
-                  <h3 className="font-semibold text-lg mb-2">Verified Patient Information</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <h3 className="font-semibold text-lg mb-2">Patient Information</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
                       <p className="text-gray-600">Patient ID:</p>
-                      <p className="font-medium">{verifiedPatient.patientId}</p>
+                      <p className="font-medium">
+                        {verifiedPatient?.patientId || patientFromUrl?.id}
+                      </p>
                     </div>
                     <div>
                       <p className="text-gray-600">Patient Name:</p>
-                      <p className="font-medium">{verifiedPatient.patientName}</p>
+                      <p className="font-medium">
+                        {verifiedPatient?.patientName || patientFromUrl?.name}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-gray-600">Birthday:</p>
+                      <p className="font-medium">
+                        {verifiedPatient?.birthday || patientFromUrl?.birthday || 'N/A'}
+                      </p>
                     </div>
                   </div>
                 </div>
               )}
 
               <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-gray-700 mb-1">Doctor ID</label>
-                    <input
-                      type="text"
-                      name="doctorId"
-                      value={formData.doctorId}
-                      onChange={(e) => setFormData({...formData, doctorId: e.target.value})}
-                      className="w-full p-2 border rounded"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-gray-700 mb-1">Patient ID</label>
-                    <input
-                      type="text"
-                      name="patientId"
-                      value={formData.patientId}
-                      onChange={(e) => setFormData({...formData, patientId: e.target.value})}
-                      className="w-full p-2 border rounded"
-                      required
-                      disabled={verifiedPatient}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-gray-700 mb-1">Patient Name</label>
-                    <input
-                      type="text"
-                      name="patientName"
-                      value={formData.patientName}
-                      onChange={(e) => setFormData({...formData, patientName: e.target.value})}
-                      className="w-full p-2 border rounded"
-                      required
-                      disabled={verifiedPatient}
-                    />
-                  </div>
-                </div>
-
                 <div className="space-y-4">
                   <h3 className="text-lg font-medium">Medications</h3>
                   {formData.medications.map((med, index) => (
@@ -331,7 +315,7 @@ const DoctorDashboard = () => {
                   </button>
                   <button
                     type="submit"
-                    disabled={loading || !verifiedPatient}
+                    disabled={loading || (!verifiedPatient && !patientFromUrl)}
                     className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:bg-blue-300"
                   >
                     {loading ? 'Submitting...' : 'Create Prescription'}
@@ -405,10 +389,6 @@ const DoctorDashboard = () => {
                               {new Date(prescription.timestamp).toLocaleString()}
                             </p>
                           </div>
-                        </div>
-                        <div className="mt-2">
-                          <p className="text-gray-600">Prescribed By:</p>
-                          <p className="font-medium">Doctor ID: {prescription.doctorId}</p>
                         </div>
                       </div>
                     ))
