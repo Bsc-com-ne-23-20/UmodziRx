@@ -4,12 +4,16 @@ const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const authRoutes = require('../routes/authRoutes');
 const prescriptionRoutes = require('../routes/prescriptionRoutes');
-const pharmacistRoutes = require('../routes/pharmacistRoutes'); // New route import
+const pharmaRoutes = require('../routes/pharmaRoutes'); // New route import
 const { connectDB } = require('../config/db'); 
 const PrescriptionController = require('../controllers/prescriptionController');
 const PharmacistController = require('../controllers/pharmacistController'); // New controller import
 
 const app = express();
+
+
+
+
 
 // Enhanced CORS configuration
 app.use(cors({
@@ -30,7 +34,7 @@ connectDB();
 
 // Routes
 app.use('/auth', authRoutes);
-app.use('/prescriptions', prescriptionRoutes); // More explicit path
+app.use('/doctor', prescriptionRoutes); 
 app.use('/pharmacist', pharmaRoutes); // New pharmacist routes
 
 // Health Check with more detailed response
@@ -64,6 +68,22 @@ app.use('*', (req, res) => {
     requestedPath: req.originalUrl
   });
 });
+
+app.get('/routes', (req, res) => {
+  const routes = [];
+  app._router.stack.forEach(middleware => {
+    if (middleware.route) {
+      routes.push({
+        path: middleware.route.path,
+        methods: Object.keys(middleware.route.methods)
+      });
+    }
+  });
+  res.json(routes);
+});
+
+
+
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
