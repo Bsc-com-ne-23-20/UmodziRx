@@ -18,6 +18,7 @@ export const AuthProvider = ({ children }) => {
     const newAuthState = { token, user };
     setAuthState(newAuthState);
     localStorage.setItem("authState", JSON.stringify(newAuthState));
+    
   };
 
   const logout = () => {
