@@ -48,6 +48,7 @@ const DoctorDashboard = () => {
         const doctorId = localStorage.getItem('doctorId');
         if (patient.id === doctorId) {
           setSelfPrescriptionWarning(true);
+          setTimeout(() => setSelfPrescriptionWarning(false), 2000);
           setPatientFromUrl(null);
         } else {
           setPatientFromUrl(patient);
@@ -95,12 +96,12 @@ const DoctorDashboard = () => {
           const doctorId = localStorage.getItem('doctorId');
           if (verifiedPatientData.patientId === doctorId) {
             setSelfPrescriptionWarning(true);
+            setTimeout(() => setSelfPrescriptionWarning(false), 2000);
             setVerifiedPatient(null);
           } else {
             setVerifiedPatient(verifiedPatientData);
             localStorage.setItem('patientId', verifiedPatientData.patientId);
             setPatientIdSearch(verifiedPatientData.patientId);
-            setSelfPrescriptionWarning(false);
           }
         },
         onFailure: (error) => {
@@ -131,6 +132,7 @@ const DoctorDashboard = () => {
     const doctorId = localStorage.getItem('doctorId');
     if (patientIdSearch === doctorId) {
       setSelfPrescriptionWarning(true);
+      setTimeout(() => setSelfPrescriptionWarning(false), 2000);
       setPrescriptionHistory(null);
       return;
     }
@@ -142,7 +144,6 @@ const DoctorDashboard = () => {
         params: { patientId: patientIdSearch }
       });
       setPrescriptionHistory(response.data.data);
-      setSelfPrescriptionWarning(false);
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to fetch prescription');
       setTimeout(() => setError(null), 3000);
@@ -185,7 +186,8 @@ const DoctorDashboard = () => {
     }
 
     if (patientData.id === doctorId || patientData.patientId === doctorId) {
-      setError('You cannot create a prescription for yourself');
+      setSelfPrescriptionWarning(true);
+      setTimeout(() => setSelfPrescriptionWarning(false), 2000);
       return;
     }
 
@@ -255,7 +257,7 @@ const DoctorDashboard = () => {
 
         <div className="bg-white p-6 rounded-lg shadow-md">
           {selfPrescriptionWarning && (
-            <div className="mb-4 p-3 bg-yellow-100 text-yellow-800 rounded">
+            <div className="mb-4 p-3 bg-red-400 text-white rounded transition-opacity duration-300">
               You cannot create or view prescriptions for yourself.
             </div>
           )}
@@ -372,90 +374,82 @@ const DoctorDashboard = () => {
               <h2 className="text-2xl font-semibold mb-4">View Patient Prescription History</h2>
               {error && <div className="mb-4 p-3 bg-red-100 text-red-700 rounded">{error}</div>}
               
-              {!selfPrescriptionWarning && (
-                <div className="mb-6">
-                  <div className="flex space-x-2">
-                    <input
-                      type="text"
-                      value={verifiedPatient?.patientId || patientFromUrl?.id || patientIdSearch}
-                      readOnly
-                      className="flex-1 p-2 border rounded bg-gray-100"
-                      placeholder={!verifiedPatient && !patientFromUrl ? "Please verify patient first" : ""}
-                    />
-                    <button
-                      onClick={fetchPrescription}
-                      disabled={loading || !(verifiedPatient?.patientId || patientFromUrl?.id || patientIdSearch)}
-                      className={`px-4 py-2 rounded text-white ${
-                        loading 
-                          ? 'bg-blue-300' 
-                          : (verifiedPatient?.patientId || patientFromUrl?.id || patientIdSearch) 
-                            ? 'bg-blue-600 hover:bg-blue-700' 
-                            : 'bg-gray-400 cursor-not-allowed'
-                      }`}
-                    >
-                      {loading ? 'Searching...' : 'Search'}
-                    </button>
-                  </div>
+              <div className="mb-6">
+                <div className="flex space-x-2">
+                  <input
+                    type="text"
+                    value={verifiedPatient?.patientId || patientFromUrl?.id || patientIdSearch}
+                    readOnly
+                    className="flex-1 p-2 border rounded bg-gray-100"
+                    placeholder={!verifiedPatient && !patientFromUrl ? "Please verify patient first" : ""}
+                  />
+                  <button
+                    onClick={fetchPrescription}
+                    disabled={loading || !(verifiedPatient?.patientId || patientFromUrl?.id || patientIdSearch)}
+                    className={`px-4 py-2 rounded text-white ${
+                      loading 
+                        ? 'bg-blue-300' 
+                        : (verifiedPatient?.patientId || patientFromUrl?.id || patientIdSearch) 
+                          ? 'bg-blue-600 hover:bg-blue-700' 
+                          : 'bg-gray-400 cursor-not-allowed'
+                    }`}
+                  >
+                    {loading ? 'Searching...' : 'Search'}
+                  </button>
                 </div>
-              )}
+              </div>
 
               {loading && <p className="text-center">Loading...</p>}
               
-              {selfPrescriptionWarning ? (
-                <div className="p-4 bg-yellow-50 rounded-lg">
-                  <p>Doctors cannot view their own prescription history through this interface.</p>
-                </div>
-              ) : (
-                prescriptionHistory ? (
-                  <div className="space-y-4">
-                    <div className="bg-blue-50 p-4 rounded-lg">
-                      <h3 className="font-semibold text-lg">Patient Information</h3>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
-                        <div>
-                          <p className="text-gray-600">Patient ID:</p>
-                          <p className="font-medium">{prescriptionHistory.patientId}</p>
-                        </div>
-                        <div>
-                          <p className="text-gray-600">Patient Name:</p>
-                          <p className="font-medium">{prescriptionHistory.patientName}</p>
-                        </div>
+              {prescriptionHistory ? (
+                <div className="space-y-4">
+                  <div className="bg-blue-50 p-4 rounded-lg">
+                    <h3 className="font-semibold text-lg">Patient Information</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
+                      <div>
+                        <p className="text-gray-600">Patient ID:</p>
+                        <p className="font-medium">{prescriptionHistory.patientId}</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-600">Patient Name:</p>
+                        <p className="font-medium">{prescriptionHistory.patientName}</p>
                       </div>
                     </div>
+                  </div>
 
-                    <h3 className="text-xl font-semibold mt-6">Prescription Records</h3>
-                    
-                    {prescriptionHistory.prescriptions?.length > 0 ? (
-                      prescriptionHistory.prescriptions.map((prescription, index) => (
-                        <div key={index} className="border rounded-lg p-4">
-                          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                            <div>
-                              <p className="text-gray-600">Medication:</p>
-                              <p className="font-medium">{prescription.medicationName}</p>
-                            </div>
-                            <div>
-                              <p className="text-gray-600">Dosage:</p>
-                              <p className="font-medium">{prescription.dosage}</p>
-                            </div>
-                            <div>
-                              <p className="text-gray-600">Instructions:</p>
-                              <p className="font-medium">{prescription.instructions}</p>
-                            </div>
-                            <div>
-                              <p className="text-gray-600">Prescribed On:</p>
-                              <p className="font-medium">
-                                {new Date(prescription.timestamp).toLocaleString()}
-                              </p>
-                            </div>
+                  <h3 className="text-xl font-semibold mt-6">Prescription Records</h3>
+                  
+                  {prescriptionHistory.prescriptions?.length > 0 ? (
+                    prescriptionHistory.prescriptions.map((prescription, index) => (
+                      <div key={index} className="border rounded-lg p-4">
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                          <div>
+                            <p className="text-gray-600">Medication:</p>
+                            <p className="font-medium">{prescription.medicationName}</p>
+                          </div>
+                          <div>
+                            <p className="text-gray-600">Dosage:</p>
+                            <p className="font-medium">{prescription.dosage}</p>
+                          </div>
+                          <div>
+                            <p className="text-gray-600">Instructions:</p>
+                            <p className="font-medium">{prescription.instructions}</p>
+                          </div>
+                          <div>
+                            <p className="text-gray-600">Prescribed On:</p>
+                            <p className="font-medium">
+                              {new Date(prescription.timestamp).toLocaleString()}
+                            </p>
                           </div>
                         </div>
-                      ))
-                    ) : (
-                      <p className="text-gray-500">No prescription records found</p>
-                    )}
-                  </div>
-                ) : (
-                  !loading && <p className="text-gray-500">No prescription history found. Please search by Patient ID.</p>
-                )
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-gray-500">No prescription records found</p>
+                  )}
+                </div>
+              ) : (
+                !loading && <p className="text-gray-500">No prescription history found. Please search by Patient ID.</p>
               )}
             </>
           )}
