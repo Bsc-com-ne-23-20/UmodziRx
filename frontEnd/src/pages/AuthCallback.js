@@ -61,6 +61,10 @@ const AuthCallback = () => {
         } else {
           console.log("[AuthCallback] Navigating to patient dashboard");
           handleOIDCCallback(token, user);
+          localStorage.setItem("patientName", user.name);
+          localStorage.setItem("patientId", user.id);
+          console.log("[AuthCallback] Navigating to patient dashboard");
+          handleOIDCCallback(token, { ...user, role: "patient" }); 
           navigate("/patient");
         }
       })
