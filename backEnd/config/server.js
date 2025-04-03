@@ -4,20 +4,23 @@ const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const authRoutes = require('../routes/authRoutes');
 const prescriptionRoutes = require('../routes/prescriptionRoutes');
+const pharmaRoutes = require('../routes/pharmaRoutes'); // New route import
 const { connectDB } = require('../config/db'); 
 const PrescriptionController = require('../controllers/prescriptionController');
+const PharmacistController = require('../controllers/pharmacistController'); // New controller import
 
 const app = express();
 
-// Middleware
-// In your backend (app.js or server.js)
+// Enhanced CORS configuration
 app.use(cors({
   origin: process.env.FRONTEND_BASE_URL,
-  methods: ['GET', 'POST', 'OPTIONS'],
-  allowedHeaders: ['Content-Type'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true,
-  maxAge: 600
+  maxAge: 86400 // Increased cache time
 }));
+
+// Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
@@ -27,20 +30,42 @@ connectDB();
 
 // Routes
 app.use('/auth', authRoutes);
-app.use('/', prescriptionRoutes);
+app.use('/prescriptions', prescriptionRoutes); // More explicit path
+app.use('/pharmacist', pharmaRoutes); // New pharmacist routes
 
-// Health Check
+// Health Check with more detailed response
 app.get('/health', (req, res) => {
-  res.status(200).json({ status: 'OK' });
+  res.status(200).json({ 
+    status: 'OK',
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development'
+  });
 });
 
-// Error Handling Middleware
+// Enhanced Error Handling Middleware
 app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ error: 'Internal Server Error' });
+  console.error(`[${new Date().toISOString()}] Error:`, err.stack);
+  
+  const statusCode = err.statusCode || 500;
+  const message = process.env.NODE_ENV === 'production' 
+    ? 'Internal Server Error' 
+    : err.message;
+  
+  res.status(statusCode).json({ 
+    error: message,
+    ...(process.env.NODE_ENV !== 'production' && { stack: err.stack })
+  });
+});
+
+// Handle 404 routes
+app.use('*', (req, res) => {
+  res.status(404).json({
+    error: 'Endpoint not found',
+    requestedPath: req.originalUrl
+  });
 });
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
 });

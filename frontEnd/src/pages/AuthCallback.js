@@ -54,6 +54,7 @@ const AuthCallback = () => {
         } else if (role === "pharmacist") {
           localStorage.setItem("pharmaName",user.name);
           localStorage.setItem("pharmaId",user.id);
+          localStorage.setItem("phamarEmail",user.email);
           setRoles(["pharmacist", "patient"]);
           localStorage.setItem("patientName",user.name);
           localStorage.setItem("patientId",user.id);
