@@ -58,8 +58,8 @@ const DoctorDashboard = () => {
         oidcConfig: {
           acr_values: 'mosip:idp:acr:generated-code mosip:idp:acr:biometric:static-code',
           claims_locales: 'en',
-          client_id: 'IIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAoZYt3',
-          redirect_uri: 'http://localhost:5000/verifypatient',
+          client_id: 'IIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAh6je3',
+          redirect_uri: 'http://localhost:5000/doctor/verifypatient',
           display: 'page',
           nonce: nonce,
           prompt: 'consent',
