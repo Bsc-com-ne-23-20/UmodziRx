@@ -19,11 +19,11 @@ export default function PharmacistDashboard() {
     const [patientID, setPatientID] = useState('');
     const [verifiedPatient, setVerifiedPatient] = useState(null);
     const [pharmacistInfo, setPharmacistInfo] = useState({
-        id: '123456',
-        email: 'pharmacy@gmail.com',
-        name: 'Tadala Cleoz',
-        birthday: '1987/11/25',
-        role: 'pharmacist'
+        id: '',
+        email: '',
+        name: '',
+        birthday: '',
+        role: ''
     });
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
@@ -64,7 +64,7 @@ export default function PharmacistDashboard() {
                 oidcConfig: {
                     acr_values: 'mosip:idp:acr:generated-code mosip:idp:acr:biometric:static-code',
                     claims_locales: 'en',
-                    client_id: 'IIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAh6je3',
+                    client_id: 'IIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA1Ueed',
                     redirect_uri: 'http://localhost:5000/pharmacist/veripatient',
                     display: 'page',
                     nonce: nonce,
