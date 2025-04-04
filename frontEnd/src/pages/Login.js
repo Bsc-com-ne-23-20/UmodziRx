@@ -2,7 +2,6 @@ import { useNavigate } from 'react-router-dom';
 import React, { useState, useCallback, useEffect } from "react";
 import prescriptionImage from "./Prescription_medication.jpeg";
 
-// generate random nonce and state
 function generateRandomString(length) {
   const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
   let randomString = '';
@@ -21,27 +20,26 @@ function Login() {
   const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
-    // Initialize eSignet button
     const nonce = generateRandomString(16);
     const state = generateRandomString(16);
 
     const renderButton = () => {
       window.SignInWithEsignetButton?.init({
         oidcConfig: {
-          acr_values: 'mosip:idp:acr:generated-code mosip:idp:acr:biometricr:static-code mosip:idp:acr:password ',
-          // authorize_url: 'http://localhost:3000/authorize', // Replace with eSignet's authorize URL
+          acr_values: 'mosip:idp:acr:generated-code mosip:idp:acr:biometricr:static-code mosip:idp:acr:password',
           claims_locales: 'en',
+
 
           client_id: 'IIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAh6je3', // Replace with your actual client ID
 
           redirect_uri: 'http://localhost:5000/auth/login', // Callback URL after eSignet authentication
           display: 'page',
-          nonce: nonce ,
+          nonce: nonce,
           prompt: 'consent',
           scope: 'openid profile',
-          state: state ,
+          state: state,
           ui_locales: 'en',
-          authorizeUri: 'http://localhost:3000/authorize',
+          authorizeUri: process.env.REACT_APP_ESIGNET_AUTHORIZE_URI,
         },
         buttonConfig: {
           labelText: 'Sign in with eSignet',
@@ -50,22 +48,10 @@ function Login() {
           type: 'standard'
         },
         signInElement: document.getElementById('esignet-button'),
-        // onSuccess: (response) => {
-        //   // Handle successful eSignet authentication
-        //   console.log('eSignet authentication successful:', response);
-        //   // Redirect to a specific route or perform additional actions
-        //   navigate('/dashboard'); // Example: Redirect to dashboard after successful login
-        // },
-        // onFailure: (error) => {
-        //   // Handle eSignet authentication failure
-        //   console.error('eSignet authentication failed:', error);
-        //   setError('eSignet authentication failed. Please try again.');
-        // }
       });
     };
     renderButton();
   }, [navigate]);
-
 
   const handleLoginSubmit = useCallback(async (e) => {
     e.preventDefault();
@@ -73,8 +59,7 @@ function Login() {
     setError("");
   
     try {
-
-      const response = await fetch("http://localhost:5000/auth/login", {
+      const response = await fetch(`${process.env.REACT_APP_API_BASE_URL}/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password }),
@@ -86,22 +71,12 @@ function Login() {
       }
   
       const data = await response.json();
-      const { token, redirect,role} = data; // Get `redirect` from backend response
+      const { token, redirect, role } = data;
   
-      //Store authentication details
       localStorage.setItem("token", token);
-      localStorage.setItem("userRole", role); // Store user role
-
-      console.log("Stored Token:", localStorage.getItem("token"));
-      console.log("Stored Role:", localStorage.getItem("userRole"));
-
-
-  
-      // Redirect user to the correct dashboard
-
+      localStorage.setItem("userRole", role);
       navigate(redirect);
       
-
     } catch (error) {
       setError("Login failed. Please check your credentials.");
       console.error(error);
@@ -109,18 +84,10 @@ function Login() {
       setLoading(false);
     }
   }, [username, password, navigate]);
-  
-
-
-
-
-
-
 
   return (
     <div className="min-h-screen bg-teal-50 flex items-center justify-center px-4">
       <div className="grid grid-cols-1 lg:grid-cols-[1.5fr_1fr] gap-8 max-w-4xl w-full">
-        {/* Left Section - Prescription Image and MOSIP Info */}
         <div className="flex flex-col items-center justify-center space-y-8 bg-white shadow-md rounded-2xl p-8">
           <img 
             src={prescriptionImage} 
@@ -135,7 +102,6 @@ function Login() {
           </div>
         </div>
 
-        {/* Right Section - Login Form */}
         <div className="bg-white shadow-lg rounded-2xl p-8">
           <h2 className="text-2xl font-bold mb-4 text-teal-700 text-center">Login</h2>
           
@@ -199,7 +165,6 @@ function Login() {
             </button>
           </form>
 
-          {/* Forgot Password Link */}
           <div className="mt-3 text-right">
             <button
               onClick={() => navigate("/forgot-password")}
@@ -209,28 +174,14 @@ function Login() {
             </button>
           </div>
 
-          {/* Divider with "or" */}
           <div className="flex items-center my-6">
             <hr className="flex-grow border-t border-gray-300" />
             <span className="mx-4 text-sm text-gray-500">or</span>
             <hr className="flex-grow border-t border-gray-300" />
           </div>
 
-          {/* Login with eSignet */}
           <div className="text-center">
             <div id="esignet-button"></div>
-          </div>
-
-          <div className="mt-4 text-center">
-            <p className="text-sm text-gray-600">
-              New user?{" "}
-              <button
-                onClick={() => navigate("/register")}
-                className="text-teal-600 hover:underline"
-              >
-                Create credentials
-              </button>
-            </p>
           </div>
         </div>
       </div>

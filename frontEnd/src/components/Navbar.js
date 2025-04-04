@@ -1,17 +1,14 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect } from "react";
+import { useAuth } from "../context/AuthContext";
 import { Link, useNavigate } from "react-router-dom";
 
 function Navbar() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const { authState, logout } = useAuth();
   const navigate = useNavigate();
 
-  useEffect(() => {
-    setIsLoggedIn(!!localStorage.getItem("Login"));
-  }, []);
-
   const handleLogout = () => {
-    localStorage.removeItem("Login");
-    setIsLoggedIn(false);
+    logout();
+    localStorage.clear();
     navigate("/");
   };
 
@@ -28,10 +25,20 @@ function Navbar() {
             <Link to="/" className="text-blue-500 dark:text-gray-300 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
               Home
             </Link>
-            {isLoggedIn && (
-              <button onClick={handleLogout} className="text-blue-500 dark:text-gray-300 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+            {authState.token ? (
+              <button 
+                onClick={handleLogout}
+                className="text-blue-500 dark:text-gray-300 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
+              >
                 Logout
               </button>
+            ) : (
+              <Link 
+                to="/login" 
+                className="text-blue-500 dark:text-gray-300 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
+              >
+                Login
+              </Link>
             )}
           </div>
         </div>

@@ -6,6 +6,7 @@ const authRoutes = require('../routes/authRoutes');
 const prescriptionRoutes = require('../routes/prescriptionRoutes');
 const pharmaRoutes = require('../routes/pharmaRoutes'); // New route import
 const { connectDB } = require('../config/db'); 
+const userRoutes = require('../routes/userRoutes'); //
 const PrescriptionController = require('../controllers/prescriptionController');
 const PharmacistController = require('../controllers/pharmacistController'); // New controller import
 
@@ -35,7 +36,8 @@ connectDB();
 // Routes
 app.use('/auth', authRoutes);
 app.use('/doctor', prescriptionRoutes); 
-app.use('/pharmacist', pharmaRoutes); // New pharmacist routes
+app.use('/pharmacist', pharmaRoutes); 
+app.use('/admin', userRoutes); 
 
 // Health Check with more detailed response
 app.get('/health', (req, res) => {

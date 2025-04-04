@@ -15,10 +15,13 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const handleOIDCCallback = (token, user) => {
-    const newAuthState = { token, user };
+    const newAuthState = { 
+      token, 
+      user,
+      timestamp: Date.now() 
+    };
     setAuthState(newAuthState);
     localStorage.setItem("authState", JSON.stringify(newAuthState));
-    
   };
 
   const logout = () => {
@@ -26,12 +29,19 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem("authState");
   };
 
+  const isTokenExpired = () => {
+    if (!authState.timestamp) return true;
+    const TOKEN_EXPIRY_TIME = 5 * 60 * 1000; // 5 minutes in milliseconds
+    return Date.now() - authState.timestamp > TOKEN_EXPIRY_TIME;
+  };
+
   return (
     <AuthContext.Provider value={{ 
       authState, 
       handleOIDCCallback, 
       logout, 
-      loading 
+      loading,
+      isTokenExpired
     }}>
       {children}
     </AuthContext.Provider>

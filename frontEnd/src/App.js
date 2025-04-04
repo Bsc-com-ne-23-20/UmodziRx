@@ -21,9 +21,18 @@ function App() {
   const [darkMode] = useState(false);
 
   useEffect(() => {
+
+    console.log('Environment:', {
+      NODE_ENV: process.env.NODE_ENV,
+      API_URL: process.env.REACT_APP_API_BASE_URL
+    });
     if (darkMode) {
       document.documentElement.classList.add("dark");
     } else {
+      console.log('Environment:', {
+        NODE_ENV: process.env.NODE_ENV,
+        API_URL: process.env.REACT_APP_API_BASE_URL
+      });
       document.documentElement.classList.remove("dark");
     }
   }, [darkMode]);
