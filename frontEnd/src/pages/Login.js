@@ -31,7 +31,7 @@ function Login() {
           acr_values: 'mosip:idp:acr:generated-code mosip:idp:acr:biometricr:static-code mosip:idp:acr:password ',
           // authorize_url: 'http://localhost:3000/authorize', // Replace with eSignet's authorize URL
           claims_locales: 'en',
-          client_id: 'IIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAoZYt3', // Replace with your actual client ID
+          client_id: 'IIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAh6je3', // Replace with your actual client ID
           redirect_uri: 'http://localhost:5000/auth/login', // Callback URL after eSignet authentication
           display: 'page',
           nonce: nonce ,

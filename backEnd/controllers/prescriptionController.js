@@ -205,7 +205,7 @@ class PrescriptionController {
  
   static  verifypatient = async (req, res) => {
     const { code, state } = req.query;
-    console.log("verifypatient called,,,,");
+    console.log("verifypatient at doctor called,,,,");
     try {
       if (!code) throw new Error('Authorization code required');
   
@@ -218,7 +218,7 @@ class PrescriptionController {
           client_id: process.env.CLIENT_ID,
           client_assertion_type: 'urn:ietf:params:oauth:client-assertion-type:jwt-bearer',
           client_assertion: clientAssertion,
-          redirect_uri: "http://localhost:5000/verifypatient"
+          redirect_uri: 'http://localhost:5000/doctor/verifypatient'
         }),
         { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
       );
