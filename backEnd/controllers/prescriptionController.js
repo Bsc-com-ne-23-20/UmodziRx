@@ -130,6 +130,7 @@ class PrescriptionController {
       }
 
       let rawData = response.data;
+      console.log("proceing query", response.data);
 
       // If response is a string starting with "Response: ", extract the JSON part
       if (typeof rawData === "string" && rawData.startsWith("Response: ")) {

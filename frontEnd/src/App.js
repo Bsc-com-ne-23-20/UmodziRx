@@ -9,12 +9,11 @@ import DoctorDashboard from "./pages/DoctorDashboard";
 import PharmacistDashboard from "./pages/PharmacistDashboard";
 import PatientPrescriptions from "./pages/PatientDashboard";
 import LearnMore from "./pages/LearnMore";
-import UserProfile from "./pages/UserProfile";
-import Register from "./pages/Register";
 import Navbar from "./components/Navbar";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Unauthorized from "./pages/Unauthorized";
 import AuthCallback from "./pages/AuthCallback";
+import SessionExpired from "./pages/SessionExpired";
 import "./App.css";
 
 function App() {
@@ -48,8 +47,7 @@ function App() {
               <Route path="/" element={<Home />} />
               <Route path="/login" element={<Login />} />
               <Route path="/learn-more" element={<LearnMore />} />
-              <Route path="/register" element={<Register />} />
-              <Route path="/user-profile" element={<UserProfile />} />
+              <Route path="/session-expired" element={<SessionExpired />} />
               <Route path="/unauthorized" element={<Unauthorized />} />
               <Route path="/callback" element={<AuthCallback />} />
 

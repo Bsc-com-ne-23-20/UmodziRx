@@ -44,7 +44,7 @@ const DoctorDashboard = () => {
         const doctorId = localStorage.getItem('doctorId');
         if (patient.id === doctorId) {
           setSelfPrescriptionWarning(true);
-          setTimeout(() => setSelfPrescriptionWarning(false), 2000);
+          setTimeout(() => setSelfPrescriptionWarning(false), 5000);
           setPatientFromUrl(null);
         } else {
           setPatientFromUrl(patient);
@@ -90,7 +90,7 @@ const DoctorDashboard = () => {
           const doctorId = localStorage.getItem('doctorId');
           if (verifiedPatientData.patientId === doctorId) {
             setSelfPrescriptionWarning(true);
-            setTimeout(() => setSelfPrescriptionWarning(false), 2000);
+            setTimeout(() => setSelfPrescriptionWarning(false), 5000);
             setVerifiedPatient(null);
           } else {
             setVerifiedPatient(verifiedPatientData);
@@ -116,7 +116,8 @@ const DoctorDashboard = () => {
   }, [activeTab]);
 
   const fetchPrescription = async () => {
-    if (!patientIdSearch) {
+    console.log("fetchi called ",verifiedPatient?.patientId || patientFromUrl?.id);
+    if (!patientFromUrl?.id) {
       setError('No patient ID found');
       setTimeout(() => setError(null), 2000);
       return;
@@ -125,7 +126,7 @@ const DoctorDashboard = () => {
     const doctorId = localStorage.getItem('doctorId');
     if (patientIdSearch === doctorId) {
       setSelfPrescriptionWarning(true);
-      setTimeout(() => setSelfPrescriptionWarning(false), 2000);
+      setTimeout(() => setSelfPrescriptionWarning(false), 5000);
       setPrescriptionHistory(null);
       return;
     }
@@ -133,8 +134,8 @@ const DoctorDashboard = () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await axios.get(`${process.env.REACT_APP_API_BASE_URL}/prescriptions`, {
-        params: { patientId: patientIdSearch }
+      const response = await axios.get(`${process.env.REACT_APP_API_BASE_URL}/doctor/prescriptions`, {
+        params: { patientId: patientIdSearch||patientFromUrl?.id }
       });
       setPrescriptionHistory(response.data.data);
     } catch (err) {
@@ -179,7 +180,7 @@ const DoctorDashboard = () => {
 
     if (patientData.id === doctorId || patientData.patientId === doctorId) {
       setSelfPrescriptionWarning(true);
-      setTimeout(() => setSelfPrescriptionWarning(false), 2000);
+      setTimeout(() => setSelfPrescriptionWarning(false), 5000);
       return;
     }
 
@@ -190,12 +191,24 @@ const DoctorDashboard = () => {
     try {
       const payload = {
         patientId: patientData.id || patientData.patientId,
-        patientName: patientData.name || patientData.patientName,
         doctorId: doctorId,
-        prescriptions: formData.medications
+        patientName: patientData.name || patientData.patientName,
+        prescriptions: formData.medications.map(med => ({
+          medicationName: med.medicationName,
+          dosage: med.dosage,
+          instructions: med.instructions
+        }))
       };
 
-      const response = await axios.post(`${process.env.REACT_APP_API_BASE_URL}/prescriptions`, payload);
+      const response = await axios.post(
+        `${process.env.REACT_APP_API_BASE_URL}/doctor/prescriptions`,
+        payload,
+        {
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        }
+      );
       
       setSuccess('Prescription created successfully!');
       setFormData({
@@ -204,6 +217,7 @@ const DoctorDashboard = () => {
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
       setError(err.response?.data?.error || err.message || 'Failed to create prescription');
+      console.error('Error creating prescription:', err);
     } finally {
       setLoading(false);
     }
@@ -223,7 +237,12 @@ const DoctorDashboard = () => {
           <h1 className="text-3xl font-bold text-gray-800"></h1>
           <div className="flex items-center space-x-4">
             <span className="text-1xl font-bold text-gray-800">Dr {localStorage.getItem("doctorName")}</span>
-            
+            <button
+              onClick={handleLogout}
+              className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
+            >
+              Logout
+            </button>
           </div>
         </div>
 
