@@ -30,9 +30,10 @@ export default function PharmacistDashboard() {
   const [comment, setComment] = useState('');
   const [dispenseSuccess, setDispenseSuccess] = useState(false);
 
-  useEffect(() => {
-    const urlParams = new URLSearchParams(location.search);
-    const encodedPatient = urlParams.get('patient');
+    useEffect(() => {
+        // Parse patient data from URL when component mounts
+        const urlParams = new URLSearchParams(location.search);
+        const encodedPatient = urlParams.get('patient');
 
     if (encodedPatient) {
       try {
@@ -81,10 +82,28 @@ export default function PharmacistDashboard() {
         onFailure: (error) => {
           console.error('Patient verification failed:', error);
           setError('Patient verification failed. Please try again.');
+
+    }, [location.search, pharmacistInfo.id]);
+
+    const handleLogout = () => {
+        localStorage.removeItem('userRole');
+        localStorage.removeItem('token');
+        navigate('/');
+
+    };
+
+    const handleSubmitPatientID = () => {
+        if (patientID.trim()) {
+            console.log(`Dispensing medications for patient ID: ${patientID}`);
+            setShowModal(false);
+            setPatientID('');
+
+
+        } else {
+            alert('Please enter a valid patient ID.');
         }
       });
     };
-
     if (!window.SignInWithEsignetButton) {
       const script = document.createElement('script');
       script.src = process.env.REACT_APP_ESIGNET_SDK_URL;
@@ -308,6 +327,92 @@ export default function PharmacistDashboard() {
               </button>
             </div>
           </div>
+
+            {/* Alert for self-dispensing attempt */}
+            {showSelfDispensingAlert && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+                    <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
+                        <h3 className="text-xl font-semibold mb-4 text-red-600">Invalid Action</h3>
+                        <p className="mb-4">You cannot dispense medication for yourself. Please verify a different patient.</p>
+                        <div className="flex justify-end">
+                            <button
+                                onClick={() => setShowSelfDispensingAlert(false)}
+                                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition duration-200"
+                            >
+                                OK
+                            </button>
+
+                        </div>
+                        <button
+                            onClick={() => setShowInventory(false)}
+                            className="mt-4 bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition duration-200"
+                        >
+                            Close Inventory
+                        </button>
+                    </div>
+                )}
+
+                {/* Modal for Dispense Medications */}
+                {showModal && (
+                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                        <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
+                            <h3 className="text-xl font-semibold mb-4">Enter Patient's Digital ID</h3>
+                            <input
+                                type="text"
+                                value={patientID}
+                                onChange={(e) => setPatientID(e.target.value)}
+                                className="w-full p-2 border rounded-lg mb-4"
+                                placeholder="Patient's Digital ID"
+                            />
+                            <div className="flex justify-end space-x-4">
+                                <button
+                                    onClick={() => setShowModal(false)}
+                                    className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition duration-200"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={handleSubmitPatientID}
+                                    className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition duration-200"
+                                >
+                                    Submit
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Modal for Review Prescriptions */}
+                {showReviewModal && (
+                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                        <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
+                            <h3 className="text-xl font-semibold mb-4">Review Prescriptions</h3>
+                            <p className="text-gray-600 mb-4">Enter patient ID to view their prescriptions</p>
+                            <input
+                                type="text"
+                                value={reviewPatientID}
+                                onChange={(e) => setReviewPatientID(e.target.value)}
+                                className="w-full p-2 border rounded-lg mb-4"
+                                placeholder="Patient's Digital ID"
+                            />
+                            <div className="flex justify-end space-x-4">
+                                <button
+                                    onClick={() => setShowReviewModal(false)}
+                                    className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition duration-200"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={handleSubmitReviewPatientID}
+                                    className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition duration-200"
+                                >
+                                    View Prescriptions
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </div>
         </div>
       )}
     </div>

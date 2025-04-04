@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -11,12 +12,9 @@ function generateRandomString(length) {
   return randomString;
 }
 
-const TABS = {
-  CREATE: 'CREATE',
-  VIEW: 'VIEW'
-};
 
 const DoctorDashboard = () => {
+
   const location = useLocation();
   const navigate = useNavigate();
   const [patientFromUrl, setPatientFromUrl] = useState(null);
@@ -223,7 +221,9 @@ const DoctorDashboard = () => {
     }
   };
 
+
   const handleLogout = () => {
+    localStorage.removeItem('authToken');
     localStorage.removeItem('userRole');
     localStorage.removeItem('Login');
     localStorage.removeItem('patientId');
@@ -246,20 +246,15 @@ const DoctorDashboard = () => {
           </div>
         </div>
 
-        <div className="flex space-x-2 mb-6">
-          <button
-            className={`px-4 py-2 rounded-t-lg ${activeTab === TABS.CREATE ? 'bg-white border-b-2 border-blue-500' : 'bg-gray-200'}`}
-            onClick={() => setActiveTab(TABS.CREATE)}
-          >
-            Create Prescription
-          </button>
-          <button
-            className={`px-4 py-2 rounded-t-lg ${activeTab === TABS.VIEW ? 'bg-white border-b-2 border-blue-500' : 'bg-gray-200'}`}
-            onClick={() => setActiveTab(TABS.VIEW)}
-          >
-            View Prescriptions
-          </button>
-        </div>
+        {/* Main Content */}
+        <div className="p-8">
+          <div className="flex items-center space-x-4 mb-6">
+            <div>
+              <h1 className="text-2xl font-bold text-blue-800"> </h1>
+              {/* Removed the welcome message */}
+            </div>
+          </div>
+
 
         <div className="bg-white p-6 rounded-lg shadow-md">
           {selfPrescriptionWarning && (
@@ -305,57 +300,29 @@ const DoctorDashboard = () => {
               )}
 
               <form onSubmit={handleSubmit} className="space-y-4">
+
                 <div className="space-y-4">
-                  <h3 className="text-lg font-medium">Medications</h3>
-                  {formData.medications.map((med, index) => (
-                    <div key={index} className="border p-4 rounded-lg">
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-2">
+                  {messages.map(message => (
+                    <div 
+                      key={message.id} 
+                      className={`p-4 border rounded-lg ${message.read ? 'bg-white' : 'bg-blue-50'}`}
+                    >
+                      <div className="flex justify-between items-start">
                         <div>
-                          <label className="block text-gray-700 mb-1">Medication Name</label>
-                          <input
-                            type="text"
-                            name="medicationName"
-                            value={med.medicationName}
-                            onChange={(e) => handleChange(e, index)}
-                            className="w-full p-2 border rounded"
-                            required
-                          />
+                          <h3 className="font-medium text-gray-900">{message.sender}</h3>
+                          <p className="text-gray-600 mt-1">{message.content}</p>
                         </div>
-                        <div>
-                          <label className="block text-gray-700 mb-1">Dosage</label>
-                          <input
-                            type="text"
-                            name="dosage"
-                            value={med.dosage}
-                            onChange={(e) => handleChange(e, index)}
-                            className="w-full p-2 border rounded"
-                            required
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-gray-700 mb-1">Instructions</label>
-                          <input
-                            type="text"
-                            name="instructions"
-                            value={med.instructions}
-                            onChange={(e) => handleChange(e, index)}
-                            className="w-full p-2 border rounded"
-                            required
-                          />
-                        </div>
+                        <span className="text-sm text-gray-500">{message.time}</span>
                       </div>
-                      {formData.medications.length > 1 && (
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveMedication(index)}
-                          className="text-red-600 text-sm"
-                        >
-                          Remove Medication
-                        </button>
+                      {!message.read && (
+                        <span className="inline-block mt-2 px-2 py-1 text-xs font-medium text-blue-800 bg-blue-100 rounded-full">
+                          New
+                        </span>
                       )}
                     </div>
                   ))}
                 </div>
+
 
                 <div className="flex space-x-4">
                   <button
@@ -403,24 +370,28 @@ const DoctorDashboard = () => {
                     {loading ? 'Searching...' : 'Search'}
                   </button>
                 </div>
-              </div>
 
-              {loading && <p className="text-center">Loading...</p>}
-              
-              {prescriptionHistory ? (
-                <div className="space-y-4">
-                  <div className="bg-blue-50 p-4 rounded-lg">
-                    <h3 className="font-semibold text-lg">Patient Information</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
-                      <div>
-                        <p className="text-gray-600">Patient ID:</p>
-                        <p className="font-medium">{prescriptionHistory.patientId}</p>
+              </div>
+            )}
+
+            {activeTab === 'reports' && (
+              <div>
+                <h2 className="text-xl font-bold text-gray-900 mb-6">Reports & Analytics</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {reports.map(report => (
+                    <div key={report.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
+                      <div className="flex items-center justify-between mb-2">
+                        <h3 className="font-medium text-gray-900">{report.title}</h3>
+                        <span className="text-xs px-2 py-1 bg-gray-100 text-gray-600 rounded">
+                          {report.type}
+                        </span>
                       </div>
-                      <div>
-                        <p className="text-gray-600">Patient Name:</p>
-                        <p className="font-medium">{prescriptionHistory.patientName}</p>
-                      </div>
+                      <p className="text-sm text-gray-500">Generated: {report.date}</p>
+                      <button className="mt-4 text-sm text-blue-600 hover:text-blue-800">
+                        View Report →
+                      </button>
                     </div>
+
                   </div>
 
                   <h3 className="text-xl font-semibold mt-6">Prescription Records</h3>
@@ -453,12 +424,11 @@ const DoctorDashboard = () => {
                   ) : (
                     <p className="text-gray-500">No prescription records found</p>
                   )}
+
                 </div>
-              ) : (
-                !loading && <p className="text-gray-500">No prescription history found. Please search by Patient ID.</p>
-              )}
-            </>
-          )}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

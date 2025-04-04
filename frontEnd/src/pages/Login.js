@@ -28,8 +28,11 @@ function Login() {
         oidcConfig: {
           acr_values: 'mosip:idp:acr:generated-code mosip:idp:acr:biometricr:static-code mosip:idp:acr:password',
           claims_locales: 'en',
-          client_id: process.env.REACT_APP_ESIGNET_CLIENT_ID,
-          redirect_uri: process.env.REACT_APP_ESIGNET_REDIRECT_URI_LOGIN,
+
+
+          client_id: 'IIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAh6je3', // Replace with your actual client ID
+
+          redirect_uri: 'http://localhost:5000/auth/login', // Callback URL after eSignet authentication
           display: 'page',
           nonce: nonce,
           prompt: 'consent',

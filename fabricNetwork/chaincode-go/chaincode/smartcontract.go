@@ -173,6 +173,7 @@ func (s *SmartContract) RevokePrescription(
 
 	if err := ctx.GetStub().PutState(patientId, assetJSON); err != nil {
 		return fmt.Errorf("failed to update patient record: %v", err)
+
 	}
 
 	eventPayload := fmt.Sprintf(`{"type":"prescription_revoked","patientId":"%s","prescriptionId":"%s"}`,
@@ -197,10 +198,12 @@ func (s *SmartContract) GetMyPrescriptions(ctx contractapi.TransactionContextInt
 		return nil, err
 	}
 
+
 	// Retrieve all prescriptions
 	prescriptions := make([]Prescription, len(asset.Prescriptions))
 	copy(prescriptions, asset.Prescriptions)
 	return prescriptions, nil
+
 }
 
 func (s *SmartContract) FillPrescription(
@@ -275,10 +278,12 @@ func (s *SmartContract) FillPrescription(
     return targetRx, nil
 }
 
+
 func (s *SmartContract) ReadAsset(ctx contractapi.TransactionContextInterface, patientId string) (*Asset, error) {
 	assetJSON, err := ctx.GetStub().GetState(patientId)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read from world state: %v", err)
+
 	}
 	if assetJSON == nil {
 		return nil, fmt.Errorf("the asset %s does not exist", patientId)
@@ -288,6 +293,7 @@ func (s *SmartContract) ReadAsset(ctx contractapi.TransactionContextInterface, p
 	if err := json.Unmarshal(assetJSON, &asset); err != nil {
 		return nil, err
 	}
+
 	return &asset, nil
 }
 
@@ -336,9 +342,12 @@ func main() {
 	if err != nil {
 		fmt.Printf("Error creating prescription chaincode: %v", err)
 		return
+
+
 	}
 
 	if err := chaincode.Start(); err != nil {
 		fmt.Printf("Error starting prescription chaincode: %v", err)
 	}
 }
+
