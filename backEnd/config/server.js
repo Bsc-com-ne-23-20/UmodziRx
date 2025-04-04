@@ -8,7 +8,8 @@ const pharmaRoutes = require('../routes/pharmaRoutes'); // New route import
 const { connectDB } = require('../config/db'); 
 const userRoutes = require('../routes/userRoutes'); //
 const PrescriptionController = require('../controllers/prescriptionController');
-const PharmacistController = require('../controllers/pharmacistController'); // New controller import
+const PharmacistController = require('../controllers/pharmacistController'); 
+const patientRoutes = require('../routes/patientRoutes');
 
 const app = express();
 
@@ -38,6 +39,7 @@ app.use('/auth', authRoutes);
 app.use('/doctor', prescriptionRoutes); 
 app.use('/pharmacist', pharmaRoutes); 
 app.use('/admin', userRoutes); 
+app.use('/patient', patientRoutes);
 
 // Health Check with more detailed response
 app.get('/health', (req, res) => {

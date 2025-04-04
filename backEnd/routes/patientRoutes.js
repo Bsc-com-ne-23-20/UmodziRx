@@ -3,6 +3,7 @@ const PatientController = require('../controllers/patientController');
 
 const router = express.Router();
 
-router.get('/:mosip_id_hash/prescriptions', PatientController.getPrescriptions);
+// Patient prescription routes
+router.get('/prescriptions', PatientController.getPrescriptions);
 
 module.exports = router;
