@@ -1,3 +1,4 @@
+
 module github.com/hyperledger/fabric-samples/asset-transfer-basic/chaincode-go
 
 go 1.22.1
@@ -29,3 +30,4 @@ require (
 	google.golang.org/grpc v1.71.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
+

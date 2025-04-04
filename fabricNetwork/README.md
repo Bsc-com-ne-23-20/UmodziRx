@@ -24,4 +24,6 @@ This is a Go Chaincode for UmodziRx, a blockchain-based platform for managing pr
 5. Resolve dependencies: GODEBUG=gocacheverify=1 go mod download -x
 6. Build the chaincode: go build -o mychaincode.bin
     - Note: The chaincode binary will be generated in the same directory.
+
     - 'mychaincode' is the name of the chaincode binary, you can change it as per your requirement.
+
