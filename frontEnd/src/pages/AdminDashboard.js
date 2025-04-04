@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from 'axios';
 
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || "http://localhost:5000";
+const admin_BASE_URL = process.env.REACT_APP_admin_BASE_URL || "http://localhost:5000";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -24,13 +24,13 @@ const AdminDashboard = () => {
     fetchUsers();
   }, []);
 
-  // Reusable API request function
-  const apiRequest = async (method, endpoint, data = null) => {
+  // Reusable admin request function
+  const adminRequest = async (method, endpoint, data = null) => {
     try {
-      const response = await axios({ method, url: `${API_BASE_URL}${endpoint}`, data });
+      const response = await axios({ method, url: `${admin_BASE_URL}${endpoint}`, data });
       return response.data;
     } catch (error) {
-      console.error(`API Error: ${error.response?.data?.message || error.message}`);
+      console.error(`admin Error: ${error.response?.data?.message || error.message}`);
       throw error;
     }
   };
@@ -39,7 +39,7 @@ const AdminDashboard = () => {
   const fetchUsers = useCallback(async () => {
     setIsLoading(true);
     try {
-      const data = await apiRequest('get', '/api/users');
+      const data = await adminRequest('get', '/admin/users');
       setUsers(data);
     } catch (error) {
       setError('Failed to fetch users.');
@@ -67,7 +67,7 @@ const AdminDashboard = () => {
     }
 
     try {
-      await apiRequest('post', '/api/users', { digitalID, role, userName });
+      await adminRequest('post', '/admin/users', { digitalID, role, userName });
       setSuccessMessage(`User ${userName} added successfully!`);
       setTimeout(() => setSuccessMessage(""), 3000); // Clear success message after 3 seconds
       setError("");
@@ -85,8 +85,8 @@ const AdminDashboard = () => {
     const { viewUserID } = formData;
 
     try {
-      const endpoint = viewUserID ? `/api/users/${viewUserID}` : '/api/users';
-      const data = await apiRequest('get', endpoint);
+      const endpoint = viewUserID ? `/admin/users/${viewUserID}` : '/admin/users';
+      const data = await adminRequest('get', endpoint);
       setViewedUsers(viewUserID ? [data] : data);
       setError("");
     } catch (error) {
@@ -108,7 +108,7 @@ const AdminDashboard = () => {
     }
 
     try {
-      await apiRequest('delete', `/api/users/${digitalID}`);
+      await adminRequest('delete', `/admin/users/${digitalID}`);
       setSuccessMessage("User deleted successfully!");
       setTimeout(() => setSuccessMessage(""), 3000); // Clear success message after 3 seconds
       setError("");
