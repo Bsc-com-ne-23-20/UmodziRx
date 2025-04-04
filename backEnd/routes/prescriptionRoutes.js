@@ -1,11 +1,14 @@
 const express = require('express');
 const PrescriptionController = require('../controllers/prescriptionController');
-
 const router = express.Router();
 
-router.post('/', PrescriptionController.createPrescription);
-router.get('/:prescriptionId', PrescriptionController.getPrescription);
-router.put('/:prescriptionId', PrescriptionController.updatePrescription);
-router.delete('/:prescriptionId', PrescriptionController.deletePrescription);
+// POST: Create a prescription
+router.post('/prescriptions', PrescriptionController.createPrescription);
+
+// GET: Retrieve a prescription by patientId (query param)
+router.get('/prescriptions', PrescriptionController.getPrescription); //
+
+router.get('/verifypatient', PrescriptionController.verifypatient);
 
 module.exports = router;
+
