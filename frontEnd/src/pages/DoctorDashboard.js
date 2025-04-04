@@ -1,52 +1,240 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import { useNavigate, useLocation } from 'react-router-dom';
+
+// Generate random nonce and state
+function generateRandomString(length) {
+  const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  let randomString = '';
+  for (let i = 0; i < length; i++) {
+    randomString += charset.charAt(Math.floor(Math.random() * charset.length));
+  }
+  return randomString;
+}
+
 
 const DoctorDashboard = () => {
-  const [activeTab, setActiveTab] = useState('prescriptions');
-  const [doctorData, setDoctorData] = useState({
-    name: "Dr. Sarah Johnson",
-    specialty: "",
-    todayAppointments: 8
-  });
-  const [showDropdown, setShowDropdown] = useState(false);
+
+  const location = useLocation();
   const navigate = useNavigate();
-
-  // Sample dashboard metrics data
-  const [metrics, setMetrics] = useState({
-    prescriptionsToday: 12,
-    patientCompliance: 82,
-    interactionsFlagged: 2
+  const [patientFromUrl, setPatientFromUrl] = useState(null);
+  const [activeTab, setActiveTab] = useState(TABS.CREATE);
+  const [formData, setFormData] = useState({
+    medications: [{ medicationName: '', dosage: '', instructions: '' }]
   });
+  const [patientIdSearch, setPatientIdSearch] = useState(localStorage.getItem('patientId') || '');
+  const [prescriptionHistory, setPrescriptionHistory] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(null);
+  const [verifiedPatient, setVerifiedPatient] = useState(null);
+  const [selfPrescriptionWarning, setSelfPrescriptionWarning] = useState(false);
 
-  // Sample messages data
-  const [messages, setMessages] = useState([
-    { id: 1, sender: "Nurse Williams", content: "Patient in room 3 needs pain medication", time: "10:30 AM", read: false },
-    { id: 2, sender: "Admin Team", content: "Your schedule for next week has been updated", time: "Yesterday", read: true },
-    { id: 3, sender: "Dr. Rodriguez", content: "Let's discuss the Smith case at lunch", time: "Monday", read: true }
-  ]);
+  useEffect(() => {
+    // Parse patient data from URL when component mounts
+    const urlParams = new URLSearchParams(window.location.search);
+    const encodedPatient = urlParams.get('patient');
 
-  // Sample reports data
-  const [reports, setReports] = useState([
-    { id: 1, title: "Monthly Patient Statistics", date: "May 2023", type: "Statistics" },
-    { id: 2, title: "Prescription Compliance Report", date: "April 2023", type: "Compliance" },
-    { id: 3, title: "Clinic Performance Metrics", date: "Q1 2023", type: "Performance" }
-  ]);
+    if (encodedPatient) {
+      try {
+        // Decode the base64 URL-safe string
+        const decodedString = atob(encodedPatient.replace(/-/g, '+').replace(/_/g, '/'));
+        const patient = JSON.parse(decodedString);
+        
+        // Check if patient ID matches doctor ID
+        const doctorId = localStorage.getItem('doctorId');
+        if (patient.id === doctorId) {
+          setSelfPrescriptionWarning(true);
+          setTimeout(() => setSelfPrescriptionWarning(false), 2000);
+          setPatientFromUrl(null);
+        } else {
+          setPatientFromUrl(patient);
+        }
+      } catch (e) {
+        console.error('Error parsing patient data:', e);
+      }
+    }
+
+    // Initialize eSignet button when component mounts
+    const nonce = generateRandomString(16);
+    const state = generateRandomString(16);
+
+    const renderButton = () => {
+      window.SignInWithEsignetButton?.init({
+        oidcConfig: {
+          acr_values: 'mosip:idp:acr:generated-code mosip:idp:acr:biometric:static-code',
+          claims_locales: 'en',
+          client_id: 'IIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAh6je3',
+          redirect_uri: 'http://localhost:5000/doctor/verifypatient',
+          display: 'page',
+          nonce: nonce,
+          prompt: 'consent',
+          scope: 'openid profile',
+          state: state,
+          ui_locales: 'en',
+          authorizeUri: 'http://localhost:3000/authorize',
+        },
+        buttonConfig: {
+          labelText: 'Verify Patient with eSignet',
+          shape: 'soft_edges',
+          theme: 'filled_blue',
+          type: 'standard'
+        },
+        signInElement: document.getElementById('esignet-verify-button'),
+        onSuccess: (response) => {
+          console.log('Patient verification successful:', response);
+          const verifiedPatientData = {
+            patientId: response.sub || response.patientId,
+            patientName: response.name || 'Verified Patient',
+            birthday: response.birthdate || 'N/A'
+          };
+
+          // Check if verified patient is the doctor
+          const doctorId = localStorage.getItem('doctorId');
+          if (verifiedPatientData.patientId === doctorId) {
+            setSelfPrescriptionWarning(true);
+            setTimeout(() => setSelfPrescriptionWarning(false), 2000);
+            setVerifiedPatient(null);
+          } else {
+            setVerifiedPatient(verifiedPatientData);
+            localStorage.setItem('patientId', verifiedPatientData.patientId);
+            setPatientIdSearch(verifiedPatientData.patientId);
+          }
+        },
+        onFailure: (error) => {
+          console.error('Patient verification failed:', error);
+          setError('Patient verification failed. Please try again.');
+        }
+      });
+    };
+
+    if (!window.SignInWithEsignetButton) {
+      const script = document.createElement('script');
+      script.src = 'https://esignet.sdk.url';
+      script.onload = renderButton;
+      document.body.appendChild(script);
+    } else {
+      renderButton();
+    }
+  }, [activeTab]);
+
+  const fetchPrescription = async () => {
+    if (!patientIdSearch) {
+      setError('No patient ID found');
+      setTimeout(() => setError(null), 2000);
+      return;
+    }
+
+    // Check if trying to view own prescriptions
+    const doctorId = localStorage.getItem('doctorId');
+    if (patientIdSearch === doctorId) {
+      setSelfPrescriptionWarning(true);
+      setTimeout(() => setSelfPrescriptionWarning(false), 2000);
+      setPrescriptionHistory(null);
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await axios.get('http://localhost:5000/prescriptions', {
+        params: { patientId: patientIdSearch }
+      });
+      setPrescriptionHistory(response.data.data);
+    } catch (err) {
+      setError(err.response?.data?.error || 'Failed to fetch prescription');
+      setTimeout(() => setError(null), 3000);
+      setPrescriptionHistory(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleChange = (e, index) => {
+    const { name, value } = e.target;
+    const medications = [...formData.medications];
+    medications[index][name] = value;
+    setFormData({ ...formData, medications });
+  };
+
+  const handleAddMedication = () => {
+    setFormData({
+      ...formData,
+      medications: [...formData.medications, { medicationName: '', dosage: '', instructions: '' }]
+    });
+  };
+
+  const handleRemoveMedication = (index) => {
+    const medications = [...formData.medications];
+    medications.splice(index, 1);
+    setFormData({ ...formData, medications });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    // Check for self-prescription
+    const doctorId = localStorage.getItem('doctorId');
+    const patientData = verifiedPatient || patientFromUrl;
+    
+    if (!patientData) {
+      setError('Please verify patient first');
+      return;
+    }
+
+    if (patientData.id === doctorId || patientData.patientId === doctorId) {
+      setSelfPrescriptionWarning(true);
+      setTimeout(() => setSelfPrescriptionWarning(false), 2000);
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    setSuccess(null);
+
+    try {
+      const payload = {
+        patientId: patientData.id || patientData.patientId,
+        patientName: patientData.name || patientData.patientName,
+        doctorId: doctorId,
+        prescriptions: formData.medications
+      };
+
+      const response = await axios.post('http://localhost:5000/prescriptions', payload);
+      
+      setSuccess('Prescription created successfully!');
+      setFormData({
+        medications: [{ medicationName: '', dosage: '', instructions: '' }]
+      });
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (err) {
+      setError(err.response?.data?.error || err.message || 'Failed to create prescription');
+    } finally {
+      setLoading(false);
+    }
+  };
+
 
   const handleLogout = () => {
     localStorage.removeItem('authToken');
     localStorage.removeItem('userRole');
-    navigate('/login');
+    localStorage.removeItem('Login');
+    localStorage.removeItem('patientId');
+    navigate('/');
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-teal-50 to-blue-50 p-4">
-      <div className="max-w-7xl mx-auto bg-white/90 backdrop-blur-sm rounded-xl shadow-xl overflow-hidden">
-        {/* Doctor Profile - Top Right Corner */}
-        <div className="absolute top-6 right-6">
-          <div className="relative">
-            <button 
-              onClick={() => setShowDropdown(!showDropdown)}
-              className="text-teal-800 font-medium hover:text-teal-900 focus:outline-none flex items-center group"
+    <div className="min-h-screen bg-gray-100 p-6">
+      <div className="max-w-6xl mx-auto">
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-3xl font-bold text-gray-800">modziRx</h1>
+          <div className="flex items-center space-x-4">
+            <span className="text-2xl font-bold text-gray-800">Dr {localStorage.getItem("doctorName")}</span>
+            <button
+              onClick={handleLogout}
+              className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition"
+
             >
               <span className="mr-2">{doctorData.name}</span>
               <div className="w-8 h-8 rounded-full bg-teal-100 group-hover:bg-teal-200 transition-colors flex items-center justify-center overflow-hidden">
@@ -77,117 +265,52 @@ const DoctorDashboard = () => {
             </div>
           </div>
 
-          {/* Quick Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-              <h3 className="text-lg font-medium text-gray-900">Today's Appointments</h3>
-              <p className="mt-2 text-3xl font-bold text-blue-600">{doctorData.todayAppointments}</p>
-            </div>
-            <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-              <h3 className="text-lg font-medium text-gray-900">Prescriptions Today</h3>
-              <p className="mt-2 text-3xl font-bold text-green-600">{metrics.prescriptionsToday}</p>
-            </div>
-            <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-              <h3 className="text-lg font-medium text-gray-900">Patient Compliance</h3>
-              <p className="mt-2 text-3xl font-bold text-yellow-600">{metrics.patientCompliance}%</p>
-            </div>
-          </div>
 
-          {/* Navigation Tabs */}
-          <div className="border-b border-gray-200 mb-6">
-            <nav className="-mb-px flex space-x-8">
-              <button
-                onClick={() => setActiveTab('prescriptions')}
-                className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                  activeTab === 'prescriptions' 
-                    ? 'border-blue-500 text-blue-600' 
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                Prescriptions
-              </button>
-              <button
-                onClick={() => setActiveTab('patients')}
-                className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                  activeTab === 'patients' 
-                    ? 'border-blue-500 text-blue-600' 
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                Patients
-              </button>
-              <button
-                onClick={() => setActiveTab('messages')}
-                className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                  activeTab === 'messages' 
-                    ? 'border-blue-500 text-blue-600' 
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                Messages
-              </button>
-              <button
-                onClick={() => setActiveTab('reports')}
-                className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                  activeTab === 'reports' 
-                    ? 'border-blue-500 text-blue-600' 
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                Reports
-              </button>
-            </nav>
-          </div>
+        <div className="bg-white p-6 rounded-lg shadow-md">
+          {selfPrescriptionWarning && (
+            <div className="mb-4 p-3 bg-red-400 text-white rounded transition-opacity duration-300">
+              You cannot create or view prescriptions for yourself.
+            </div>
+          )}
 
-          {/* Tab Content */}
-          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-            {activeTab === 'prescriptions' && (
-              <div>
-                <h2 className="text-xl font-bold text-gray-900 mb-6">Prescription Management</h2>
-                <div className="space-y-6">
-                  <div className="border border-gray-200 rounded-lg p-4">
-                    <h3 className="font-medium text-lg mb-3">Create New Prescription</h3>
-                    <button className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
-                      New Prescription
-                    </button>
-                  </div>
-                  <div className="border border-gray-200 rounded-lg p-4">
-                    <h3 className="font-medium text-lg mb-3">Recent Prescriptions</h3>
-                    <div className="space-y-3">
-                      <div className="flex justify-between items-center p-3 bg-gray-50 rounded">
-                        <div>
-                          <p className="font-medium">John Doe</p>
-                          <p className="text-sm text-gray-500">Paracetamol 500mg</p>
-                        </div>
-                        <span className="text-sm text-gray-500">Today, 10:30 AM</span>
-                      </div>
+          {activeTab === TABS.CREATE ? (
+            <>
+              <h2 className="text-2xl font-semibold mb-4">Create Prescription</h2>
+              {error && <div className="mb-4 p-3 bg-red-100 text-red-700 rounded">{error}</div>}
+              {success && <div className="mb-4 p-3 bg-green-100 text-green-700 rounded">{success}</div>}
+              
+              <div className="mb-6 flex items-center">
+                <div id="esignet-verify-button" className="mr-4"></div>
+              </div>
+
+              {!selfPrescriptionWarning && (verifiedPatient || patientFromUrl) && (
+                <div className="bg-blue-50 p-4 rounded-lg mb-6">
+                  <h3 className="font-semibold text-lg mb-2">Patient Information</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <p className="text-gray-600">Patient ID:</p>
+                      <p className="font-medium">
+                        {verifiedPatient?.patientId || patientFromUrl?.id}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-gray-600">Patient Name:</p>
+                      <p className="font-medium">
+                        {verifiedPatient?.patientName || patientFromUrl?.name}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-gray-600">Birthday:</p>
+                      <p className="font-medium">
+                        {verifiedPatient?.birthday || patientFromUrl?.birthday || 'N/A'}
+                      </p>
                     </div>
                   </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            {activeTab === 'patients' && (
-              <div>
-                <h2 className="text-xl font-bold text-gray-900 mb-6">Patient Management</h2>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <input
-                      type="text"
-                      placeholder="Search patients..."
-                      className="border border-gray-300 rounded-md px-4 py-2 w-full max-w-md"
-                    />
-                    <button className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
-                      Add New Patient
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
+              <form onSubmit={handleSubmit} className="space-y-4">
 
-            {activeTab === 'messages' && (
-              <div>
-                <h2 className="text-xl font-bold text-gray-900 mb-6">Messages</h2>
                 <div className="space-y-4">
                   {messages.map(message => (
                     <div 
@@ -209,6 +332,55 @@ const DoctorDashboard = () => {
                     </div>
                   ))}
                 </div>
+
+
+                <div className="flex space-x-4">
+                  <button
+                    type="button"
+                    onClick={handleAddMedication}
+                    className="bg-gray-200 px-4 py-2 rounded hover:bg-gray-300"
+                  >
+                    Add Medication
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={loading || (!verifiedPatient && !patientFromUrl) || selfPrescriptionWarning}
+                    className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:bg-blue-300"
+                  >
+                    {loading ? 'Submitting...' : 'Create Prescription'}
+                  </button>
+                </div>
+              </form>
+            </>
+          ) : (
+            <>
+              <h2 className="text-2xl font-semibold mb-4">View Patient Prescription History</h2>
+              {error && <div className="mb-4 p-3 bg-red-100 text-red-700 rounded">{error}</div>}
+              
+              <div className="mb-6">
+                <div className="flex space-x-2">
+                  <input
+                    type="text"
+                    value={verifiedPatient?.patientId || patientFromUrl?.id || patientIdSearch}
+                    readOnly
+                    className="flex-1 p-2 border rounded bg-gray-100"
+                    placeholder={!verifiedPatient && !patientFromUrl ? "Please verify patient first" : ""}
+                  />
+                  <button
+                    onClick={fetchPrescription}
+                    disabled={loading || !(verifiedPatient?.patientId || patientFromUrl?.id || patientIdSearch)}
+                    className={`px-4 py-2 rounded text-white ${
+                      loading 
+                        ? 'bg-blue-300' 
+                        : (verifiedPatient?.patientId || patientFromUrl?.id || patientIdSearch) 
+                          ? 'bg-blue-600 hover:bg-blue-700' 
+                          : 'bg-gray-400 cursor-not-allowed'
+                    }`}
+                  >
+                    {loading ? 'Searching...' : 'Search'}
+                  </button>
+                </div>
+
               </div>
             )}
 
@@ -229,7 +401,40 @@ const DoctorDashboard = () => {
                         View Report →
                       </button>
                     </div>
-                  ))}
+
+                  </div>
+
+                  <h3 className="text-xl font-semibold mt-6">Prescription Records</h3>
+                  
+                  {prescriptionHistory.prescriptions?.length > 0 ? (
+                    prescriptionHistory.prescriptions.map((prescription, index) => (
+                      <div key={index} className="border rounded-lg p-4">
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                          <div>
+                            <p className="text-gray-600">Medication:</p>
+                            <p className="font-medium">{prescription.medicationName}</p>
+                          </div>
+                          <div>
+                            <p className="text-gray-600">Dosage:</p>
+                            <p className="font-medium">{prescription.dosage}</p>
+                          </div>
+                          <div>
+                            <p className="text-gray-600">Instructions:</p>
+                            <p className="font-medium">{prescription.instructions}</p>
+                          </div>
+                          <div>
+                            <p className="text-gray-600">Prescribed On:</p>
+                            <p className="font-medium">
+                              {new Date(prescription.timestamp).toLocaleString()}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-gray-500">No prescription records found</p>
+                  )}
+
                 </div>
               </div>
             )}

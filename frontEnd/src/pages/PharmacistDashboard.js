@@ -1,40 +1,112 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import axios from 'axios';
+
+// generate random nonce and state
+function generateRandomString(length) {
+  const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  let randomString = '';
+  for (let i = 0; i < length; i++) {
+    randomString += charset.charAt(Math.floor(Math.random() * charset.length));
+  }
+  return randomString;
+}
 
 export default function PharmacistDashboard() {
     const navigate = useNavigate();
-    const [showModal, setShowModal] = useState(false);
-    const [showReviewModal, setShowReviewModal] = useState(false);
-    const [showInventory, setShowInventory] = useState(false);
-    const [patientID, setPatientID] = useState('');
-    const [reviewPatientID, setReviewPatientID] = useState('');
-    const [showDropdown, setShowDropdown] = useState(false);
-    const pharmacistName = "Pharmacist Name";
 
-    // Sample inventory data
-    const inventory = [
-        { id: 1, name: "Paracetamol 500mg", stock: 142, threshold: 50 },
-        { id: 2, name: "Amoxicillin 250mg", stock: 87, threshold: 30 },
-        { id: 3, name: "Ibuprofen 200mg", stock: 203, threshold: 75 },
-        { id: 4, name: "Omeprazole 20mg", stock: 56, threshold: 25 },
-        { id: 5, name: "Atorvastatin 40mg", stock: 34, threshold: 20 }
-    ];
+    const location = useLocation();
+    const [showModal, setShowModal] = useState(false);
+    const [patientID, setPatientID] = useState('');
+    const [verifiedPatient, setVerifiedPatient] = useState(null);
+    const [pharmacistInfo, setPharmacistInfo] = useState({
+        id: '123456',
+        email: 'pharmacy@gmail.com',
+        name: 'Tadala Cleoz',
+        birthday: '1987/11/25',
+        role: 'pharmacist'
+    });
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
+    const [showSelfDispensingAlert, setShowSelfDispensingAlert] = useState(false);
+
+    useEffect(() => {
+        // Parse patient data from URL when component mounts
+        const urlParams = new URLSearchParams(location.search);
+        const encodedPatient = urlParams.get('patient');
+
+        if (encodedPatient) {
+            try {
+                const decodedString = atob(encodedPatient.replace(/-/g, '+').replace(/_/g, '/'));
+                const patient = JSON.parse(decodedString);
+
+                console.log('received verified patient:', patient)
+                
+                // Check if patient ID matches pharmacist ID
+                if (patient.id === localStorage.getItem('pharmaId')) {
+                    setShowSelfDispensingAlert(true);
+                    setVerifiedPatient(null);
+                } else {
+                    setVerifiedPatient(patient);
+                    setShowModal(true);
+                }
+                console.log('Patient from URL:', patient);
+            } catch (e) {
+                console.error('Error parsing patient data:', e);
+            }
+        }
+
+        // Initialize eSignet button
+        const nonce = generateRandomString(16);
+        const state = generateRandomString(16);
+
+        const renderButton = () => {
+            window.SignInWithEsignetButton?.init({
+                oidcConfig: {
+                    acr_values: 'mosip:idp:acr:generated-code mosip:idp:acr:biometric:static-code',
+                    claims_locales: 'en',
+                    client_id: 'IIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAh6je3',
+                    redirect_uri: 'http://localhost:5000/pharmacist/veripatient',
+                    display: 'page',
+                    nonce: nonce,
+                    prompt: 'consent',
+                    scope: 'openid profile',
+                    state: state,
+                    ui_locales: 'en',
+                    authorizeUri: 'http://localhost:3000/authorize',
+                },
+                buttonConfig: {
+                    labelText: 'Verify Patient with eSignet',
+                    shape: 'soft_edges',
+                    theme: 'filled_blue',
+                    type: 'standard'
+                },
+                signInElement: document.getElementById('esignet-verify-button'),
+                onSuccess: (response) => {
+                    console.log('Patient verification successful:', response);
+                },
+                onFailure: (error) => {
+                    console.error('Patient verification failed:', error);
+                    setError('Patient verification failed. Please try again.');
+                }
+            });
+        };
+
+        if (!window.SignInWithEsignetButton) {
+            const script = document.createElement('script');
+            script.src = 'https://esignet.sdk.url';
+            script.onload = renderButton;
+            document.body.appendChild(script);
+        } else {
+            renderButton();
+        }
+    }, [location.search, pharmacistInfo.id]);
 
     const handleLogout = () => {
         localStorage.removeItem('userRole');
+        localStorage.removeItem('token');
         navigate('/');
-    };
 
-    const handleDispenseMedications = () => {
-        setShowModal(true);
-    };
-
-    const handleReviewPrescriptions = () => {
-        setShowReviewModal(true);
-    };
-
-    const handleShowInventory = () => {
-        setShowInventory(true);
     };
 
     const handleSubmitPatientID = () => {
@@ -42,116 +114,128 @@ export default function PharmacistDashboard() {
             console.log(`Dispensing medications for patient ID: ${patientID}`);
             setShowModal(false);
             setPatientID('');
+
+
         } else {
             alert('Please enter a valid patient ID.');
         }
     };
 
-    const handleSubmitReviewPatientID = () => {
-        if (reviewPatientID.trim()) {
-            console.log(`Reviewing prescriptions for patient ID: ${reviewPatientID}`);
-            setShowReviewModal(false);
-            setReviewPatientID('');
-        } else {
-            alert('Please enter a valid patient ID.');
+
+    const fetchPrescriptions = async () => {
+        if (!verifiedPatient?.id) {
+            setError('No verified patient found');
+            return;
+        }
+
+        setLoading(true);
+        try {
+            const response = await axios.get('http://localhost:5000/pharmacist/prescriptions', {
+                params: { patientId: verifiedPatient.id }
+            });
+            console.log('Prescriptions:', response.data);
+        } catch (err) {
+            setError(err.response?.data?.error || 'Failed to fetch prescriptions');
+        } finally {
+            setLoading(false);
         }
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-teal-50 to-blue-50 p-4">
-            <div className="max-w-6xl mx-auto bg-white/90 backdrop-blur-sm rounded-xl shadow-xl overflow-hidden p-8 relative">
-                {/* Pharmacist Name - Top Right Corner */}
-                <div className="absolute top-6 right-6">
-                    <div className="relative">
-                        <button 
-                            onClick={() => setShowDropdown(!showDropdown)}
-                            className="text-teal-800 font-medium hover:text-teal-900 focus:outline-none flex items-center group"
-                        >
-                            <span className="mr-2">{pharmacistName}</span>
-                            <div className="w-8 h-8 rounded-full bg-teal-100 group-hover:bg-teal-200 transition-colors flex items-center justify-center overflow-hidden">
-                                {/* Profile image placeholder - blank for now */}
-                                <div className="w-full h-full bg-gray-200"></div>
-                            </div>
-                        </button>
-                        
-                        {showDropdown && (
-                            <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-1 z-10 border border-gray-200">
-                                <button
-                                    onClick={handleLogout}
-                                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                                >
-                                    Logout
-                                </button>
-                            </div>
-                        )}
-                    </div>
-                </div>
+        <div className="min-h-screen bg-gray-100 p-6">
+            <div className="max-w-6xl mx-auto">
+                <div className="flex justify-between items-center mb-8">
+                    <h1 className="text-3xl font-bold text-gray-800">modziRx - Pharmacist Portal</h1>
+                    <div className="flex items-center space-x-4">
 
-                <p className="text-gray-700 text-lg mb-8">Welcome, Pharmacist! Manage prescriptions here.</p>
+                        <button
+                            onClick={handleLogout}
+                            className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition"
+                        >
+                            Logout
 
-                <div className="mt-8">
-                    <h3 className="text-2xl font-semibold mb-6">Pharmacist Duties</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {/* Dispense Medications */}
-                        <button
-                            onClick={handleDispenseMedications}
-                            className="bg-green-100 text-green-700 p-6 rounded-lg hover:bg-green-200 transition duration-200 flex flex-col items-center justify-center"
-                        >
-                            <span className="text-4xl mb-2">💊</span>
-                            <span className="text-lg font-medium">Dispense Medications</span>
-                        </button>
-                        
-                        {/* Review Prescriptions */}
-                        <button
-                            onClick={handleReviewPrescriptions}
-                            className="bg-blue-100 text-blue-700 p-6 rounded-lg hover:bg-blue-200 transition duration-200 flex flex-col items-center justify-center"
-                        >
-                            <span className="text-4xl mb-2">📋</span>
-                            <span className="text-lg font-medium">Review Prescriptions</span>
-                        </button>
-                        
-                        {/* Manage Inventory */}
-                        <button
-                            onClick={handleShowInventory}
-                            className="bg-purple-100 text-purple-700 p-6 rounded-lg hover:bg-purple-200 transition duration-200 flex flex-col items-center justify-center"
-                        >
-                            <span className="text-4xl mb-2">🧪</span>
-                            <span className="text-lg font-medium">Manage Inventory</span>
                         </button>
                     </div>
                 </div>
 
-                {/* Inventory Display */}
-                {showInventory && (
-                    <div className="mt-8">
-                        <h3 className="text-xl font-semibold mb-4">Current Inventory</h3>
-                        <div className="overflow-x-auto">
-                            <table className="min-w-full border-collapse">
-                                <thead>
-                                    <tr className="bg-gray-50">
-                                        <th className="px-4 py-2 text-left border-b">Medication</th>
-                                        <th className="px-4 py-2 text-left border-b">Current Stock</th>
-                                        <th className="px-4 py-2 text-left border-b">Status</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {inventory.map(item => (
-                                        <tr key={item.id} className="hover:bg-gray-50">
-                                            <td className="px-4 py-2 border-b">{item.name}</td>
-                                            <td className="px-4 py-2 border-b">{item.stock}</td>
-                                            <td className="px-4 py-2 border-b">
-                                                <span className={`px-2 py-1 text-xs rounded-full ${
-                                                    item.stock < item.threshold 
-                                                        ? 'bg-red-100 text-red-800' 
-                                                        : 'bg-green-100 text-green-800'
-                                                }`}>
-                                                    {item.stock < item.threshold ? 'Low Stock' : 'In Stock'}
-                                                </span>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+
+                <div className="bg-white p-6 rounded-lg shadow-md">
+                    <h2 className="text-2xl font-semibold mb-4">Pharmacist Dashboard</h2>
+                    
+                    {/* Pharmacist Information */}
+                    <div className="bg-blue-50 p-4 rounded-lg mb-6">
+                        <h3 className="font-semibold text-lg mb-2">Pharmacist Information</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <p className="text-gray-600">ID:</p>
+                                <p className="font-medium">{localStorage.getItem('pharmaId')}</p>
+                            </div>
+                            <div>
+                                <p className="text-gray-600">Name:</p>
+                                <p className="font-medium">{localStorage.getItem('pharmaName')}</p>
+                            </div>
+                            <div>
+                                <p className="text-gray-600">Email:</p>
+                                <p className="font-medium">{localStorage.getItem('phamarEmail')}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Patient Verification Section */}
+                    <div className="mb-6 flex items-start">
+                        <div id="esignet-verify-button" className="mr-4"></div>
+                        <p className="text-sm text-gray-500 mt-2">
+                            Verify patient identity using eSignet before dispensing medications
+                        </p>
+                    </div>
+
+                    {/* Verified Patient Information - Only shown if not pharmacist themselves */}
+                    {verifiedPatient && (
+                        <div className="bg-green-50 p-4 rounded-lg mb-6">
+                            <h3 className="font-semibold text-lg mb-2">Verified Patient Information</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div>
+                                    <p className="text-gray-600">Patient ID:</p>
+                                    <p className="font-medium">{verifiedPatient.id}</p>
+                                </div>
+                                <div>
+                                    <p className="text-gray-600">Patient Name:</p>
+                                    <p className="font-medium">{verifiedPatient.name}</p>
+                                </div>
+                                <div>
+                                    <p className="text-gray-600">Birthday:</p>
+                                    <p className="font-medium">{verifiedPatient.birthday}</p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={fetchPrescriptions}
+                                disabled={loading}
+                                className="mt-4 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:bg-blue-300"
+                            >
+                                {loading ? 'Loading...' : 'Fetch Prescriptions'}
+                            </button>
+                        </div>
+                    )}
+
+                    {error && <div className="mb-4 p-3 bg-red-100 text-red-700 rounded">{error}</div>}
+                </div>
+            </div>
+
+
+            {/* Alert for self-dispensing attempt */}
+            {showSelfDispensingAlert && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+                    <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
+                        <h3 className="text-xl font-semibold mb-4 text-red-600">Invalid Action</h3>
+                        <p className="mb-4">You cannot dispense medication for yourself. Please verify a different patient.</p>
+                        <div className="flex justify-end">
+                            <button
+                                onClick={() => setShowSelfDispensingAlert(false)}
+                                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition duration-200"
+                            >
+                                OK
+                            </button>
+
                         </div>
                         <button
                             onClick={() => setShowInventory(false)}
