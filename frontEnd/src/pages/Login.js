@@ -1,7 +1,15 @@
-import React, { useState, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
-import eSignetIcon from "./esignet.png";
+import { useNavigate } from 'react-router-dom';
+import React, { useState, useCallback, useEffect } from "react";
 import prescriptionImage from "./Prescription_medication.jpeg";
+
+function generateRandomString(length) {
+  const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  let randomString = '';
+  for (let i = 0; i < length; i++) {
+    randomString += charset.charAt(Math.floor(Math.random() * charset.length));
+  }
+  return randomString;
+}
 
 function Login() {
   const navigate = useNavigate();
@@ -9,7 +17,38 @@ function Login() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
+  useEffect(() => {
+    const nonce = generateRandomString(16);
+    const state = generateRandomString(16);
+
+    const renderButton = () => {
+      window.SignInWithEsignetButton?.init({
+        oidcConfig: {
+          acr_values: 'mosip:idp:acr:generated-code mosip:idp:acr:biometricr:static-code mosip:idp:acr:password',
+          claims_locales: 'en',
+          client_id: process.env.REACT_APP_ESIGNET_CLIENT_ID,
+          redirect_uri: process.env.REACT_APP_ESIGNET_REDIRECT_URI_LOGIN,
+          display: 'page',
+          nonce: nonce,
+          prompt: 'consent',
+          scope: 'openid profile',
+          state: state,
+          ui_locales: 'en',
+          authorizeUri: process.env.REACT_APP_ESIGNET_AUTHORIZE_URI,
+        },
+        buttonConfig: {
+          labelText: 'Sign in with eSignet',
+          shape: 'soft_edges',
+          theme: 'filled_orange',
+          type: 'standard'
+        },
+        signInElement: document.getElementById('esignet-button'),
+      });
+    };
+    renderButton();
+  }, [navigate]);
 
   const handleLoginSubmit = useCallback(async (e) => {
     e.preventDefault();
@@ -17,7 +56,7 @@ function Login() {
     setError("");
   
     try {
-      const response = await fetch("http://localhost:5000/auth/login", {
+      const response = await fetch(`${process.env.REACT_APP_API_BASE_URL}/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password }),
@@ -29,18 +68,12 @@ function Login() {
       }
   
       const data = await response.json();
-      const { token, redirect } = data; // Get `redirect` from backend response
+      const { token, redirect, role } = data;
   
-      // Store authentication details
       localStorage.setItem("token", token);
-      console.log("Token stored:", localStorage.getItem("token"));
-
-  
-      // Redirect user to the correct dashboard
-
-      navigate(redirect || "/dashboard");
+      localStorage.setItem("userRole", role);
+      navigate(redirect);
       
-
     } catch (error) {
       setError("Login failed. Please check your credentials.");
       console.error(error);
@@ -48,33 +81,24 @@ function Login() {
       setLoading(false);
     }
   }, [username, password, navigate]);
-  
-
-
-
-
-
-
 
   return (
     <div className="min-h-screen bg-teal-50 flex items-center justify-center px-4">
       <div className="grid grid-cols-1 lg:grid-cols-[1.5fr_1fr] gap-8 max-w-4xl w-full">
-        {/* Left Section - Prescription Image and MOSIP Info */}
         <div className="flex flex-col items-center justify-center space-y-8 bg-white shadow-md rounded-2xl p-8">
           <img 
             src={prescriptionImage} 
             alt="Prescription and Medication" 
-            className="w-64 h-64 object-cover rounded-full" // Enlarged avatar
+            className="w-64 h-64 object-cover rounded-full"
           />
           <div className="text-center"> 
             <h2 className="block text-teal-600 dark:text-teal-400 text-3xl font-bold mt-4">UmodziRx</h2>
-            <p className=" block text-lg text-teal-600 max-w-xs font-bold mt-2">
+            <p className="block text-lg text-teal-600 max-w-xs font-bold mt-2">
               Secure Prescription Management.
             </p>
           </div>
         </div>
 
-        {/* Right Section - Login Form */}
         <div className="bg-white shadow-lg rounded-2xl p-8">
           <h2 className="text-2xl font-bold mb-4 text-teal-700 text-center">Login</h2>
           
@@ -106,17 +130,26 @@ function Login() {
               <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
                 Password
               </label>
-              <input
-                type="password"
-                id="password"
-                aria-label="Password"
-                aria-required="true"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500 bg-gray-50"
-                placeholder="Enter password"
-                required
-              />
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  id="password"
+                  aria-label="Password"
+                  aria-required="true"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500 bg-gray-50"
+                  placeholder="Enter password"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-sm leading-5"
+                >
+                  {showPassword ? "🙈" : "👁️"}
+                </button>
+              </div>
             </div>
 
             <button
@@ -129,34 +162,23 @@ function Login() {
             </button>
           </form>
 
-          {/* Divider with "or" */}
+          <div className="mt-3 text-right">
+            <button
+              onClick={() => navigate("/forgot-password")}
+              className="text-sm text-teal-600 hover:underline"
+            >
+              Forgot Password?
+            </button>
+          </div>
+
           <div className="flex items-center my-6">
             <hr className="flex-grow border-t border-gray-300" />
             <span className="mx-4 text-sm text-gray-500">or</span>
             <hr className="flex-grow border-t border-gray-300" />
           </div>
 
-          {/* Login with eSignet Button */}
           <div className="text-center">
-            <button
-              className="w-full bg-gray-200 text-teal-700 px-3 py-2 rounded-lg hover:bg-gray-300 transition duration-200 focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 flex items-center justify-center"
-              onClick={() => alert("Login with eSignet is under development")}
-            >
-              <img src={eSignetIcon} alt="eSignet" className="w-6 h-6 mr-2" />
-              Login with eSignet
-            </button>
-          </div>
-
-          <div className="mt-4 text-center">
-            <p className="text-sm text-gray-600">
-              New user? {" "}
-              <button
-                onClick={() => navigate("/register")}
-                className="text-teal-600 hover:underline"
-              >
-                Create credentials
-              </button>
-            </p>
+            <div id="esignet-button"></div>
           </div>
         </div>
       </div>

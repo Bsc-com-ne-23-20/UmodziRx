@@ -1,48 +1,70 @@
-const { pgClient } = require('../config/db');
+const axios = require('axios');
 
-class Prescription {
-  static async create(prescriptionData) {
-    const { patient_id, medication, dosage, instructions, ipfs_cid, metadata_hash } = prescriptionData;
-    const query = `
-      INSERT INTO prescriptions (patient_id, medication, dosage, instructions, ipfs_cid, metadata_hash)
-      VALUES ($1, $2, $3, $4, $5, $6)
-      RETURNING *;
-    `;
-    const values = [patient_id, medication, dosage, instructions, ipfs_cid, metadata_hash];
-    const result = await pgClient.query(query, values);
-    return result.rows[0];
+class PrescriptionController {
+  static async createPrescription(req, res) {
+    const { doctor_name, patient_id, medication, dosage, instructions } = req.body;
+    
+    const requestData = {
+      headers: {
+        type: "SendTransaction",
+        signer: "user1",
+        channel: "default-channel",
+        chaincode: "chaincode_js"
+      },
+      func: "issuePrescription",
+      args: [
+        `pres-${Date.now()}`, // Unique Prescription ID
+        doctor_name,
+        patient_id,
+        medication,
+        dosage,
+        instructions,
+        "24" // Example additional argument
+      ],
+      init: false
+    };
+
+    try {
+      const response = await axios.post(
+        'https://u0zy6vfzce-u0xgnn6gvm-connect.us0-aws-ws.kaleido.io/transactions',
+        requestData,
+        {
+          headers: {
+            'accept': '*/*',
+            'Content-Type': 'application/json',
+            'Authorization': 'Basic dTBkNjkyZ3hmaTpCb2tqQ3JreXIzNk1qZnowZDc4WkIyWmx5RGRDejdaczk1UDhIYnBQdzNF'
+          }
+        }
+      );
+
+      res.status(201).json({
+        message: 'Prescription created successfully on blockchain',
+        data: response.data
+      });
+    } catch (error) {
+      console.error('Error creating prescription:', error.response ? error.response.data : error.message);
+      res.status(500).json({ message: 'Failed to create prescription' });
+    }
   }
 
-  static async findById(prescriptionId) {
-    const query = 'SELECT * FROM prescriptions WHERE id = $1';
-    const result = await pgClient.query(query, [prescriptionId]);
-    return result.rows[0];
-  }
+  static async getPrescription(req, res) {
+    try {
+      const response = await axios.get(
+        'https://u0zy6vfzce-u0xgnn6gvm-connect.us0-aws-ws.kaleido.io/transactions/3f8bae104040b3a732eb1dc3e99682071baf4e0fb370c6fc643c62b389f378d3?fly-channel=default-channel&fly-signer=user1',
+        {
+          headers: {
+            'accept': 'application/json',
+            'Authorization': 'Basic dTBkNjkyZ3hmaTpCb2tqQ3JreXIzNk1qZnowZDc4WkIyWmx5RGRDejdaczk1UDhIYnBQdzNF'
+          }
+        }
+      );
 
-  static async findByPatientId(patientId) {
-    const query = 'SELECT * FROM prescriptions WHERE patient_id = $1';
-    const result = await pgClient.query(query, [patientId]);
-    return result.rows;
-  }
-
-  static async update(prescriptionId, updateData) {
-    const { medication, dosage, instructions, ipfs_cid, metadata_hash } = updateData;
-    const query = `
-      UPDATE prescriptions
-      SET medication = $1, dosage = $2, instructions = $3, ipfs_cid = $4, metadata_hash = $5
-      WHERE id = $6
-      RETURNING *;
-    `;
-    const values = [medication, dosage, instructions, ipfs_cid, metadata_hash, prescriptionId];
-    const result = await pgClient.query(query, values);
-    return result.rows[0];
-  }
-
-  static async delete(prescriptionId) {
-    const query = 'DELETE FROM prescriptions WHERE id = $1 RETURNING *';
-    const result = await pgClient.query(query, [prescriptionId]);
-    return result.rows[0];
+      res.json(response.data);
+    } catch (error) {
+      console.error('Error fetching prescription:', error.response ? error.response.data : error.message);
+      res.status(500).json({ message: 'Failed to retrieve prescription' });
+    }
   }
 }
 
-module.exports = Prescription;
+module.exports = PrescriptionController;
