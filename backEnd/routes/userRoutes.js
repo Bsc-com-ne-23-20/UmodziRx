@@ -10,7 +10,7 @@ router.post('/users', UserController.addUser);
 router.get('/users', UserController.getUsers);
 
 // Route to get a user by digital ID
-router.get('/users/:digitalID', UserController.getUserById); // Newm route
+router.get('/users/:digitalID', UserController.getUserById); 
 
 // Route to delete a user by digital ID
 router.delete('/users/:digitalID', UserController.deleteUser);
