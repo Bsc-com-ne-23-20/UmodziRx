@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate, useLocation } from 'react-router-dom';
 
-// Generate random nonce and state
 function generateRandomString(length) {
   const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
   let randomString = '';
@@ -34,17 +33,14 @@ const DoctorDashboard = () => {
   const [selfPrescriptionWarning, setSelfPrescriptionWarning] = useState(false);
 
   useEffect(() => {
-    // Parse patient data from URL when component mounts
     const urlParams = new URLSearchParams(window.location.search);
     const encodedPatient = urlParams.get('patient');
 
     if (encodedPatient) {
       try {
-        // Decode the base64 URL-safe string
         const decodedString = atob(encodedPatient.replace(/-/g, '+').replace(/_/g, '/'));
         const patient = JSON.parse(decodedString);
         
-        // Check if patient ID matches doctor ID
         const doctorId = localStorage.getItem('doctorId');
         if (patient.id === doctorId) {
           setSelfPrescriptionWarning(true);
@@ -58,7 +54,6 @@ const DoctorDashboard = () => {
       }
     }
 
-    // Initialize eSignet button when component mounts
     const nonce = generateRandomString(16);
     const state = generateRandomString(16);
 
@@ -67,15 +62,15 @@ const DoctorDashboard = () => {
         oidcConfig: {
           acr_values: 'mosip:idp:acr:generated-code mosip:idp:acr:biometric:static-code',
           claims_locales: 'en',
-          client_id: 'IIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA1Ueed',
-          redirect_uri: 'http://localhost:5000/doctor/verifypatient',
+          client_id: process.env.REACT_APP_ESIGNET_CLIENT_ID,
+          redirect_uri: process.env.REACT_APP_ESIGNET_REDIRECT_URI_DOCTOR,
           display: 'page',
           nonce: nonce,
           prompt: 'consent',
           scope: 'openid profile',
           state: state,
           ui_locales: 'en',
-          authorizeUri: 'http://localhost:3000/authorize',
+          authorizeUri: process.env.REACT_APP_ESIGNET_AUTHORIZE_URI,
         },
         buttonConfig: {
           labelText: 'Verify Patient with eSignet',
@@ -92,7 +87,6 @@ const DoctorDashboard = () => {
             birthday: response.birthdate || 'N/A'
           };
 
-          // Check if verified patient is the doctor
           const doctorId = localStorage.getItem('doctorId');
           if (verifiedPatientData.patientId === doctorId) {
             setSelfPrescriptionWarning(true);
@@ -113,7 +107,7 @@ const DoctorDashboard = () => {
 
     if (!window.SignInWithEsignetButton) {
       const script = document.createElement('script');
-      script.src = 'https://esignet.sdk.url';
+      script.src = process.env.REACT_APP_ESIGNET_SDK_URL;
       script.onload = renderButton;
       document.body.appendChild(script);
     } else {
@@ -128,7 +122,6 @@ const DoctorDashboard = () => {
       return;
     }
 
-    // Check if trying to view own prescriptions
     const doctorId = localStorage.getItem('doctorId');
     if (patientIdSearch === doctorId) {
       setSelfPrescriptionWarning(true);
@@ -140,7 +133,7 @@ const DoctorDashboard = () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await axios.get('http://localhost:5000/prescriptions', {
+      const response = await axios.get(`${process.env.REACT_APP_API_BASE_URL}/prescriptions`, {
         params: { patientId: patientIdSearch }
       });
       setPrescriptionHistory(response.data.data);
@@ -176,7 +169,6 @@ const DoctorDashboard = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // Check for self-prescription
     const doctorId = localStorage.getItem('doctorId');
     const patientData = verifiedPatient || patientFromUrl;
     
@@ -203,7 +195,7 @@ const DoctorDashboard = () => {
         prescriptions: formData.medications
       };
 
-      const response = await axios.post('http://localhost:5000/prescriptions', payload);
+      const response = await axios.post(`${process.env.REACT_APP_API_BASE_URL}/prescriptions`, payload);
       
       setSuccess('Prescription created successfully!');
       setFormData({
