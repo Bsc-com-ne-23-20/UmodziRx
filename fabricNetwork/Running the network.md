@@ -1,5 +1,5 @@
 # Prerequisites
-Ensure you have the following tools installed:
+Ensure you have the following installed:
 - `git`
 - `curl`
 - `docker`
