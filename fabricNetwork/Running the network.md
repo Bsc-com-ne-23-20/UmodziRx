@@ -1,39 +1,62 @@
 # Prerequisites
-- git
-- curl
-- docker 
-- jq
+Ensure you have the following tools installed:
+- `git`
+- `curl`
+- `docker`
+- `jq`
 
-- Clone the repo
-```git clone https://github.com/Bsc-com-ne-23-20/UmodziRx.git```
+# Clone the repository
 
-- Navigate to fabricNetwork/
-```cd fabricNetwork```
+```bash
+git clone https://github.com/Bsc-com-ne-23-20/UmodziRx.git
+```
+
+Navigate to the `fabricNetwork` directory:
+
+```bash
+cd fabricNetwork
+```
 
 # Bootstrap the network
-- Make all scripts executable, in current and sub-dirs
 
-```find . -type f -name "*.sh" -exec chmod +x {} \;```
+### Make all scripts executable (in current and subdirectories)
 
-- Add binary files to path
+```bash
+find . -type f -name "*.sh" -exec chmod +x {} \;
+```
 
-```cd primary-network/bin```
-```echo -e "\n### UMODZIRX NETWORK PATH\nexport PATH=\$PATH:$(pwd)" >> ~/.bashrc```
-```source ~/.bashrc```
-```cd ..```
+### Add binary files to the path
 
-- You must be in primary-network/ to run the network
-```./network.sh up createChannel -ca -s couchdb```
+Navigate to the `primary-network/bin` directory and update the path:
 
-- This launches all relevant docker images for the network:
-    - peer nodes
-    - orderer nodes
-    - Certificate authorities
-    - couch databases
+```bash
+cd primary-network/bin
+echo -e "\n### UMODZIRX NETWORK PATH\nexport PATH=\$PATH:$(pwd)" >> ~/.bashrc
+source ~/.bashrc
+cd ..
+```
 
-# Deploy chaincode 
+### Run the network
 
-```./network.sh deployCC -ccn basic -ccp ../asset-transfer-basic/chaincode-go -ccl go```
+You must be in the `primary-network/` directory to run the network:
+
+```bash
+./network.sh up createChannel -ca -s couchdb
+```
+
+This will launch the following Docker containers for the network:
+- Peer nodes
+- Orderer nodes
+- Certificate Authorities
+- CouchDB databases
+
+# Deploy Chaincode
+
+To deploy the chaincode, use the following command:
+
+```bash
+./network.sh deployCC -ccn basic -ccp ../asset-transfer-basic/chaincode-go -ccl go
+```
 
 - Chaincode may be deployed without bringing down the network.
 - Several chaincodes may be deployed on a single channel, but each chaincode must be unique to each channel.
