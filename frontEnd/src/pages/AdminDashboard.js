@@ -6,7 +6,7 @@ const admin_BASE_URL = process.env.REACT_APP_admin_BASE_URL || "http://localhost
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState("addUser");
+  const [activeTab, setActiveTab] = useState("users");
   const [formData, setFormData] = useState({
     digitalID: "",
     role: "",
@@ -14,11 +14,12 @@ const AdminDashboard = () => {
     viewUserID: "",
   });
   const [users, setUsers] = useState([]);
-  const [viewedUsers, setViewedUsers] = useState([]);
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [showUserModal, setShowUserModal] = useState(false);
   const adminName = "Patrick Chisale";
 
   const adminRequest = async (method, endpoint, data = null) => {
@@ -38,10 +39,12 @@ const AdminDashboard = () => {
     }
   };
 
-  // Fetch users on component mount
+  // Fetch users on component mount and when activeTab changes
   useEffect(() => {
-    fetchUsers();
-  }, []);
+    if (activeTab === "users") {
+      fetchUsers();
+    }
+  }, [activeTab]);
 
   const fetchUsers = useCallback(async () => {
     setIsLoading(true);
@@ -83,40 +86,17 @@ const AdminDashboard = () => {
     }
   };
 
-  const handleViewUsers = async (e) => {
-    e.preventDefault();
-    const { viewUserID } = formData;
-
-    try {
-      const endpoint = viewUserID ? `/admin/users/${viewUserID}` : '/admin/users';
-      const data = await adminRequest('get', endpoint);
-      setViewedUsers(viewUserID ? [data] : data);
-    } catch (error) {
-      setError(error.response?.data?.message || 'Failed to fetch user data.');
-      setTimeout(() => setError(""), 3000);
-      setViewedUsers([]);
-    }
-  };
-
-  const handleDeleteUser = async (e) => {
-    e.preventDefault();
-    const { digitalID } = formData;
-
-    if (!digitalID) {
-      setError("Please provide a digital ID to delete.");
-      setTimeout(() => setError(""), 3000);
-      return;
-    }
-
-    try {
-      await adminRequest('delete', `/admin/users/${digitalID}`);
-      setSuccessMessage("User deleted successfully!");
-      setTimeout(() => setSuccessMessage(""), 3000);
-      setFormData({ digitalID: "", role: "", userName: "", viewUserID: "" });
-      fetchUsers();
-    } catch (error) {
-      setError(error.response?.data?.message || 'Failed to delete user.');
-      setTimeout(() => setError(""), 3000);
+  const handleDeleteUser = async (userId) => {
+    if (window.confirm("Are you sure you want to delete this user?")) {
+      try {
+        await adminRequest('delete', `/admin/users/${userId}`);
+        setSuccessMessage("User deleted successfully!");
+        setTimeout(() => setSuccessMessage(""), 3000);
+        fetchUsers();
+      } catch (error) {
+        setError(error.response?.data?.message || 'Failed to delete user.');
+        setTimeout(() => setError(""), 3000);
+      }
     }
   };
 
@@ -125,6 +105,29 @@ const AdminDashboard = () => {
     localStorage.removeItem("userRole");
     navigate("/");
   };
+
+  const openUserModal = (user) => {
+    setSelectedUser(user);
+    setShowUserModal(true);
+  };
+
+  // Simple loading spinner component
+  const LoadingSpinner = () => (
+    <div className="flex justify-center items-center py-12">
+      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-teal-500"></div>
+    </div>
+  );
+
+  // Empty state component
+  const EmptyState = () => (
+    <div className="text-center py-12">
+      <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+      <h3 className="mt-2 text-lg font-medium text-gray-900">No users found</h3>
+      <p className="mt-1 text-gray-500">Add new users using the "Add User" tab</p>
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-teal-50 to-blue-50 p-4">
@@ -170,7 +173,7 @@ const AdminDashboard = () => {
 
           {/* Navigation Tabs */}
           <div className="flex border-b border-gray-200 mb-8">
-            {["addUser", "viewUsers", "deleteUser"].map((tab) => (
+            {["users", "addUser"].map((tab) => (
               <button
                 key={tab}
                 className={`px-6 py-3 font-medium text-sm border-b-2 ${activeTab === tab 
@@ -178,11 +181,7 @@ const AdminDashboard = () => {
                   : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"}`}
                 onClick={() => setActiveTab(tab)}
               >
-                {tab === "addUser" 
-                  ? "Add User" 
-                  : tab === "viewUsers" 
-                  ? "View Users" 
-                  : "Delete User"}
+                {tab === "addUser" ? "Add User" : "Manage Users"}
               </button>
             ))}
           </div>
@@ -237,7 +236,7 @@ const AdminDashboard = () => {
                 <div className="md:col-span-2 flex justify-start">
                   <button 
                     type="submit" 
-                    className="w-auto bg-teal-600 text-white px-8 py-3 rounded-lg hover:bg-teal-700 transition-colors focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2"
+                    className="bg-teal-600 text-white px-8 py-3 rounded-lg hover:bg-teal-700 transition-colors focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2"
                   >
                     Add User
                   </button>
@@ -245,40 +244,22 @@ const AdminDashboard = () => {
               </form>
             )}
 
-            {activeTab === "viewUsers" && (
+            {activeTab === "users" && (
               <div className="space-y-6">
-                <form onSubmit={handleViewUsers} className="flex flex-col md:flex-row gap-4">
-                  <div className="flex-1">
-                    <input
-                      type="text"
-                      id="viewUserID"
-                      value={formData.viewUserID}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-                      placeholder="Enter Digital ID"
-                    />
-                  </div>
-                  <div className="flex gap-2">
-                    <button
-                      type="submit"
-                      className="px-6 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors"
-                    >
-                      Search
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setFormData({...formData, viewUserID: ""});
-                        handleViewUsers({preventDefault: () => {}});
-                      }}
-                      className="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
-                    >
-                      View All
-                    </button>
-                  </div>
-                </form>
+                <div className="flex justify-between items-center">
+                  <h3 className="text-lg font-semibold">User Management</h3>
+                  <button
+                    onClick={fetchUsers}
+                    disabled={isLoading}
+                    className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                  >
+                    Refresh
+                  </button>
+                </div>
 
-                {viewedUsers.length > 0 && (
+                {isLoading ? (
+                  <LoadingSpinner />
+                ) : users.length > 0 ? (
                   <div className="overflow-hidden border border-gray-200 rounded-lg">
                     <table className="min-w-full divide-y divide-gray-200">
                       <thead className="bg-gray-50">
@@ -286,14 +267,19 @@ const AdminDashboard = () => {
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Digital ID</th>
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
+                          <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                         </tr>
                       </thead>
                       <tbody className="bg-white divide-y divide-gray-200">
-                        {viewedUsers.map((user) => (
+                        {users.map((user) => (
                           <tr key={user.digitalID} className="hover:bg-gray-50">
-                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{user.name}</td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="flex items-center">
+                                <div className="text-sm font-medium text-gray-900">{user.name}</div>
+                              </div>
+                            </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.digitalID}</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <td className="px-6 py-4 whitespace-nowrap">
                               <span className={`px-2 py-1 text-xs rounded-full ${
                                 user.role === 'admin' ? 'bg-purple-100 text-purple-800' :
                                 user.role === 'doctor' ? 'bg-blue-100 text-blue-800' :
@@ -302,43 +288,97 @@ const AdminDashboard = () => {
                                 {user.role}
                               </span>
                             </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                              <div className="flex justify-end space-x-2">
+                                <button
+                                  onClick={() => openUserModal(user)}
+                                  className="text-blue-600 hover:text-blue-900 p-1 rounded hover:bg-blue-50"
+                                  title="View Details"
+                                >
+                                  View
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteUser(user.digitalID)}
+                                  className="text-red-600 hover:text-red-900 p-1 rounded hover:bg-red-50"
+                                  title="Delete"
+                                >
+                                  Delete
+                                </button>
+                              </div>
+                            </td>
                           </tr>
                         ))}
                       </tbody>
                     </table>
                   </div>
+                ) : (
+                  <EmptyState />
                 )}
               </div>
-            )}
-
-            {activeTab === "deleteUser" && (
-              <form onSubmit={handleDeleteUser} className="max-w-md mx-auto space-y-6">
-                <div>
-                  <label htmlFor="digitalID" className="block text-sm font-medium text-gray-700 mb-1">
-                    Digital ID
-                  </label>
-                  <input
-                    type="text"
-                    id="digitalID"
-                    value={formData.digitalID}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-                    required
-                  />
-                </div>
-                <div>
-                  <button
-                    type="submit"
-                    className="w-full bg-red-600 text-white px-4 py-3 rounded-lg hover:bg-red-700 transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
-                  >
-                    Delete User
-                  </button>
-                </div>
-              </form>
             )}
           </div>
         </div>
       </div>
+
+      {/* User Detail Modal */}
+      {showUserModal && selectedUser && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
+            <div className="p-6">
+              <div className="flex justify-between items-start">
+                <h3 className="text-lg font-bold text-gray-900">User Details</h3>
+                <button
+                  onClick={() => setShowUserModal(false)}
+                  className="text-gray-400 hover:text-gray-500"
+                >
+                  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              <div className="mt-6 space-y-4">
+                <div>
+                  <p className="text-sm font-medium text-gray-500">Name</p>
+                  <p className="mt-1 text-sm text-gray-900">{selectedUser.name}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-500">Digital ID</p>
+                  <p className="mt-1 text-sm text-gray-900">{selectedUser.digitalID}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-500">Role</p>
+                  <p className="mt-1 text-sm text-gray-900">
+                    <span className={`px-2 py-1 text-xs rounded-full ${
+                      selectedUser.role === 'admin' ? 'bg-purple-100 text-purple-800' :
+                      selectedUser.role === 'doctor' ? 'bg-blue-100 text-blue-800' :
+                      'bg-green-100 text-green-800'
+                    }`}>
+                      {selectedUser.role}
+                    </span>
+                  </p>
+                </div>
+              </div>
+              <div className="mt-6 flex justify-end space-x-3">
+                <button
+                  onClick={() => {
+                    setShowUserModal(false);
+                    handleDeleteUser(selectedUser.digitalID);
+                  }}
+                  className="px-4 py-2 border border-red-600 text-red-600 rounded-md shadow-sm text-sm font-medium hover:bg-red-50"
+                >
+                  Delete User
+                </button>
+                <button
+                  onClick={() => setShowUserModal(false)}
+                  className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-teal-600 hover:bg-teal-700"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
