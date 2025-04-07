@@ -21,19 +21,27 @@ const AdminDashboard = () => {
   const [showDropdown, setShowDropdown] = useState(false);
   const adminName = "Patrick Chisale";
 
+  const adminRequest = async (method, endpoint, data = null) => {
+    try {
+      const response = await axios({ 
+        method, 
+        url: `${admin_BASE_URL}${endpoint}`, 
+        data,
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      return response.data;
+    } catch (error) {
+      console.error(`Admin Error: ${error.response?.data?.message || error.message}`);
+      throw error;
+    }
+  };
+
   // Fetch users on component mount
   useEffect(() => {
     fetchUsers();
   }, []);
-  const apiRequest = async (method, endpoint, data = null) => {
-    try {
-      const response = await axios({ method, url: `${admin_BASE_URL}${endpoint}`, data });
-      return response.data;
-    } catch (error) {
-      console.error(`admin Error: ${error.response?.data?.message || error.message}`);
-      throw error;
-    }
-  };
 
   const fetchUsers = useCallback(async () => {
     setIsLoading(true);
@@ -119,7 +127,6 @@ const AdminDashboard = () => {
   };
 
   return (
-
     <div className="min-h-screen bg-gradient-to-br from-teal-50 to-blue-50 p-4">
       <div className="max-w-6xl mx-auto bg-white/90 backdrop-blur-sm rounded-xl shadow-xl overflow-hidden">
         {/* Admin Name - Top Right Corner */}
@@ -131,7 +138,6 @@ const AdminDashboard = () => {
             >
               <span className="mr-2">{adminName}</span>
               <div className="w-8 h-8 rounded-full bg-teal-100 group-hover:bg-teal-200 transition-colors flex items-center justify-center overflow-hidden">
-                {/* Profile image placeholder - blank for now */}
                 <div className="w-full h-full bg-gray-200"></div>
               </div>
             </button>
