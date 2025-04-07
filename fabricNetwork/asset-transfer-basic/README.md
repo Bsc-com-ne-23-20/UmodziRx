@@ -18,14 +18,31 @@ This is a Go Chaincode for UmodziRx, a blockchain-based platform for managing pr
 
 ## Installation
 1. Clone the repository
+   
    ```bash
    git clone https://github.com/Bsc-com-ne-23-20/UmodziRx.git
    ```
-3. Navigate to the chaincode directory: cd UmodziRx/fabricNetwork/chaincode-go
-4. Clean up dependencies: go mod tidy
-5. Clean module cache and clear out old dependencies: go clean -modcache
-6. Resolve dependencies: GODEBUG=gocacheverify=1 go mod download -x
-7. Build the chaincode: go build -o mychaincode.bin
+2. Navigate to the chaincode directory
+  
+   ```bash
+   cd UmodziRx/fabricNetwork/chaincode-go
+   ```
+3. Clean up dependencies
+   ```bash
+   go mod tidy
+   ```
+4. Clean module cache and clear out old dependencies
+   ```bash
+   go clean -modcache
+   ```
+5. Resolve dependencies
+   ```bash
+   GODEBUG=gocacheverify=1 go mod download -x
+   ```
+6. Build the chaincode
+   ```bash
+   go build -o mychaincode.bin
+   ```
     - Note: The chaincode binary will be generated in the same directory.
 
     - 'mychaincode' is the name of the chaincode binary, you can change it as per your requirement.
