@@ -3,6 +3,9 @@
 ## Overview
 UmodziRx is a comprehensive web application designed to manage patient prescriptions and healthcare services, integrating with MOSIP for identity management and utilizing blockchain technology for secure data handling.
 
+## Live demo
+https://umodzirx.tech
+
 ## Expanded Tech Stack & Implementation Details
 
 ### 1. Frontend Development
