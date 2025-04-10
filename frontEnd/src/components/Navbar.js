@@ -9,8 +9,8 @@ function Navbar() {
 
   const handleLogout = () => {
     logout();
+    navigate("/");
     localStorage.clear();
-    navigate("/home");
   };
 
   // Define all protected routes
