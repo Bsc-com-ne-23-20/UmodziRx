@@ -15,7 +15,10 @@ export default function PharmacistDashboard() {
   const navigate = useNavigate();
   const location = useLocation();
   const [showModal, setShowModal] = useState(false);
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [showInventory, setShowInventory] = useState(false);
   const [patientID, setPatientID] = useState('');
+  const [reviewPatientID, setReviewPatientID] = useState('');
   const [verifiedPatient, setVerifiedPatient] = useState(null);
   const [pharmacistInfo] = useState({
     id: localStorage.getItem('pharmaId'),
@@ -29,6 +32,49 @@ export default function PharmacistDashboard() {
   const [selectedPrescription, setSelectedPrescription] = useState(null);
   const [comment, setComment] = useState('');
   const [dispenseSuccess, setDispenseSuccess] = useState(false);
+  const [showDropdown, setShowDropdown] = useState(false);
+  
+  // Sample inventory data
+  const inventory = [
+    { id: 1, name: "Paracetamol 500mg", stock: 142, threshold: 50 },
+    { id: 2, name: "Amoxicillin 250mg", stock: 87, threshold: 30 },
+    { id: 3, name: "Ibuprofen 200mg", stock: 203, threshold: 75 },
+    { id: 4, name: "Omeprazole 20mg", stock: 56, threshold: 25 },
+    { id: 5, name: "Atorvastatin 40mg", stock: 34, threshold: 20 }
+  ];
+
+  // New functions for inventory and modal handling
+  const handleDispenseMedications = () => {
+    setShowModal(true);
+  };
+
+  const handleReviewPrescriptions = () => {
+    setShowReviewModal(true);
+  };
+
+  const handleShowInventory = () => {
+    setShowInventory(true);
+  };
+
+  const handleSubmitPatientID = () => {
+    if (patientID.trim()) {
+      console.log(`Dispensing medications for patient ID: ${patientID}`);
+      setShowModal(false);
+      setPatientID('');
+    } else {
+      alert('Please enter a valid patient ID.');
+    }
+  };
+
+  const handleSubmitReviewPatientID = () => {
+    if (reviewPatientID.trim()) {
+      console.log(`Reviewing prescriptions for patient ID: ${reviewPatientID}`);
+      setShowReviewModal(false);
+      setReviewPatientID('');
+    } else {
+      alert('Please enter a valid patient ID.');
+    }
+  };
 
   useEffect(() => {
     const urlParams = new URLSearchParams(location.search);
@@ -77,6 +123,12 @@ export default function PharmacistDashboard() {
         signInElement: document.getElementById('esignet-verify-button'),
         onSuccess: (response) => {
           console.log('Patient verification successful:', response);
+          const verifiedPatientData = {
+            id: response.sub || response.patientId,
+            name: response.name || 'Verified Patient',
+            birthday: response.birthdate || 'N/A'
+          };
+          setVerifiedPatient(verifiedPatientData);
         },
         onFailure: (error) => {
           console.error('Patient verification failed:', error);
@@ -138,7 +190,7 @@ export default function PharmacistDashboard() {
       setComment('');
       setSelectedPrescription(null);
       setTimeout(() => setDispenseSuccess(false), 3000);
-      fetchPrescriptions(); // Refresh the prescriptions list
+      fetchPrescriptions();
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to dispense medication');
     } finally {
@@ -153,45 +205,116 @@ export default function PharmacistDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 p-10">
-      <div className="max-w-6xl mx-auto">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-800"></h1>
-          <div className="flex items-center space-x-4">
-            <span className="text-lg font-medium text-gray-700">
-              {pharmacistInfo.name}
-            </span>
+    <div className="min-h-screen bg-gradient-to-br from-teal-50 to-blue-50 p-4">
+      <div className="max-w-6xl mx-auto bg-white/90 backdrop-blur-sm rounded-xl shadow-xl overflow-hidden p-8 relative">
+        {/* Pharmacist Name - Top Right Corner */}
+        <div className="absolute top-6 right-6">
+          <div className="flex items-center">
+            <span className="text-teal-800 font-medium mr-2">{pharmacistInfo.name}</span>
+            <div className="w-8 h-8 rounded-full bg-teal-100 flex items-center justify-center overflow-hidden">
+              {/* Profile icon placeholder */}
+            </div>
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-lg shadow-md">
-          <h2 className="text-2xl font-semibold mb-4">Pharmacist Portal</h2>
+        <p className="text-gray-700 text-lg mb-8">Welcome, Pharmacist! Manage prescriptions here.</p>
+
+        <div className="mt-8">
+          <h3 className="text-2xl font-semibold mb-6">Pharmacist Duties</h3>
           
-          <div className="bg-blue-50 p-4 rounded-lg mb-6">
-            <h3 className="font-semibold text-lg mb-2">Pharmacist Information</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <p className="text-gray-600">ID:</p>
-                <p className="font-medium">{pharmacistInfo.id}</p>
-              </div>
-              <div>
-                <p className="text-gray-600">Name:</p>
-                <p className="font-medium">{pharmacistInfo.name}</p>
-              </div>
-              <div>
-                <p className="text-gray-600">Email:</p>
-                <p className="font-medium">{localStorage.getItem('phamarEmail')}</p>
-              </div>
+          {/* eSignet Verification Button */}
+          <div className="mb-6 flex items-center justify-center">
+            <div id="esignet-verify-button"></div>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {/* Dispense Medications */}
+            <button
+              onClick={handleDispenseMedications}
+              disabled={!verifiedPatient}
+              className={`p-6 rounded-lg transition duration-200 flex flex-col items-center justify-center ${
+                verifiedPatient 
+                  ? 'bg-green-100 text-green-700 hover:bg-green-200' 
+                  : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+              }`}
+            >
+              <span className="text-4xl mb-2">💊</span>
+              <span className="text-lg font-medium">Dispense Medications</span>
+            </button>
+            
+            {/* Review Prescriptions */}
+            <button
+              onClick={handleReviewPrescriptions}
+              disabled={!verifiedPatient}
+              className={`p-6 rounded-lg transition duration-200 flex flex-col items-center justify-center ${
+                verifiedPatient 
+                  ? 'bg-blue-100 text-blue-700 hover:bg-blue-200' 
+                  : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+              }`}
+            >
+              <span className="text-4xl mb-2">📋</span>
+              <span className="text-lg font-medium">Review Prescriptions</span>
+            </button>
+            
+            {/* Manage Inventory */}
+            <button
+              onClick={handleShowInventory}
+              className="bg-purple-100 text-purple-700 p-6 rounded-lg hover:bg-purple-200 transition duration-200 flex flex-col items-center justify-center"
+            >
+              <span className="text-4xl mb-2">🧪</span>
+              <span className="text-lg font-medium">Manage Inventory</span>
+            </button>
+          </div>
+          <p className="text-sm text-gray-500 text-center mt-2">
+            {verifiedPatient 
+              ? `Verified patient: ${verifiedPatient.name} (${verifiedPatient.id})`
+              : 'Please verify patient using eSignet above'}
+          </p>
+        </div>
+
+        {/* Inventory Display */}
+        {showInventory && (
+          <div className="mt-8">
+            <h3 className="text-xl font-semibold mb-4">Current Inventory</h3>
+            <div className="overflow-x-auto">
+              <table className="min-w-full border-collapse">
+                <thead>
+                  <tr className="bg-gray-50">
+                    <th className="px-4 py-2 text-left border-b">Medication</th>
+                    <th className="px-4 py-2 text-left border-b">Current Stock</th>
+                    <th className="px-4 py-2 text-left border-b">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {inventory.map(item => (
+                    <tr key={item.id} className="hover:bg-gray-50">
+                      <td className="px-4 py-2 border-b">{item.name}</td>
+                      <td className="px-4 py-2 border-b">{item.stock}</td>
+                      <td className="px-4 py-2 border-b">
+                        <span className={`px-2 py-1 text-xs rounded-full ${
+                          item.stock < item.threshold 
+                            ? 'bg-red-100 text-red-800' 
+                            : 'bg-green-100 text-green-800'
+                        }`}>
+                          {item.stock < item.threshold ? 'Low Stock' : 'In Stock'}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
+            <button
+              onClick={() => setShowInventory(false)}
+              className="mt-4 bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition duration-200"
+            >
+              Close Inventory
+            </button>
           </div>
+        )}
 
-          <div className="mb-6 flex items-start">
-            <div id="esignet-verify-button" className="mr-4"></div>
-            <p className="text-sm text-gray-500 mt-2">
-              Verify patient identity using eSignet before dispensing medications
-            </p>
-          </div>
-
+        {/* Prescription handling UI - only shown after verification */}
+        <div className="mt-8">
           {error && <div className="mb-4 p-3 bg-red-100 text-red-700 rounded">{error}</div>}
           {dispenseSuccess && (
             <div className="mb-4 p-3 bg-green-100 text-green-700 rounded">
@@ -292,24 +415,24 @@ export default function PharmacistDashboard() {
             </div>
           )}
         </div>
-      </div>
 
-      {showSelfDispensingAlert && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-          <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
-            <h3 className="text-xl font-semibold mb-4 text-red-600">Invalid Action</h3>
-            <p className="mb-4">You cannot dispense medication for yourself. Please verify a different patient.</p>
-            <div className="flex justify-end">
-              <button
-                onClick={() => setShowSelfDispensingAlert(false)}
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition duration-200"
-              >
-                OK
-              </button>
+        {showSelfDispensingAlert && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+            <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
+              <h3 className="text-xl font-semibold mb-4 text-red-600">Invalid Action</h3>
+              <p className="mb-4">You cannot dispense medication for yourself. Please verify a different patient.</p>
+              <div className="flex justify-end">
+                <button
+                  onClick={() => setShowSelfDispensingAlert(false)}
+                  className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition duration-200"
+                >
+                  OK
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }
