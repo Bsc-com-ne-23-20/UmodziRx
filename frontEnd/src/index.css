@@ -2,6 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Only keep essential animations */
 @keyframes fadeIn {
     from {
         opacity: 0;
@@ -15,4 +16,31 @@
 
 .animate-fadeIn {
     animation: fadeIn 0.5s ease-out;
+}
+
+/* Essential layout styles */
+html, body, #root {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    width: 100%;
+}
+
+/* Scrollbar styles */
+*::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+*::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+    background-color: rgba(0, 0, 0, 0.2);
+    border-radius: 3px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(0, 0, 0, 0.3);
 }
