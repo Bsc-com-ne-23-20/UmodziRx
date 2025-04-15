@@ -103,7 +103,7 @@ const login = async (req, res) => {
       birthday:userInfo.birthdate,
       role:role  }
 
-      console.log('user', user);
+     
     const frontendCode = crypto.randomBytes(32).toString('hex');
     temporaryInfo ={
       code:frontendCode, 
@@ -148,7 +148,7 @@ const exchangeCode = async (req, res) => {
       { expiresIn: '5m' }
     );
 
-    console.log('sending: ', temporaryInfo,token,getRoleDashboard(role));
+    
 
     return res.json({
       success: true,

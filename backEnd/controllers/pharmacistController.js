@@ -195,9 +195,9 @@ class PharmacistController {
       const requestData = new URLSearchParams();
       requestData.append('channelid', process.env.CHANNEL_ID);
       requestData.append('chaincodeid', process.env.CHAINCODE_ID);
-      requestData.append('function', 'DispenseMedication');
+      requestData.append('function', 'DispensePrecription');
       requestData.append('args', patientId);
-      requestData.append('args', prescriptionId);
+    //requestData.append('args', prescriptionId);
       requestData.append('args', pharmacistId);
       requestData.append('args', comment);
 

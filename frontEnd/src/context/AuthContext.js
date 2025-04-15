@@ -31,7 +31,7 @@ export const AuthProvider = ({ children }) => {
 
   const isTokenExpired = () => {
     if (!authState.timestamp) return true;
-    const TOKEN_EXPIRY_TIME = 5 * 60 * 1000; // 5 minutes in milliseconds
+    const TOKEN_EXPIRY_TIME = 10 * 60 * 1000; // 5 minutes in milliseconds
     return Date.now() - authState.timestamp > TOKEN_EXPIRY_TIME;
   };
 
