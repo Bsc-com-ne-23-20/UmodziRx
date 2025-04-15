@@ -3,7 +3,7 @@ import { FiHome, FiUsers } from 'react-icons/fi';
 import BaseDashboard from '../components/BaseDashboard';
 import UserManagement from '../components/UserManagement';
 
-const ModernAdminDashboard = () => {
+const NewAdminDashboard = () => {
   const navItems = [
     { icon: FiHome, label: 'Dashboard', id: 'dashboard' },
     { icon: FiUsers, label: 'User Management', id: 'users' }
@@ -25,4 +25,4 @@ const ModernAdminDashboard = () => {
   );
 };
 
-export default ModernAdminDashboard;
+export default NewAdminDashboard;
