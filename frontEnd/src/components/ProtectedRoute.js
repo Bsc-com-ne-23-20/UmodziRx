@@ -3,7 +3,7 @@ import { useAuth } from "../context/AuthContext";
 import { useEffect } from "react";
 
 const ProtectedRoute = ({ allowedRoles }) => {
-  const { authState, loading, isTokenExpired } = useAuth();
+  const { authState, loading /*, isTokenExpired */ } = useAuth();
   const { token, user } = authState;
 
   // Store current path for back button handling
@@ -15,13 +15,15 @@ const ProtectedRoute = ({ allowedRoles }) => {
     return <div className="flex justify-center items-center h-screen text-lg">Loading...</div>;
   }
 
-  if (!token || isTokenExpired()) {
-    return <Navigate to="/session-expired" replace />;
+  if (!token /* || isTokenExpired() */) {
+    // Commented out session expiration check
+    // return <Navigate to="/session-expired" replace />;
   }
 
-  if (!user?.role || !allowedRoles.includes(user.role)) {
-    return <Navigate to="/unauthorized" replace />;
-  }
+  // Commented out unauthorized role check
+  // if (!user?.role || !allowedRoles.includes(user.role)) {
+  //   return <Navigate to="/unauthorized" replace />;
+  // }
 
   return <Outlet />;
 };
