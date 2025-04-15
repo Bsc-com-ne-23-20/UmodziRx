@@ -69,25 +69,11 @@ function Login() {
       }
   
       const data = await response.json();
-      const { token, role } = data;
+      const { token, redirect, role } = data;
   
       localStorage.setItem("token", token);
       localStorage.setItem("userRole", role);
-  
-      // Handle different role redirections
-      switch(role) {
-        case 'admin':
-          navigate('/admin/dashboard');
-          break;
-        case 'doctor':
-          navigate('/doctor/dashboard');
-          break;
-        case 'pharmacist':
-          navigate('/pharmacist/dashboard');
-          break;
-        default:
-          navigate('/login');
-      }
+      navigate(redirect);
       
     } catch (error) {
       setError("Login failed. Please check your credentials.");
@@ -98,11 +84,11 @@ function Login() {
   }, [username, password, navigate]);
 
   return (
-    <div className="h-screen overflow-hidden bg-white flex items-center justify-center">
-      <div className="w-full max-w-6xl bg-white overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-teal-50 to-blue-50 flex items-center justify-center pt-20 pb-8 px-4">
+      <div className="w-full max-w-6xl bg-white rounded-xl shadow-lg overflow-hidden mt-4">
         <div className="md:flex">
           {/* Left Side - Branding */}
-          <div className="md:w-1/2 bg-gradient-to-br from-teal-600 to-blue-600 p-12 flex flex-col items-center justify-center text-white rounded-l-xl">
+          <div className="md:w-1/2 bg-gradient-to-br from-teal-600 to-blue-600 p-12 flex flex-col items-center justify-center text-white">
             <div className="text-center space-y-6">
               <img 
                 src={prescriptionImage} 
@@ -110,19 +96,21 @@ function Login() {
                 className="w-48 h-48 object-cover rounded-full border-4 border-white shadow-md mx-auto"
               />
               <div>
-              <h1 className="text-4xl font-bold mb-2">UmodziRx</h1>
+                <h1 className="text-4xl font-bold mb-2">UmodziRx</h1>
                 <p className="text-xl font-light opacity-90">
-                  Secure Prescription Management
+                  Secure Prescription Management System
                 </p>
               </div>
               <div className="pt-6">
-                {/* Removed the text "Trusted by healthcare professionals nationwide" */}
+                <p className="text-sm opacity-80">
+                  Trusted by healthcare professionals nationwide
+                </p>
               </div>
             </div>
           </div>
 
           {/* Right Side - Login Form */}
-          <div className="md:w-1/2 p-12 border border-gray-300 rounded-r-xl">
+          <div className="md:w-1/2 p-12">
             <div className="max-w-md mx-auto">
               <div className="text-center mb-8">
                 <h2 className="text-3xl font-bold text-gray-800">Welcome Back</h2>
@@ -144,7 +132,7 @@ function Login() {
 
               {/* Primary Login - eSignet */}
               <div className="mb-6">
-                <div id="esignet-button" className="w-full h-12 flex items-center justify-center text-center rounded-lg border border-gray-300 bg-white"></div>
+                <div id="esignet-button" className="w-full"></div>
               </div>
 
               <div className="flex items-center my-6">
