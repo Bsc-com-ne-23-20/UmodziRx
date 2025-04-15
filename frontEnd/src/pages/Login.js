@@ -80,7 +80,7 @@ function Login() {
           navigate('/admin/dashboard');
           break;
         case 'doctor':
-          navigate('/doctor'); 
+          navigate('/doctor/dashboard');
           break;
         case 'pharmacist':
           navigate('/pharmacist/dashboard');
@@ -101,6 +101,7 @@ function Login() {
     <div className="h-screen overflow-hidden bg-white flex items-center justify-center">
       <div className="w-full max-w-6xl bg-white overflow-hidden">
         <div className="md:flex">
+          {/* Left Side - Branding */}
           <div className="md:w-1/2 bg-gradient-to-br from-teal-600 to-blue-600 p-12 flex flex-col items-center justify-center text-white rounded-l-xl">
             <div className="text-center space-y-6">
               <img 
@@ -115,6 +116,7 @@ function Login() {
                 </p>
               </div>
               <div className="pt-6">
+                {/* Removed the text "Trusted by healthcare professionals nationwide" */}
               </div>
             </div>
           </div>

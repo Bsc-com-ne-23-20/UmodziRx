@@ -10,9 +10,9 @@ import PatientPrescriptions from "./pages/PatientDashboard";
 import Unauthorized from "./pages/Unauthorized";
 import AuthCallback from "./pages/AuthCallback";
 import ProtectedRoute from "./components/ProtectedRoute"; 
+import ModernDoctorDashboard from "./pages/ModernDoctorDashboard";
+import ModernAdminDashboard from './pages/ModernAdminDashboard';
 import SessionExpired from './pages/SessionExpired';
-import NewDoctorDashboard from './pages/NewDoctorDashboard';
-import NewAdminDashboard from './pages/NewAdminDashboard';
 import "./App.css";
 
 function App() {
@@ -38,13 +38,13 @@ function App() {
 
             <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
               <Route path="/admin" element={<AdminDashboard />} />
-              <Route path="/admin/dashboard" element={<NewAdminDashboard />} />
+              <Route path="/admin/dashboard" element={<ModernAdminDashboard />} />
             </Route>
 
             <Route element={<ProtectedRoute allowedRoles={["doctor"]} />}>
-              <Route path="/doctor" element={<NewDoctorDashboard />} />
-              <Route path="/doctor/prescriptions" element={<NewDoctorDashboard />} />
-              <Route path="/doctor/schedule" element={<NewDoctorDashboard />} />
+              <Route path="/doctor" element={<ModernDoctorDashboard />} />
+              <Route path="/doctor/prescriptions" element={<ModernDoctorDashboard />} />
+              <Route path="/doctor/schedule" element={<ModernDoctorDashboard />} />
               <Route path="/doctor/new-prescription" element={<ViewPatientPrescriptions />} />
               <Route path="/doctor/patient/:id" element={<ViewPatientPrescriptions />} />
               <Route path="/doctor/appointment/:id" element={<ViewPatientPrescriptions />} />

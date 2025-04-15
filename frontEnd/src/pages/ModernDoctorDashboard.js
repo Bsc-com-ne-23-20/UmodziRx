@@ -3,7 +3,7 @@ import { FiHome, FiUsers, FiFileText } from 'react-icons/fi';
 import BaseDashboard from '../components/BaseDashboard';
 import DoctorContent from '../components/DoctorContent';
 
-const NewDoctorDashboard = () => {
+const ModernDoctorDashboard = () => {
   const [activeView, setActiveView] = useState('dashboard');
   
   const navItems = [
@@ -47,4 +47,4 @@ const NewDoctorDashboard = () => {
   );
 };
 
-export default NewDoctorDashboard;
+export default ModernDoctorDashboard;
