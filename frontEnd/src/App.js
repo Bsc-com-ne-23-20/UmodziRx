@@ -40,8 +40,8 @@ function App() {
             <Route path="/callback" element={<AuthCallback />} />
 
             <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
-              <Route path="/admin" element={<AdminDashboard />} />
-              <Route path="/admin/dashboard" element={<NewAdminDashboard />} />
+              <Route path="/admin" element={<NewAdminDashboard />} />
+              {/* <Route path="/admin/dashboard" element={<NewAdminDashboard />} /> */}
             </Route>
 
             <Route element={<ProtectedRoute allowedRoles={["doctor"]} />}>
@@ -62,8 +62,8 @@ function App() {
               <Route path="/patient" element={<PatientPrescriptions />} />
             </Route>
 
-            <Route path="*" element={<Navigate to="/login" replace />} />
-            <Route path="/" element={<Navigate to="/login" replace />} />
+            {/* <Route path="*" element={<Navigate to="/login" replace />} />
+            <Route path="/" element={<Navigate to="/login" replace />} /> */}
           </Routes>
         </div>
       </Router>
