@@ -1,18 +1,16 @@
 const express = require('express');
-const UserController = require('../controllers/userController');
+const path = require('path');
+// Use absolute path to ensure correct file resolution
+const UserController = require(path.join(__dirname, '../controllers/UserController'));
 
 const router = express.Router();
 
-// Route to add a new user
+
+// Admin user management routes (updated to match your frontend)
 router.post('/users', UserController.addUser);
-
-// Route to get all users
 router.get('/users', UserController.getUsers);
-
-// Route to get a user by digital ID
-router.get('/users/:digitalID', UserController.getUserById); 
-
-// Route to delete a user by digital ID
+router.get('/users/:digitalID', UserController.getUserById);
+router.put('/users/:digitalID', UserController.updateUser); // Added missing PUT route
 router.delete('/users/:digitalID', UserController.deleteUser);
 
 module.exports = router;
