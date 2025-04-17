@@ -69,11 +69,25 @@ function Login() {
       }
   
       const data = await response.json();
-      const { token, redirect, role } = data;
+      const { token, role } = data;
   
       localStorage.setItem("token", token);
       localStorage.setItem("userRole", role);
-      navigate(redirect);
+  
+      // Handle different role redirections
+      switch(role) {
+        case 'admin':
+          navigate('/admin/dashboard');
+          break;
+        case 'doctor':
+          navigate('/doctor'); 
+          break;
+        case 'pharmacist':
+          navigate('/pharmacist/dashboard');
+          break;
+        default:
+          navigate('/login');
+      }
       
     } catch (error) {
       setError("Login failed. Please check your credentials.");

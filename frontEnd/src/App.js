@@ -1,37 +1,27 @@
 import React, { useState, useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
-import Home from "./pages/Home";
 import Login from "./pages/Login";
 import ViewPatientPrescriptions from "./pages/ViewPatientPrescriptions";
 import AdminDashboard from "./pages/AdminDashboard";
 import DoctorDashboard from "./pages/DoctorDashboard";
 import PharmacistDashboard from "./pages/PharmacistDashboard";
 import PatientPrescriptions from "./pages/PatientDashboard";
-import LearnMore from "./pages/LearnMore";
-import Navbar from "./components/Navbar";
-import ProtectedRoute from "./components/ProtectedRoute";
 import Unauthorized from "./pages/Unauthorized";
 import AuthCallback from "./pages/AuthCallback";
-import SessionExpired from "./pages/SessionExpired";
+import ProtectedRoute from "./components/ProtectedRoute"; 
+import SessionExpired from './pages/SessionExpired';
+import NewDoctorDashboard from './pages/NewDoctorDashboard';
+import NewAdminDashboard from './pages/NewAdminDashboard';
 import "./App.css";
 
 function App() {
   const [darkMode] = useState(false);
 
   useEffect(() => {
-
-    console.log('Environment:', {
-      NODE_ENV: process.env.NODE_ENV,
-      API_URL: process.env.REACT_APP_API_BASE_URL
-    });
     if (darkMode) {
       document.documentElement.classList.add("dark");
     } else {
-      console.log('Environment:', {
-        NODE_ENV: process.env.NODE_ENV,
-        API_URL: process.env.REACT_APP_API_BASE_URL
-      });
       document.documentElement.classList.remove("dark");
     }
   }, [darkMode]);
@@ -40,39 +30,38 @@ function App() {
     <AuthProvider>
       <Router>
         <div className="min-h-screen bg-background dark:bg-background-dark">
-          <Navbar />
-          <div className="container mx-auto px-4 py-8">
-            <Routes>
-              {/* Public Routes */}
-              <Route path="/" element={<Home />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/learn-more" element={<LearnMore />} />
-              <Route path="/session-expired" element={<SessionExpired />} />
-              <Route path="/unauthorized" element={<Unauthorized />} />
-              <Route path="/callback" element={<AuthCallback />} />
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route path="/session-expired" element={<SessionExpired />} />
+            <Route path="/unauthorized" element={<Unauthorized />} />
+            <Route path="/callback" element={<AuthCallback />} />
 
-              {/* Protected Routes */}
-              <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
-                <Route path="/admin" element={<AdminDashboard />} />
-              </Route>
+            <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
+              <Route path="/admin" element={<AdminDashboard />} />
+              <Route path="/admin/dashboard" element={<NewAdminDashboard />} />
+            </Route>
 
-              <Route element={<ProtectedRoute allowedRoles={["doctor"]} />}>
-                <Route path="/doctor" element={<DoctorDashboard />} />
-                <Route path="/view-patient-prescriptions" element={<ViewPatientPrescriptions />} />
-              </Route>
+            <Route element={<ProtectedRoute allowedRoles={["doctor"]} />}>
+              <Route path="/doctor" element={<NewDoctorDashboard />} />
+              <Route path="/doctor/prescriptions" element={<NewDoctorDashboard />} />
+              <Route path="/doctor/schedule" element={<NewDoctorDashboard />} />
+              <Route path="/doctor/new-prescription" element={<ViewPatientPrescriptions />} />
+              <Route path="/doctor/patient/:id" element={<ViewPatientPrescriptions />} />
+              <Route path="/doctor/appointment/:id" element={<ViewPatientPrescriptions />} />
+              <Route path="/view-patient-prescriptions" element={<ViewPatientPrescriptions />} />
+            </Route>
 
-              <Route element={<ProtectedRoute allowedRoles={["pharmacist"]} />}>
-                <Route path="/pharmacist" element={<PharmacistDashboard />} />
-              </Route>
+            <Route element={<ProtectedRoute allowedRoles={["pharmacist"]} />}>
+              <Route path="/pharmacist" element={<PharmacistDashboard />} />
+            </Route>
 
-              <Route element={<ProtectedRoute allowedRoles={["patient"]} />}>
-                <Route path="/patient" element={<PatientPrescriptions />} />
-              </Route>
+            <Route element={<ProtectedRoute allowedRoles={["patient"]} />}>
+              <Route path="/patient" element={<PatientPrescriptions />} />
+            </Route>
 
-              {/* Redirect all unknown routes */}
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-          </div>
+            <Route path="*" element={<Navigate to="/login" replace />} />
+            <Route path="/" element={<Navigate to="/login" replace />} />
+          </Routes>
         </div>
       </Router>
     </AuthProvider>
