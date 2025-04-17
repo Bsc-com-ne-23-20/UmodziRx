@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
+import Home from "./pages/Home";
 import Login from "./pages/Login";
 import ViewPatientPrescriptions from "./pages/ViewPatientPrescriptions";
 import AdminDashboard from "./pages/AdminDashboard";
@@ -31,6 +32,8 @@ function App() {
       <Router>
         <div className="min-h-screen bg-background dark:bg-background-dark">
           <Routes>
+            {/* Public Routes */}
+            <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login />} />
             <Route path="/session-expired" element={<SessionExpired />} />
             <Route path="/unauthorized" element={<Unauthorized />} />
