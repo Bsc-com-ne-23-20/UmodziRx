@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
+import Home from "./pages/Home";
 import Login from "./pages/Login";
 import ViewPatientPrescriptions from "./pages/ViewPatientPrescriptions";
 import AdminDashboard from "./pages/AdminDashboard";
@@ -31,14 +32,16 @@ function App() {
       <Router>
         <div className="min-h-screen bg-background dark:bg-background-dark">
           <Routes>
+            {/* Public Routes */}
+            <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login />} />
             <Route path="/session-expired" element={<SessionExpired />} />
             <Route path="/unauthorized" element={<Unauthorized />} />
             <Route path="/callback" element={<AuthCallback />} />
 
             <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
-              <Route path="/admin" element={<AdminDashboard />} />
-              <Route path="/admin/dashboard" element={<NewAdminDashboard />} />
+              <Route path="/admin" element={<NewAdminDashboard />} />
+              {/* <Route path="/admin/dashboard" element={<NewAdminDashboard />} /> */}
             </Route>
 
             <Route element={<ProtectedRoute allowedRoles={["doctor"]} />}>
@@ -59,8 +62,8 @@ function App() {
               <Route path="/patient" element={<PatientPrescriptions />} />
             </Route>
 
-            <Route path="*" element={<Navigate to="/login" replace />} />
-            <Route path="/" element={<Navigate to="/login" replace />} />
+            {/* <Route path="*" element={<Navigate to="/login" replace />} />
+            <Route path="/" element={<Navigate to="/login" replace />} /> */}
           </Routes>
         </div>
       </Router>

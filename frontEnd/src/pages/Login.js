@@ -98,152 +98,159 @@ function Login() {
   }, [username, password, navigate]);
 
   return (
-    <div className="h-screen overflow-hidden bg-white flex items-center justify-center">
-      <div className="w-full max-w-6xl bg-white overflow-hidden">
-        <div className="md:flex">
-          <div className="md:w-1/2 bg-gradient-to-br from-teal-600 to-blue-600 p-12 flex flex-col items-center justify-center text-white rounded-l-xl">
-            <div className="text-center space-y-6">
-              <img 
-                src={prescriptionImage} 
-                alt="Prescription and Medication" 
-                className="w-48 h-48 object-cover rounded-full border-4 border-white shadow-md mx-auto"
-              />
-              <div>
-              <h1 className="text-4xl font-bold mb-2">UmodziRx</h1>
-                <p className="text-xl font-light opacity-90">
-                  Secure Prescription Management
-                </p>
-              </div>
-              <div className="pt-6">
+    <div className="fixed inset-0 bg-gradient-to-br from-teal-50 to-blue-50 overflow-y-auto">
+      <div className="min-h-full flex items-center justify-center p-4">
+        {/* Main container with max-width and responsive sizing */}
+        <div className="w-full max-w-md md:max-w-2xl bg-white rounded-xl shadow-lg overflow-hidden">
+          <div className="md:flex">
+            {/* Left Side - Branding - Hidden on small screens */}
+            <div className="hidden md:flex md:w-1/2 bg-gradient-to-br from-teal-600 to-blue-600 p-6 flex-col items-center justify-center text-white">
+              <div className="text-center space-y-6">
+                <img 
+                  src={prescriptionImage} 
+                  alt="Prescription and Medication" 
+                  className="w-32 h-32 md:w-48 md:h-48 object-cover rounded-full border-4 border-white shadow-md mx-auto"
+                />
+                <div>
+                  <h1 className="text-3xl md:text-4xl font-bold mb-2">UmodziRx</h1>
+                  <p className="text-lg md:text-xl font-light opacity-90">
+                    Secure Prescription Management System
+                  </p>
+                </div>
+                <div className="pt-2">
+                  <p className="text-sm opacity-80">
+                    Trusted by healthcare professionals nationwide
+                  </p>
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Right Side - Login Form */}
-          <div className="md:w-1/2 p-12 border border-gray-300 rounded-r-xl">
-            <div className="max-w-md mx-auto">
-              <div className="text-center mb-8">
-                <h2 className="text-3xl font-bold text-gray-800">Welcome Back</h2>
-                <p className="text-gray-600 mt-2">
-                  Sign in to access your account
-                </p>
-              </div>
-
-              {error && (
-                <div className="bg-red-50 border-l-4 border-red-500 text-red-700 p-4 mb-6 rounded">
-                  <div className="flex items-center">
-                    <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2h-1V9z" clipRule="evenodd" />
-                    </svg>
-                    <span>{error}</span>
-                  </div>
+            {/* Right Side - Login Form */}
+            <div className="w-full md:w-1/2 p-6 md:p-8">
+              <div className="max-w-xs mx-auto w-full md:max-w-none">
+                <div className="text-center mb-6">
+                  <h2 className="text-2xl md:text-3xl font-bold text-gray-800">Welcome Back</h2>
+                  <p className="text-gray-600 mt-2 text-sm md:text-base">
+                    Sign in to access your account
+                  </p>
                 </div>
-              )}
 
-              {/* Primary Login - eSignet */}
-              <div className="mb-6">
-                <div id="esignet-button" className="w-full h-12 flex items-center justify-center text-center rounded-lg border border-gray-300 bg-white"></div>
-              </div>
-
-              <div className="flex items-center my-6">
-                <hr className="flex-grow border-t border-gray-200" />
-                <span className="mx-4 text-sm text-gray-500">or</span>
-                <hr className="flex-grow border-t border-gray-200" />
-              </div>
-
-              {/* Secondary Login - Username/Password */}
-              {showTraditionalLogin ? (
-                <form onSubmit={handleLoginSubmit} className="space-y-5">
-                  <div>
-                    <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1">
-                      Username
-                    </label>
-                    <input
-                      type="text"
-                      id="username"
-                      aria-label="Username"
-                      aria-required="true"
-                      value={username}
-                      onChange={(e) => setUsername(e.target.value)}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200"
-                      placeholder="Enter your username"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
-                      Password
-                    </label>
-                    <div className="relative">
-                      <input
-                        type={showPassword ? "text" : "password"}
-                        id="password"
-                        aria-label="Password"
-                        aria-required="true"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200"
-                        placeholder="Enter your password"
-                        required
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-gray-700"
-                        aria-label={showPassword ? "Hide password" : "Show password"}
-                      >
-                        {showPassword ? (
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
-                          </svg>
-                        ) : (
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                          </svg>
-                        )}
-                      </button>
+                {error && (
+                  <div className="bg-red-50 border-l-4 border-red-500 text-red-700 p-4 mb-4 rounded text-sm">
+                    <div className="flex items-center">
+                      <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2h-1V9z" clipRule="evenodd" />
+                      </svg>
+                      <span>{error}</span>
                     </div>
                   </div>
+                )}
 
-                  <div className="flex items-center justify-between">
+                {/* Primary Login - eSignet */}
+                <div className="mb-4">
+                  <div id="esignet-button" className="w-full"></div>
+                </div>
+
+                <div className="flex items-center my-4">
+                  <hr className="flex-grow border-t border-gray-200" />
+                  <span className="mx-4 text-sm text-gray-500">or</span>
+                  <hr className="flex-grow border-t border-gray-200" />
+                </div>
+
+                {/* Secondary Login - Username/Password */}
+                {showTraditionalLogin ? (
+                  <form onSubmit={handleLoginSubmit} className="space-y-4">
+                    <div>
+                      <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1">
+                        Username
+                      </label>
+                      <input
+                        type="text"
+                        id="username"
+                        aria-label="Username"
+                        aria-required="true"
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value)}
+                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200"
+                        placeholder="Enter your username"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+                        Password
+                      </label>
+                      <div className="relative">
+                        <input
+                          type={showPassword ? "text" : "password"}
+                          id="password"
+                          aria-label="Password"
+                          aria-required="true"
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200"
+                          placeholder="Enter your password"
+                          required
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-gray-700"
+                          aria-label={showPassword ? "Hide password" : "Show password"}
+                        >
+                          {showPassword ? (
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                            </svg>
+                          ) : (
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            </svg>
+                          )}
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <button
+                        type="button"
+                        onClick={() => navigate("/forgot-password")}
+                        className="text-xs md:text-sm text-blue-600 hover:text-blue-800 hover:underline"
+                      >
+                        Forgot password?
+                      </button>
+                    </div>
+
                     <button
-                      type="button"
-                      onClick={() => navigate("/forgot-password")}
-                      className="text-sm text-blue-600 hover:text-blue-800 hover:underline"
+                      type="submit"
+                      disabled={loading}
+                      className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed text-sm md:text-base"
                     >
-                      Forgot password?
+                      {loading ? (
+                        <span className="flex items-center justify-center">
+                          <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                          Signing in...
+                        </span>
+                      ) : "Sign in"}
                     </button>
-                  </div>
-
+                  </form>
+                ) : (
                   <button
-                    type="submit"
-                    disabled={loading}
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                    onClick={() => setShowTraditionalLogin(true)}
+                    className="w-full bg-white border border-gray-300 text-gray-700 font-medium py-2 px-4 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition duration-200 text-sm md:text-base"
                   >
-                    {loading ? (
-                      <span className="flex items-center justify-center">
-                        <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        Signing in...
-                      </span>
-                    ) : "Sign in"}
+                    Sign in with username/password
                   </button>
-                </form>
-              ) : (
-                <button
-                  onClick={() => setShowTraditionalLogin(true)}
-                  className="w-full bg-white border border-gray-300 text-gray-700 font-medium py-3 px-4 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition duration-200"
-                >
-                  Sign in with username/password
-                </button>
-              )}
+                )}
 
-              <div className="mt-8 text-center text-sm text-gray-500">
-                <p>Don't have an account? <a href="#" className="text-blue-600 hover:underline">Contact administrator</a></p>
+                <div className="mt-4 text-center text-xs md:text-sm text-gray-500">
+                  <p>Don't have an account? <a href="#" className="text-blue-600 hover:underline">Contact administrator</a></p>
+                </div>
               </div>
             </div>
           </div>
