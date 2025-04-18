@@ -167,6 +167,22 @@ static async getUsers(req, res) {
     }
   }
   
+  // Inside UserController
+static async findUserByDigitalID(digitalID) {
+  const encryptedDigitalID = encryptData(digitalID);
+  const [users] = await pool.query('SELECT * FROM staff WHERE digitalID = ?', [encryptedDigitalID]);
+  if (users.length === 0) return null;
+
+  return {
+    digitalID: decryptData(users[0].digitalID),
+    name: decryptData(users[0].name),
+    role: decryptData(users[0].role),
+    status: decryptData(users[0].status),
+  };
+}
+
+
+
    // Get a user by their digitalID
    static async getUserById(req, res) {
     const { digitalID } = req.params;
