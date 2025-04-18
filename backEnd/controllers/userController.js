@@ -82,24 +82,54 @@ class UserController {
     }
   }
 
-  // Get all users
-  static async getUsers(req, res) {
-    try {
+ // Get all users with pagination
+static async getUsers(req, res) {
+  try {
+      // Get pagination parameters from query
+      const page = parseInt(req.query.page) || 1;
+      const limit = parseInt(req.query.limit) || 20;
+      const offset = (page - 1) * limit;
+
+      // Ensure table exists
       await UserController.ensureTableExists();
 
-      const [users] = await pool.query('SELECT * FROM staff');
+      // Get total count of users
+      const [totalCount] = await pool.query('SELECT COUNT(*) as count FROM staff');
+      const totalUsers = totalCount[0].count;
+
+      // Get paginated users
+      const [users] = await pool.query(
+          'SELECT * FROM staff ORDER BY digitalID LIMIT ? OFFSET ?',
+          [limit, offset]
+      );
+
+      // Decrypt user data
       const decryptedUsers = users.map(user => ({
-        digitalID: decryptData(user.digitalID),
-        name: decryptData(user.name),
-        role: decryptData(user.role),
-        status: decryptData(user.status) || 'Active'
+          digitalID: decryptData(user.digitalID),
+          name: decryptData(user.name),
+          role: decryptData(user.role),
+          status: decryptData(user.status) || 'Active'
       }));
-      res.json(decryptedUsers);
-    } catch (error) {
-      console.error('Error fetching users:', error);
-      res.status(500).json({ message: 'Internal server error' });
-    }
+
+      res.json({
+          users: decryptedUsers,
+          pagination: {
+              total: totalUsers,
+              page,
+              limit,
+              totalPages: Math.ceil(totalUsers / limit),
+              hasNextPage: (page * limit) < totalUsers
+          }
+      });
+
+  } catch (error) {
+      console.error('Error in getUsers:', error);
+      res.status(500).json({ 
+          message: 'Failed to retrieve users',
+          error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      });
   }
+}
 
   // Update a user
   static async updateUser(req, res) {
@@ -170,8 +200,6 @@ class UserController {
       res.status(500).json({ message: 'Internal server error' });
     }
   }
-
-
 
   // Delete a user
   static async deleteUser(req, res) {
