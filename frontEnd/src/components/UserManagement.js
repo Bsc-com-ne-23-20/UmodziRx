@@ -53,14 +53,13 @@ const UserManagement = () => {
     setIsLoading(true);
     try {
       const data = await adminRequest('get', `/admin/users?page=${page}&limit=${pagination.limit}`);
-      setUsers(Array.isArray(data?.users) ? data.users : []);
-      setPagination(data.pagination || {
-        page,
-        limit: pagination.limit,
-        total: 0,
-        totalPages: 1,
-        hasNextPage: false
-      });
+      if (data?.users && Array.isArray(data.users)) {
+        setUsers(data.users);
+        setPagination({
+          ...data.pagination,
+          limit: pagination.limit // Ensure we maintain our limit of 20
+        });
+      }
     } catch (error) {
       setError('Failed to fetch users.');
       setTimeout(() => setError(""), 3000);
@@ -80,19 +79,16 @@ const UserManagement = () => {
     setIsLoading(true);
     try {
       const user = await adminRequest('get', `/admin/users/${searchInput.trim()}`);
-      setUsers([user]);
-      setPagination({
-        page: 1,
-        limit: 1,
-        total: 1,
-        totalPages: 1,
-        hasNextPage: false
-      });
-      setSearchTerm(searchInput.trim());
+      if (user) {
+        setUsers([user]);
+        setSearchTerm(searchInput.trim());
+      } else {
+        setError('User not found');
+        setTimeout(() => setError(""), 3000);
+      }
     } catch (error) {
       setError('User not found');
       setTimeout(() => setError(""), 3000);
-      setUsers([]);
     } finally {
       setIsLoading(false);
     }
@@ -317,7 +313,7 @@ const UserManagement = () => {
           </table>
 
           {/* Pagination Controls */}
-          {!searchTerm && (
+          {!searchTerm && pagination.totalPages > 1 && (
             <div className="flex items-center justify-between px-6 py-4 border-t border-gray-200 dark:border-gray-700">
               <div className="text-sm text-gray-700 dark:text-gray-300">
                 Showing page {pagination.page} of {pagination.totalPages} ({pagination.total} total users)
