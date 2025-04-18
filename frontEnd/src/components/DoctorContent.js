@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { FiPlusCircle, FiUsers, FiX, FiPlus} from 'react-icons/fi';
+import { FiPlusCircle, FiUsers, FiX, FiPlus } from 'react-icons/fi';
+import TableHeader from './TableHeader';
 
 // sample meds
 const MEDICATION_LIST = [
@@ -75,6 +76,9 @@ const DoctorContent = ({ activeView, handleNavigation }) => {
   const [selectedMeds, setSelectedMeds] = useState(new Set());
   const [showPatientModal, setShowPatientModal] = useState(false);
   const [selectedPatient, setSelectedPatient] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [searchInput, setSearchInput] = useState('');
+  const [filteredPatients, setFilteredPatients] = useState(MOCK_PATIENTS);
 
   const modalRef = useRef();
 
@@ -185,8 +189,75 @@ const DoctorContent = ({ activeView, handleNavigation }) => {
     setShowPatientModal(true);
   };
 
-  const renderPatientsTable = () => (
+  const handleSearch = () => {
+    setSearchTerm(searchInput);
+    const filtered = MOCK_PATIENTS.filter(patient => {
+      const search = searchInput.toLowerCase();
+      return (
+        patient.name.toLowerCase().includes(search) ||
+        patient.id.toLowerCase().includes(search) ||
+        patient.prescriptionId.toLowerCase().includes(search)
+      );
+    });
+    setFilteredPatients(filtered);
+  };
+
+  const handleSearchReset = () => {
+    setSearchTerm('');
+    setSearchInput('');
+    setFilteredPatients(MOCK_PATIENTS);
+  };
+
+  const handleFilter = (filterValue) => {
+    if (filterValue === 'all') {
+      setFilteredPatients(MOCK_PATIENTS);
+      return;
+    }
+    const filtered = MOCK_PATIENTS.filter(patient => 
+      patient.status.toLowerCase() === filterValue
+    );
+    setFilteredPatients(filtered);
+  };
+
+  const filterOptions = [
+    { label: 'All Patients', value: 'all' },
+    { label: 'Pending', value: 'pending' },
+    { label: 'Dispensed', value: 'dispensed' },
+    { label: 'Issued', value: 'issued' },
+    { label: 'Revoked', value: 'revoked' }
+  ];
+
+  const renderDashboard = () => (
+    <>
+      <div className="flex justify-between items-center mb-6">
+        <div className="grid grid-cols-2 gap-4 flex-1">
+          <button 
+            onClick={handlePatientRecords} 
+            className="p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-blue-500 dark:hover:border-blue-400 hover:shadow-md transition-all"
+          >
+            <div className="flex items-center space-x-3">
+              <FiUsers className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+              <span className="font-medium text-gray-700 dark:text-gray-300">Patient Records</span>
+            </div>
+          </button>
+        </div>
+      </div>
+      {/* Add other dashboard content here */}
+    </>
+  );
+
+  const renderPatients = () => (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
+      <TableHeader
+        title="Patient Management"
+        searchPlaceholder="Search patients..."
+        onSearch={handleSearch}
+        onFilter={handleFilter}
+        searchValue={searchInput}
+        onSearchChange={setSearchInput}
+        onSearchReset={handleSearchReset}
+        filterOptions={filterOptions}
+      />
       <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
         <thead className="bg-gray-50 dark:bg-gray-900">
           <tr>
@@ -208,64 +279,57 @@ const DoctorContent = ({ activeView, handleNavigation }) => {
           </tr>
         </thead>
         <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-          {patients.map(patient => (
-            <tr key={patient.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer" onClick={() => handlePatientClick(patient)}>
-              <td className="px-6 py-4 whitespace-nowrap">
-                <div className="text-sm font-medium text-gray-900 dark:text-gray-300">{patient.name}</div>
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                {patient.id}
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                {patient.prescriptionId}
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                {new Date(patient.lastVisit).toLocaleDateString()}
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap">
-                <span className={getStatusBadgeClass(patient.status)}>
-                  <span className={`w-2 h-2 rounded-full ${getStatusDotColor(patient.status)}`}></span>
-                  {patient.status}
-                </span>
+          {filteredPatients.length > 0 ? (
+            filteredPatients.map(patient => (
+              <tr key={patient.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer" onClick={() => handlePatientClick(patient)}>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="text-sm font-medium text-gray-900 dark:text-gray-300">{patient.name}</div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                  {patient.id}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                  {patient.prescriptionId}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                  {new Date(patient.lastVisit).toLocaleDateString()}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <span className={getStatusBadgeClass(patient.status)}>
+                    <span className={`w-2 h-2 rounded-full ${getStatusDotColor(patient.status)}`}></span>
+                    {patient.status}
+                  </span>
+                </td>
+              </tr>
+            ))
+          ) : (
+            <tr>
+              <td colSpan="5" className="px-6 py-4 text-center">
+                <div className="text-gray-500 dark:text-gray-400">
+                  No patients found
+                </div>
               </td>
             </tr>
-          ))}
+          )}
         </tbody>
       </table>
     </div>
   );
 
   return (
-    <div className="flex-1 overflow-auto p-6">
-      {activeView === 'dashboard' ? (
-        <>
-          <div className="flex justify-between items-center mb-6">
-            <div className="grid grid-cols-2 gap-4 flex-1">
-              <button 
-                onClick={() => setShowPrescriptionModal(true)} 
-                className="p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-blue-500 dark:hover:border-blue-400 hover:shadow-md transition-all"
-              >
-                <div className="flex items-center space-x-3">
-                  <FiPlusCircle className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-                  <span className="font-medium text-gray-700 dark:text-gray-300">New Prescription</span>
-                </div>
-              </button>
-              <button onClick={handlePatientRecords} className="p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-blue-500 dark:hover:border-blue-400 hover:shadow-md transition-all">
-                <div className="flex items-center space-x-3">
-                  <FiUsers className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-                  <span className="font-medium text-gray-700 dark:text-gray-300">Patient Records</span>
-                </div>
-              </button>
-            </div>
-          </div>
-          {renderPatientsTable()}
-        </>
-      ) : activeView === 'patients' ? (
-        <>
-          <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-6">Patient Management</h2>
-          {renderPatientsTable()}
-        </>
-      ) : null}
+    <div className="relative min-h-full">
+      {activeView === 'dashboard' && renderDashboard()}
+      {activeView === 'patients' && renderPatients()}
+
+      {/* Floating Action Button - visible in both views */}
+      {(activeView === 'prescriptions' || activeView === 'dashboard') && (
+        <button
+          onClick={() => setShowPrescriptionModal(true)}
+          className="fixed bottom-6 right-6 w-14 h-14 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg flex items-center justify-center transition-colors z-10"
+        >
+          <FiPlus className="h-6 w-6" />
+        </button>
+      )}
 
       {showPrescriptionModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">

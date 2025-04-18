@@ -28,7 +28,7 @@ const NewDoctorDashboard = () => {
   ];
 
   const doctorInfo = {
-    name: localStorage.getItem('doctorName') || 'Dr. John Doe',
+    name: localStorage.getItem('doctorName') || 'Dr. Doe',
     id: localStorage.getItem('doctorId'),
   };
 
@@ -39,7 +39,7 @@ const NewDoctorDashboard = () => {
   return (
     <BaseDashboard
       navItems={navItems}
-      title="UmodziRx"
+      title="Doctor"
       userInfo={doctorInfo}
     >
       <DoctorContent activeView={activeView} handleNavigation={handleNavigation} />
