@@ -109,9 +109,9 @@ const BaseDashboard = ({ children, navItems, title, userInfo }) => {
       {/* Sidebar + Main */}
       <div className="flex pt-16 h-full">
         {/* Left Sidebar */}
-        <div className={`${isSidebarCollapsed ? 'w-16' : 'min-w-[16rem]'} bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 p-4 flex flex-col h-full transition-all duration-300`}>
+        <div className={`${isSidebarCollapsed ? 'w-16' : 'min-w-[10rem]'} bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 p-4 flex flex-col h-full transition-all duration-300`}>
           <div className="mb-8 flex justify-between items-center">
-            <h1 className={`font-bold text-blue-600 dark:text-blue-400 transition-all duration-300 ${isSidebarCollapsed ? 'text-xs truncate' : 'text-xl'}`}>
+            <h1 className={`font-bold text-blue-600 dark:text-blue-400  transition-all duration-300 ${isSidebarCollapsed ? 'text-xs truncate' : 'text-xl p-2' }`}>
               {title}
             </h1>
             <button
