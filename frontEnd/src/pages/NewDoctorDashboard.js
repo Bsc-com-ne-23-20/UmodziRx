@@ -39,7 +39,7 @@ const NewDoctorDashboard = () => {
   return (
     <BaseDashboard
       navItems={navItems}
-      title="Doctor"
+      title="UmodziRx"
       userInfo={doctorInfo}
     >
       <DoctorContent activeView={activeView} handleNavigation={handleNavigation} />
