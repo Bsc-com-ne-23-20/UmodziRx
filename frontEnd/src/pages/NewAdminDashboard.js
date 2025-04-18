@@ -1,12 +1,11 @@
 import React from 'react';
-import { FiHome, FiUsers } from 'react-icons/fi';
+import { FiHome } from 'react-icons/fi';
 import BaseDashboard from '../components/BaseDashboard';
 import UserManagement from '../components/UserManagement';
 
 const NewAdminDashboard = () => {
   const navItems = [
-    { icon: FiHome, label: 'Dashboard', id: 'dashboard' },
-    { icon: FiUsers, label: 'User Management', id: 'users' }
+    { icon: FiHome, label: 'Dashboard', id: 'dashboard' }
   ];
 
   const adminInfo = {
@@ -17,7 +16,7 @@ const NewAdminDashboard = () => {
   return (
     <BaseDashboard
       navItems={navItems}
-      title="UmodziRx Admin"
+      title="Admin"
       userInfo={adminInfo}
     >
       <UserManagement />
