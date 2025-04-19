@@ -1,6 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import UserManagement from '../components/UserManagement';
 import {
   FiSettings,
   FiMoreVertical,
@@ -8,8 +7,7 @@ import {
   FiSun,
   FiMenu,
   FiLogOut,
-  FiEye,
-  FiUserPlus
+  FiEye
 } from 'react-icons/fi';
 
 const BaseDashboard = ({ children, navItems, title, userInfo }) => {
@@ -21,7 +19,6 @@ const BaseDashboard = ({ children, navItems, title, userInfo }) => {
     return saved ? JSON.parse(saved) : false;
   });
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-  const userManagementRef = useRef(null);
 
   useEffect(() => {
     if (darkMode) {
@@ -58,12 +55,6 @@ const BaseDashboard = ({ children, navItems, title, userInfo }) => {
 
   const handlePatientView = () => {
     navigate('/patient');
-  };
-
-  const handleAddUserClick = () => {
-    if (userManagementRef.current) {
-      userManagementRef.current.showAddUserModal();
-    }
   };
 
   return (
@@ -135,25 +126,13 @@ const BaseDashboard = ({ children, navItems, title, userInfo }) => {
             {navItems.map(item => (
               <button
                 key={item.id}
-                onClick={() => handleNavigation(item.id)}
-                className={`w-full flex items-center ${isSidebarCollapsed ? 'justify-center' : 'justify-start'} px-4 py-2.5 rounded-lg transition-colors
-                  ${activeView === item.id
-                    ? 'bg-blue-50 text-blue-600 dark:bg-blue-900 dark:text-blue-400'
-                    : 'text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-900 hover:text-blue-600 dark:hover:text-blue-400'}`}
+                onClick={item.onClick || (() => {})}
+                className={`w-full flex items-center ${isSidebarCollapsed ? 'justify-center' : 'justify-start'} px-4 py-2.5 rounded-lg transition-colors text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-900 hover:text-blue-600 dark:hover:text-blue-400`}
               >
                 <item.icon className="h-5 w-5 flex-shrink-0" />
                 {!isSidebarCollapsed && <span className="ml-3">{item.label}</span>}
               </button>
             ))}
-
-            {/* Add User Button */}
-            <button
-              onClick={handleAddUserClick}
-              className={`w-full flex items-center ${isSidebarCollapsed ? 'justify-center' : 'justify-start'} px-4 py-2.5 rounded-lg transition-colors text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-900 hover:text-blue-600 dark:hover:text-blue-400`}
-            >
-              <FiUserPlus className="h-5 w-5 flex-shrink-0" />
-              {!isSidebarCollapsed && <span className="ml-3">Add User</span>}
-            </button>
           </nav>
 
           <div className="mt-auto space-y-2">
@@ -179,14 +158,7 @@ const BaseDashboard = ({ children, navItems, title, userInfo }) => {
 
         {/* Main Content */}
         <div className="flex-1 overflow-auto p-6">
-          {React.Children.map(children, child =>
-            React.cloneElement(child, {
-              activeView,
-              darkMode,
-              handleNavigation,
-              ref: child.type === UserManagement ? userManagementRef : null
-            })
-          )}
+          {children}
         </div>
       </div>
     </div>

@@ -34,17 +34,19 @@ const UserManagement = forwardRef((props, ref) => {
 
   // Expose functions to parent via ref
   useImperativeHandle(ref, () => ({
-    showAddUserModal: () => {
-      setSelectedUser(null);
-      setEditFormData({
-        name: '',
-        role: '',
-        status: 'Active',
-        digitalID: ''
-      });
-      setShowEditModal(true);
-    }
+    showAddUserModal: () => handleAddUserClick()
   }));
+
+  const handleAddUserClick = () => {
+    setSelectedUser(null);
+    setEditFormData({
+      name: '',
+      role: '',
+      status: 'Active',
+      digitalID: ''
+    });
+    setShowEditModal(true);
+  };
 
   // Scroll event handler for floating button visibility
   // Replace the existing useEffect scroll handler with this:
@@ -384,21 +386,12 @@ useEffect(() => {
         </>
       )}
 
-      {/* Floating Add User Button - Only visible when scrolled to top */}
+      {/* Floating Add User Button */}
       {showFloatingButton && (
         <div className="fixed bottom-4 right-10 z-10 transition-opacity duration-300">
           <button 
             className="flex h-12 w-12 items-center justify-center rounded-full bg-blue-600 text-white shadow-md transition-all hover:bg-blue-700 hover:shadow-lg"
-            onClick={() => {
-              setSelectedUser(null);
-              setEditFormData({
-                name: '',
-                role: '',
-                status: 'Active',
-                digitalID: ''
-              });
-              setShowEditModal(true);
-            }}
+            onClick={handleAddUserClick}
           >
             <FiUserPlus className="h-5 w-5" />
           </button>
