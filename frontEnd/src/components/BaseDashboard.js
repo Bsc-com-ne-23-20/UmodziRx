@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import UserManagement from '../components/UserManagement';
 import {
   FiSettings,
   FiMoreVertical,
@@ -7,7 +8,8 @@ import {
   FiSun,
   FiMenu,
   FiLogOut,
-  FiEye
+  FiEye,
+  FiUserPlus
 } from 'react-icons/fi';
 
 const BaseDashboard = ({ children, navItems, title, userInfo }) => {
@@ -19,6 +21,7 @@ const BaseDashboard = ({ children, navItems, title, userInfo }) => {
     return saved ? JSON.parse(saved) : false;
   });
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const userManagementRef = useRef(null);
 
   useEffect(() => {
     if (darkMode) {
@@ -54,7 +57,13 @@ const BaseDashboard = ({ children, navItems, title, userInfo }) => {
   };
 
   const handlePatientView = () => {
-    navigate('/patient/dashboard');
+    navigate('/patient');
+  };
+
+  const handleAddUserClick = () => {
+    if (userManagementRef.current) {
+      userManagementRef.current.showAddUserModal();
+    }
   };
 
   return (
@@ -111,7 +120,7 @@ const BaseDashboard = ({ children, navItems, title, userInfo }) => {
         {/* Left Sidebar */}
         <div className={`${isSidebarCollapsed ? 'w-16' : 'min-w-[10rem]'} bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 p-4 flex flex-col h-full transition-all duration-300`}>
           <div className="mb-8 flex justify-between items-center">
-            <h1 className={`font-bold text-blue-600 dark:text-blue-400  transition-all duration-300 ${isSidebarCollapsed ? 'text-xs truncate' : 'text-xl p-2' }`}>
+            <h1 className={`font-bold text-blue-600 dark:text-blue-400 transition-all duration-300 ${isSidebarCollapsed ? 'text-xs truncate' : 'text-xl p-2'}`}>
               {title}
             </h1>
             <button
@@ -136,6 +145,15 @@ const BaseDashboard = ({ children, navItems, title, userInfo }) => {
                 {!isSidebarCollapsed && <span className="ml-3">{item.label}</span>}
               </button>
             ))}
+
+            {/* Add User Button */}
+            <button
+              onClick={handleAddUserClick}
+              className={`w-full flex items-center ${isSidebarCollapsed ? 'justify-center' : 'justify-start'} px-4 py-2.5 rounded-lg transition-colors text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-900 hover:text-blue-600 dark:hover:text-blue-400`}
+            >
+              <FiUserPlus className="h-5 w-5 flex-shrink-0" />
+              {!isSidebarCollapsed && <span className="ml-3">Add User</span>}
+            </button>
           </nav>
 
           <div className="mt-auto space-y-2">
@@ -165,7 +183,8 @@ const BaseDashboard = ({ children, navItems, title, userInfo }) => {
             React.cloneElement(child, {
               activeView,
               darkMode,
-              handleNavigation
+              handleNavigation,
+              ref: child.type === UserManagement ? userManagementRef : null
             })
           )}
         </div>
