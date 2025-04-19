@@ -47,25 +47,29 @@ const UserManagement = forwardRef((props, ref) => {
   }));
 
   // Scroll event handler for floating button visibility
-  useEffect(() => {
-    const handleScroll = () => {
-      if (mainContentRef.current) {
-        const { scrollTop } = mainContentRef.current;
-        setShowFloatingButton(scrollTop === 0);
-      }
-    };
-
-    const contentElement = mainContentRef.current;
-    if (contentElement) {
-      contentElement.addEventListener('scroll', handleScroll);
+  // Replace the existing useEffect scroll handler with this:
+useEffect(() => {
+  const handleScroll = () => {
+    if (mainContentRef.current) {
+      const { scrollTop, scrollHeight, clientHeight } = mainContentRef.current;
+      const distanceFromBottom = scrollHeight - (scrollTop + clientHeight);
+      
+      // Show button unless we're within 200px of the bottom
+      setShowFloatingButton(distanceFromBottom > 200);
     }
+  };
 
-    return () => {
-      if (contentElement) {
-        contentElement.removeEventListener('scroll', handleScroll);
-      }
-    };
-  }, []);
+  const contentElement = mainContentRef.current;
+  if (contentElement) {
+    contentElement.addEventListener('scroll', handleScroll);
+  }
+
+  return () => {
+    if (contentElement) {
+      contentElement.removeEventListener('scroll', handleScroll);
+    }
+  };
+}, []);
 
   // API request helper
   const adminRequest = async (method, endpoint, data = null) => {
