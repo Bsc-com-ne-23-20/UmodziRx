@@ -14,6 +14,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import SessionExpired from './pages/SessionExpired';
 import NewDoctorDashboard from './pages/NewDoctorDashboard';
 import NewAdminDashboard from './pages/NewAdminDashboard';
+import Learn from './pages/LearnMore';
 import "./App.css";
 
 function App() {
@@ -38,6 +39,7 @@ function App() {
             <Route path="/session-expired" element={<SessionExpired />} />
             <Route path="/unauthorized" element={<Unauthorized />} />
             <Route path="/callback" element={<AuthCallback />} />
+            <Route path="/learn" element={<Learn />} />
 
             <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
               <Route path="/admin" element={<NewAdminDashboard />} />
