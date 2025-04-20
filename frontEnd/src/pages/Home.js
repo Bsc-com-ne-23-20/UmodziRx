@@ -75,7 +75,7 @@ export default function Home() {
             <div className="flex justify-center space-x-4">
             <div className="flex justify-center space-x-4">
               <Link
-                to="/learn-more"
+                to="/learn"
                 className="inline-flex items-center px-8 py-4 border border-transparent text-xl font-semibold rounded-full text-blue-600 bg-white hover:bg-gray-100 transition-colors duration-200 shadow-lg"
               >
                 Learn More
