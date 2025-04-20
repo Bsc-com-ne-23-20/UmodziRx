@@ -2,46 +2,34 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
+const { connectDB } = require('./db');
+const { initializeEncryption } = require('../utils/encryption');
+const UserController = require('../controllers/userController');
+const withRetry = require('./retry');
+
+// Route imports
 const authRoutes = require('../routes/authRoutes');
 const prescriptionRoutes = require('../routes/prescriptionRoutes');
-const pharmaRoutes = require('../routes/pharmaRoutes'); // New route import
-const { connectDB } = require('../config/db'); 
-const userRoutes = require('../routes/userRoutes'); //
-const PrescriptionController = require('../controllers/prescriptionController');
-const PharmacistController = require('../controllers/pharmacistController'); 
+const pharmaRoutes = require('../routes/pharmaRoutes');
+const userRoutes = require('../routes/userRoutes');
 const patientRoutes = require('../routes/patientRoutes');
 
 const app = express();
 
-
-
-
-
-// Enhanced CORS configuration
+// Middleware
 app.use(cors({
   origin: process.env.FRONTEND_BASE_URL,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true,
-  maxAge: 86400 // Increased cache time
+  maxAge: 86400
 }));
 
-// Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-// Database Connection
-connectDB();
-
-// Routes
-app.use('/auth', authRoutes);
-app.use('/doctor', prescriptionRoutes); 
-app.use('/pharmacist', pharmaRoutes); 
-app.use('/admin', userRoutes); 
-app.use('/patient', patientRoutes);
-
-// Health Check with more detailed response
+// Health check route
 app.get('/health', (req, res) => {
   res.status(200).json({ 
     status: 'OK',
@@ -50,22 +38,27 @@ app.get('/health', (req, res) => {
   });
 });
 
-// Enhanced Error Handling Middleware
+// Routes
+app.use('/auth', authRoutes);
+app.use('/doctor', prescriptionRoutes);
+app.use('/pharmacist', pharmaRoutes);
+app.use('/admin', userRoutes);
+app.use('/patient', patientRoutes);
+
+// Global error handler
 app.use((err, req, res, next) => {
   console.error(`[${new Date().toISOString()}] Error:`, err.stack);
-  
   const statusCode = err.statusCode || 500;
   const message = process.env.NODE_ENV === 'production' 
     ? 'Internal Server Error' 
     : err.message;
-  
   res.status(statusCode).json({ 
     error: message,
     ...(process.env.NODE_ENV !== 'production' && { stack: err.stack })
   });
 });
 
-// Handle 404 routes
+// 404 handler
 app.use('*', (req, res) => {
   res.status(404).json({
     error: 'Endpoint not found',
@@ -73,23 +66,30 @@ app.use('*', (req, res) => {
   });
 });
 
-app.get('/routes', (req, res) => {
-  const routes = [];
-  app._router.stack.forEach(middleware => {
-    if (middleware.route) {
-      routes.push({
-        path: middleware.route.path,
-        methods: Object.keys(middleware.route.methods)
-      });
-    }
-  });
-  res.json(routes);
-});
 
 
+const startServer = async () => {
+  try {
+    // Initialize encryption
+    await initializeEncryption();
 
+    // Database connection with retry
+    await withRetry(async () => {
+      console.log('🔗 Attempting database connection...');
+      const client = await connectDB();
+      console.log('✅ Database connection established');
+      await UserController.ensureTableExists();
+    }, 5, 2000); // 5 attempts with 2s initial delay
 
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
-});
+    // Start server
+    const PORT = process.env.PORT || 5000;
+    app.listen(PORT, () => {
+      console.log(`🚀 Server running on port ${PORT}`);
+    });
+  } catch (error) {
+    console.error('💀 Fatal startup error:', error.message);
+    process.exit(1);
+  }
+};
+
+startServer();
