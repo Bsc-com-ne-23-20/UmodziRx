@@ -28,7 +28,7 @@ const NewDoctorDashboard = () => {
   ];
 
   const doctorInfo = {
-    name: localStorage.getItem('doctorName') || 'Dr. John Doe',
+    name: localStorage.getItem('doctorName') || 'Dr. Doe',
     id: localStorage.getItem('doctorId'),
   };
 

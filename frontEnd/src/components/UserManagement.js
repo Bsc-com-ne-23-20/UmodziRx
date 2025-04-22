@@ -1,6 +1,7 @@
 import React, { useState, useEffect, forwardRef, useImperativeHandle, useRef } from 'react';
 import { FiEdit2, FiTrash2, FiUserPlus, FiChevronLeft, FiChevronRight, FiX, FiSearch } from 'react-icons/fi';
 import axios from 'axios';
+import TableHeader from './TableHeader';
 
 const admin_BASE_URL = process.env.REACT_APP_admin_BASE_URL || "http://localhost:5000";
 
@@ -72,6 +73,44 @@ useEffect(() => {
     }
   };
 }, []);
+
+  const filterOptions = [
+    { label: 'All Users', value: 'all' },
+    { label: 'Active Users', value: 'active' },
+    { label: 'Inactive Users', value: 'inactive' },
+    { label: 'Doctors', value: 'doctor' },
+    { label: 'Pharmacists', value: 'pharmacist' },
+    { label: 'Admins', value: 'admin' }
+  ];
+
+  const handleSearch = () => {
+    setSearchTerm(searchInput);
+  };
+
+  const handleSearchReset = () => {
+    setSearchTerm('');
+    setSearchInput('');
+  };
+
+  const handleFilter = (filterValue) => {
+    switch (filterValue) {
+      case 'active':
+        setUsers(prevUsers => prevUsers.filter(user => user.status === 'Active'));
+        break;
+      case 'inactive':
+        setUsers(prevUsers => prevUsers.filter(user => user.status === 'Inactive'));
+        break;
+      case 'doctor':
+      case 'pharmacist':
+      case 'admin':
+        setUsers(prevUsers => prevUsers.filter(user => user.role.toLowerCase() === filterValue));
+        break;
+      case 'all':
+      default:
+        fetchUsers(pagination.page);
+        break;
+    }
+  };
 
   // API request helper
   const adminRequest = async (method, endpoint, data = null) => {
@@ -263,37 +302,6 @@ useEffect(() => {
           <p>{error}</p>
         </div>
       )}
-
-      {/* Header with Search */}
-      <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
-        <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200">User Management</h2>
-        <div className="flex items-center space-x-2">
-          <div className="relative">
-            <input
-              type="text"
-              placeholder="Search by Digital ID..."
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-              className="pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-gray-100"
-            />
-            <FiSearch className="absolute left-3 top-3 text-gray-400" />
-          </div>
-          <button
-            onClick={findUserById}
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
-          >
-            Search
-          </button>
-          {searchTerm && (
-            <button
-              onClick={resetSearch}
-              className="px-4 py-2 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 rounded-lg transition-colors"
-            >
-              Reset
-            </button>
-          )}
-        </div>
-      </div>
 
       {/* Main Content */}
       {isLoading ? (
