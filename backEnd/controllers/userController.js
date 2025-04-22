@@ -1,249 +1,216 @@
 const { pool } = require('../config/db');
-const CryptoJS = require('crypto-js');
-const dotenv = require('dotenv');
-
-dotenv.config();
-
-// Helper function to encrypt data
-const encryptData = (data) => {
-  const key = CryptoJS.enc.Utf8.parse(process.env.ENCRYPTION_KEY);
-  const iv = CryptoJS.enc.Utf8.parse('fixed_iv_16bytes'); // Use a fixed IV (must be 16 bytes)
-  const encrypted = CryptoJS.AES.encrypt(data, key, { iv: iv });
-  return encrypted.toString();
-};
-
-// Helper function to decrypt data
-const decryptData = (encryptedData) => {
-  try {
-    const key = CryptoJS.enc.Utf8.parse(process.env.ENCRYPTION_KEY);
-    const iv = CryptoJS.enc.Utf8.parse('fixed_iv_16bytes'); // Use the same fixed IV
-    const decrypted = CryptoJS.AES.decrypt(encryptedData, key, { iv: iv });
-    return decrypted.toString(CryptoJS.enc.Utf8);
-  } catch (error) {
-    console.error('Decryption error:', error);
-    return null;
-  }
-};
+const { encryptPII, decryptPII } = require('../utils/encryption');
+const { hashDigitalID } = require('../utils/hash');
 
 class UserController {
-  // Check if the table exists, and create it if it doesn't
   static async ensureTableExists() {
     try {
       await pool.query(`
-        CREATE TABLE IF NOT EXISTS staff (
-          digitalID VARCHAR(255) PRIMARY KEY,
-          name VARCHAR(255) NOT NULL,
-          role VARCHAR(50) NOT NULL,
-          status VARCHAR(50) NOT NULL DEFAULT 'Active'
-        )
+        CREATE TABLE IF NOT EXISTS staffs (
+          digitalID TEXT PRIMARY KEY,
+          digitalID_hash TEXT UNIQUE,
+          name TEXT NOT NULL,
+          role TEXT NOT NULL,
+          status TEXT DEFAULT 'Active',
+          createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
       `);
-      console.log('Table checked/created successfully.');
-    } catch (error) {
-      console.error('Error ensuring table exists:', error);
-      throw error;
+
+      await pool.query(`
+        CREATE OR REPLACE FUNCTION update_updated_at()
+        RETURNS TRIGGER AS $$
+        BEGIN
+          NEW.updatedAt = NOW();
+          RETURN NEW;
+        END;
+        $$ LANGUAGE plpgsql;
+      `);
+
+      await pool.query(`
+        CREATE OR REPLACE TRIGGER update_staffs_updated_at
+        BEFORE UPDATE ON staffs
+        FOR EACH ROW
+        EXECUTE FUNCTION update_updated_at();
+      `);
+
+      console.log('✅ Staffs table and triggers verified');
+    } catch (err) {
+      console.error('❌ Table creation error:', err.message);
+      throw err;
     }
   }
 
-  // Add a new user
   static async addUser(req, res) {
-    const { digitalID, role, name, status = 'Active' } = req.body;
-    if (!digitalID || !role || !name) {
-      return res.status(400).json({ message: 'Missing required fields' });
-    }
-
     try {
-      await UserController.ensureTableExists();
+      const { digitalID, role, name, status = 'Active' } = req.body;
+      if (!digitalID || !role || !name) {
+        return res.status(400).json({ message: 'Missing required fields: digitalID, role, name' });
+      }
 
-      const encryptedDigitalID = encryptData(digitalID);
-      const encryptedName = encryptData(name);
-      const encryptedRole = encryptData(role);
-      const encryptedStatus = encryptData(status);
+      const encryptedDigitalID = await encryptPII(digitalID);
+      const digitalIDHash = hashDigitalID(digitalID);
+      const encryptedName = await encryptPII(name);
+      const encryptedRole = await encryptPII(role);
+      const encryptedStatus = await encryptPII(status);
 
-      const [existingUser] = await pool.query(
-        'SELECT 1 FROM staff WHERE digitalID = ?', 
-        [encryptedDigitalID]
+      const existing = await pool.query(
+        'SELECT digitalID FROM staffs WHERE digitalID_hash = $1',
+        [digitalIDHash]
       );
-      if (existingUser.length > 0) {
-        return res.status(400).json({ message: 'User with this Digital ID already exists.' });
+
+      if (existing.rows.length > 0) {
+        return res.status(409).json({ message: 'User already exists' });
       }
 
       await pool.query(
-        'INSERT INTO staff (digitalID, name, role, status) VALUES (?, ?, ?, ?)',
-        [encryptedDigitalID, encryptedName, encryptedRole, encryptedStatus]
+        `INSERT INTO staffs (digitalID, digitalID_hash, name, role, status)
+         VALUES ($1, $2, $3, $4, $5)`,
+        [encryptedDigitalID, digitalIDHash, encryptedName, encryptedRole, encryptedStatus]
       );
 
-      res.status(201).json({ 
-        message: 'User added successfully', 
+      return res.status(201).json({
+        message: 'User added successfully',
         user: { digitalID, name, role, status }
       });
-    } catch (error) {
-      console.error('Error adding user:', error);
-      res.status(500).json({ message: 'Internal server error' });
+    } catch (err) {
+      console.error('Add user error:', err);
+      return res.status(500).json({ message: 'Internal server error', error: err.message });
     }
   }
 
- // Get all users with pagination
-static async getUsers(req, res) {
-  try {
-      // Get pagination parameters from query
+  static async getUsers(req, res) {
+    try {
       const page = parseInt(req.query.page) || 1;
       const limit = parseInt(req.query.limit) || 20;
       const offset = (page - 1) * limit;
 
-      // Ensure table exists
-      await UserController.ensureTableExists();
+      const countQuery = await pool.query('SELECT COUNT(*) FROM staffs');
+      const total = parseInt(countQuery.rows[0].count);
 
-      // Get total count of users
-      const [totalCount] = await pool.query('SELECT COUNT(*) as count FROM staff');
-      const totalUsers = totalCount[0].count;
-
-      // Get paginated users
-      const [users] = await pool.query(
-          'SELECT * FROM staff ORDER BY digitalID LIMIT ? OFFSET ?',
-          [limit, offset]
+      const result = await pool.query(
+        'SELECT * FROM staffs ORDER BY createdAt DESC LIMIT $1 OFFSET $2',
+        [limit, offset]
       );
 
-      // Decrypt user data
-      const decryptedUsers = users.map(user => ({
-          digitalID: decryptData(user.digitalID),
-          name: decryptData(user.name),
-          role: decryptData(user.role),
-          status: decryptData(user.status) || 'Active'
-      }));
+      const users = await Promise.all(result.rows.map(async (row) => ({
+        digitalID: await decryptPII(row.digitalid),
+        name: await decryptPII(row.name),
+        role: await decryptPII(row.role),
+        status: await decryptPII(row.status),
+        createdAt: row.createdat,
+        updatedAt: row.updatedat
+      })));
 
-      res.json({
-          users: decryptedUsers,
-          pagination: {
-              total: totalUsers,
-              page,
-              limit,
-              totalPages: Math.ceil(totalUsers / limit),
-              hasNextPage: (page * limit) < totalUsers
-          }
+      return res.json({
+        users,
+        pagination: {
+          total,
+          page,
+          limit,
+          totalPages: Math.ceil(total / limit),
+          hasNextPage: (page * limit) < total
+        }
       });
-
-  } catch (error) {
-      console.error('Error in getUsers:', error);
-      res.status(500).json({ 
-          message: 'Failed to retrieve users',
-          error: process.env.NODE_ENV === 'development' ? error.message : undefined
-      });
-  }
-}
-
-  // Update a user
-  static async updateUser(req, res) {
-    const { digitalID } = req.params;
-    const { name, role, status } = req.body;
-
-    if (!name || !role || !status) {
-      return res.status(400).json({ message: 'Missing required fields' });
+    } catch (err) {
+      console.error('Fetch users error:', err);
+      return res.status(500).json({ message: 'Failed to fetch users', error: err.message });
     }
+  }
 
+  static async getUserById(req, res) {
     try {
-      await UserController.ensureTableExists();
+      const { digitalID } = req.params;
+      if (!digitalID) {
+        return res.status(400).json({ message: 'Missing digitalID parameter' });
+      }
 
-      const encryptedDigitalID = encryptData(digitalID);
-      const encryptedName = encryptData(name);
-      const encryptedRole = encryptData(role);
-      const encryptedStatus = encryptData(status);
-
-      const [result] = await pool.query(
-        'UPDATE staff SET name = ?, role = ?, status = ? WHERE digitalID = ?',
-        [encryptedName, encryptedRole, encryptedStatus, encryptedDigitalID]
+      const digitalIDHash = hashDigitalID(digitalID);
+      const result = await pool.query(
+        'SELECT * FROM staffs WHERE digitalID_hash = $1',
+        [digitalIDHash]
       );
 
-      if (result.affectedRows === 0) {
+      if (result.rows.length === 0) {
         return res.status(404).json({ message: 'User not found' });
       }
 
-      res.json({ 
-        message: 'User updated successfully', 
-        user: { digitalID, name, role, status }
-      });
-    } catch (error) {
-      console.error('Error updating user:', error);
-      res.status(500).json({ message: 'Internal server error' });
-    }
-  }
-  
-  // Inside UserController
-static async findUserByDigitalID(digitalID) {
-  const encryptedDigitalID = encryptData(digitalID);
-  const [users] = await pool.query('SELECT * FROM staff WHERE digitalID = ?', [encryptedDigitalID]);
-  if (users.length === 0) return null;
-
-  return {
-    digitalID: decryptData(users[0].digitalID),
-    name: decryptData(users[0].name),
-    role: decryptData(users[0].role),
-    status: decryptData(users[0].status),
-  };
-}
-
-
-
-   // Get a user by their digitalID
-   static async getUserById(req, res) {
-    const { digitalID } = req.params;
-    console.log('Plaintext digitalID:', digitalID);
-
-    const encryptedDigitalID = encryptData(digitalID);
-    console.log('Encrypted digitalID:', encryptedDigitalID);
-
-    try {
-      // Ensure the table exists before fetching a user
-      await UserController.ensureTableExists();
-
-      const [users] = await pool.query('SELECT * FROM staff WHERE digitalID = ?', [encryptedDigitalID]);
-      console.log('Database query result:', users);
-
-      if (users.length === 0) {
-        return res.status(404).json({ message: 'User not found', digitalID });
-      }
-
+      const user = result.rows[0];
       const decryptedUser = {
-        digitalID: decryptData(users[0].digitalID),
-        name: decryptData(users[0].name),
-        role: decryptData(users[0].role),
-        status: decryptData(users[0].status),
+        digitalID: await decryptPII(user.digitalid),
+        name: await decryptPII(user.name),
+        role: await decryptPII(user.role),
+        status: await decryptPII(user.status),
+        createdAt: user.createdat,
+        updatedAt: user.updatedat
       };
 
-      console.log('Decrypted user:', decryptedUser);
-      res.json(decryptedUser);
-    } catch (error) {
-      console.error('Error fetching user:', error);
-      res.status(500).json({ message: 'Internal server error' });
+      return res.json(decryptedUser);
+    } catch (err) {
+      console.error('Get user error:', err);
+      return res.status(500).json({ message: 'Failed to get user', error: err.message });
     }
   }
 
-  // Delete a user
-  static async deleteUser(req, res) {
-    const { digitalID } = req.params;
+  static async updateUser(req, res) {
     try {
-      await UserController.ensureTableExists();
+      const { digitalID } = req.params;
+      const { name, role, status } = req.body;
 
-      const encryptedDigitalID = encryptData(digitalID);
-      const [result] = await pool.query(
-        'DELETE FROM staff WHERE digitalID = ?', 
-        [encryptedDigitalID]
+      if (!digitalID || !name || !role || !status) {
+        return res.status(400).json({ message: 'Missing required fields: digitalID, name, role, status' });
+      }
+
+      const digitalIDHash = hashDigitalID(digitalID);
+      const encryptedName = await encryptPII(name);
+      const encryptedRole = await encryptPII(role);
+      const encryptedStatus = await encryptPII(status);
+
+      const result = await pool.query(
+        `UPDATE staffs
+         SET name = $1, role = $2, status = $3
+         WHERE digitalID_hash = $4
+         RETURNING *`,
+        [encryptedName, encryptedRole, encryptedStatus, digitalIDHash]
       );
 
-      if (result.affectedRows === 0) {
+      if (result.rows.length === 0) {
         return res.status(404).json({ message: 'User not found' });
       }
 
-      res.status(204).send();
-    } catch (error) {
-      console.error('Error deleting user:', error);
-      res.status(500).json({ message: 'Internal server error' });
+      return res.json({
+        message: 'User updated successfully',
+        user: { digitalID, name, role, status }
+      });
+    } catch (err) {
+      console.error('Update user error:', err);
+      return res.status(500).json({ message: 'Failed to update user', error: err.message });
     }
   }
 
-  // Other methods remain the same...
-}
+  static async deleteUser(req, res) {
+    try {
+      const { digitalID } = req.params;
+      if (!digitalID) {
+        return res.status(400).json({ message: 'Missing digitalID parameter' });
+      }
 
-// Initialize the table when the application starts
-UserController.ensureTableExists();
+      const digitalIDHash = hashDigitalID(digitalID);
+      const result = await pool.query(
+        'DELETE FROM staffs WHERE digitalID_hash = $1 RETURNING *',
+        [digitalIDHash]
+      );
+
+      if (result.rows.length === 0) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+
+      return res.status(204).end();
+    } catch (err) {
+      console.error('Delete user error:', err);
+      return res.status(500).json({ message: 'Failed to delete user', error: err.message });
+    }
+  }
+}
 
 module.exports = UserController;
