@@ -54,7 +54,7 @@ const BaseDashboard = ({ children, navItems, title, userInfo }) => {
   };
 
   const handlePatientView = () => {
-    navigate('/patient/dashboard');
+    navigate('/patient');
   };
 
   return (
@@ -112,7 +112,7 @@ const BaseDashboard = ({ children, navItems, title, userInfo }) => {
         {/* Left Sidebar */}
         <div className={`${isSidebarCollapsed ? 'w-16' : 'min-w-[10rem]'} bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 p-4 flex flex-col h-full transition-all duration-300`}>
           <div className="mb-8 flex justify-between items-center">
-            <h1 className={`font-bold text-blue-600 dark:text-blue-400  transition-all duration-300 ${isSidebarCollapsed ? 'text-xs truncate' : 'text-xl p-2' }`}>
+            <h1 className={`font-bold text-blue-600 dark:text-blue-400 transition-all duration-300 ${isSidebarCollapsed ? 'text-xs truncate' : 'text-xl p-2'}`}>
               {title}
             </h1>
             <button
@@ -127,11 +127,8 @@ const BaseDashboard = ({ children, navItems, title, userInfo }) => {
             {navItems.map(item => (
               <button
                 key={item.id}
-                onClick={() => handleNavigation(item.id)}
-                className={`w-full flex items-center ${isSidebarCollapsed ? 'justify-center' : 'justify-start'} px-4 py-2.5 rounded-lg transition-colors
-                  ${activeView === item.id
-                    ? 'bg-blue-50 text-blue-600 dark:bg-blue-900 dark:text-blue-400'
-                    : 'text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-900 hover:text-blue-600 dark:hover:text-blue-400'}`}
+                onClick={item.onClick || (() => {})}
+                className={`w-full flex items-center ${isSidebarCollapsed ? 'justify-center' : 'justify-start'} px-4 py-2.5 rounded-lg transition-colors text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-900 hover:text-blue-600 dark:hover:text-blue-400`}
               >
                 <item.icon className="h-5 w-5 flex-shrink-0" />
                 {!isSidebarCollapsed && <span className="ml-3">{item.label}</span>}
@@ -156,13 +153,7 @@ const BaseDashboard = ({ children, navItems, title, userInfo }) => {
 
         {/* Main Content */}
         <div className="flex-1 overflow-auto p-6">
-          {React.Children.map(children, child =>
-            React.cloneElement(child, {
-              activeView,
-              darkMode,
-              handleNavigation
-            })
-          )}
+          {children}
         </div>
       </div>
     </div>

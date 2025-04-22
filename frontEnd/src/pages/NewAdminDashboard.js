@@ -1,11 +1,25 @@
-import React from 'react';
-import { FiHome } from 'react-icons/fi';
+import React, { useRef } from 'react';
+import { FiHome, FiUserPlus } from 'react-icons/fi';
 import BaseDashboard from '../components/BaseDashboard';
 import UserManagement from '../components/UserManagement';
 
 const NewAdminDashboard = () => {
+  const userManagementRef = useRef(null);
+
+  const handleAddUser = () => {
+    if (userManagementRef.current) {
+      userManagementRef.current.showAddUserModal();
+    }
+  };
+
   const navItems = [
-    { icon: FiHome, label: 'Dashboard', id: 'dashboard' }
+    { icon: FiHome, label: 'Dashboard', id: 'dashboard' },
+    { 
+      icon: FiUserPlus, 
+      label: 'Add User', 
+      id: 'add-user',
+      onClick: handleAddUser 
+    }
   ];
 
   const adminInfo = {
@@ -19,7 +33,7 @@ const NewAdminDashboard = () => {
       title="Admin"
       userInfo={adminInfo}
     >
-      <UserManagement />
+      <UserManagement ref={userManagementRef} />
     </BaseDashboard>
   );
 };

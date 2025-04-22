@@ -1,11 +1,11 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { FiEdit2, FiTrash2, FiUserPlus, FiX, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
+import React, { useState, useEffect, forwardRef, useImperativeHandle, useRef } from 'react';
+import { FiEdit2, FiTrash2, FiUserPlus, FiChevronLeft, FiChevronRight, FiX, FiSearch } from 'react-icons/fi';
 import axios from 'axios';
 import TableHeader from './TableHeader';
 
 const admin_BASE_URL = process.env.REACT_APP_admin_BASE_URL || "http://localhost:5000";
 
-const UserManagement = () => {
+const UserManagement = forwardRef((props, ref) => {
   // State management
   const [users, setUsers] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
@@ -30,6 +30,49 @@ const UserManagement = () => {
   });
   const [searchTerm, setSearchTerm] = useState('');
   const [searchInput, setSearchInput] = useState('');
+  const [showFloatingButton, setShowFloatingButton] = useState(true);
+  const mainContentRef = useRef(null);
+
+  // Expose functions to parent via ref
+  useImperativeHandle(ref, () => ({
+    showAddUserModal: () => handleAddUserClick()
+  }));
+
+  const handleAddUserClick = () => {
+    setSelectedUser(null);
+    setEditFormData({
+      name: '',
+      role: '',
+      status: 'Active',
+      digitalID: ''
+    });
+    setShowEditModal(true);
+  };
+
+  // Scroll event handler for floating button visibility
+  // Replace the existing useEffect scroll handler with this:
+useEffect(() => {
+  const handleScroll = () => {
+    if (mainContentRef.current) {
+      const { scrollTop, scrollHeight, clientHeight } = mainContentRef.current;
+      const distanceFromBottom = scrollHeight - (scrollTop + clientHeight);
+      
+      // Show button unless we're within 200px of the bottom
+      setShowFloatingButton(distanceFromBottom > 200);
+    }
+  };
+
+  const contentElement = mainContentRef.current;
+  if (contentElement) {
+    contentElement.addEventListener('scroll', handleScroll);
+  }
+
+  return () => {
+    if (contentElement) {
+      contentElement.removeEventListener('scroll', handleScroll);
+    }
+  };
+}, []);
 
   const filterOptions = [
     { label: 'All Users', value: 'all' },
@@ -96,7 +139,7 @@ const UserManagement = () => {
         setUsers(data.users);
         setPagination({
           ...data.pagination,
-          limit: pagination.limit // Ensure we maintain our limit of 20
+          limit: pagination.limit
         });
       }
     } catch (error) {
@@ -243,18 +286,11 @@ const UserManagement = () => {
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow relative">
-      <TableHeader
-        title="User Management"
-        searchPlaceholder="Search by Digital ID"
-        onSearch={handleSearch}
-        onFilter={handleFilter}
-        searchValue={searchInput}
-        onSearchChange={setSearchInput}
-        onSearchReset={handleSearchReset}
-        filterOptions={filterOptions}
-      />
-
+    <div 
+      ref={mainContentRef}
+      className="relative min-h-screen bg-white dark:bg-gray-800 rounded-lg shadow"
+      style={{ overflowY: 'auto', height: '100%' }}
+    >
       {/* Success/Error messages */}
       {successMessage && (
         <div className="bg-green-100 dark:bg-green-900 border-l-4 border-green-500 dark:border-green-700 text-green-700 dark:text-green-200 p-4 mb-4">
@@ -359,21 +395,16 @@ const UserManagement = () => {
       )}
 
       {/* Floating Add User Button */}
-      <button 
-        className="fixed bottom-6 right-6 w-14 h-14 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg flex items-center justify-center transition-colors z-10"
-        onClick={() => {
-          setSelectedUser(null);
-          setEditFormData({
-            name: '',
-            role: '',
-            status: 'Active',
-            digitalID: ''
-          });
-          setShowEditModal(true);
-        }}
-      >
-        <FiUserPlus className="h-6 w-6" />
-      </button>
+      {showFloatingButton && (
+        <div className="fixed bottom-4 right-10 z-10 transition-opacity duration-300">
+          <button 
+            className="flex h-12 w-12 items-center justify-center rounded-full bg-blue-600 text-white shadow-md transition-all hover:bg-blue-700 hover:shadow-lg"
+            onClick={handleAddUserClick}
+          >
+            <FiUserPlus className="h-5 w-5" />
+          </button>
+        </div>
+      )}
 
       {/* Delete Confirmation Modal */}
       {showDeleteModal && (
@@ -433,9 +464,7 @@ const UserManagement = () => {
                   onClick={() => setShowEditModal(false)}
                   className="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300"
                 >
-                  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
+                  <FiX className="h-6 w-6" />
                 </button>
               </div>
               
@@ -530,6 +559,6 @@ const UserManagement = () => {
       )}
     </div>
   );
-};
+});
 
 export default UserManagement;
