@@ -1,63 +1,73 @@
 const sodium = require('libsodium-wrappers');
-const umbral = require('umbral-pre');
+require('dotenv').config();
 
-/**
- * Encrypts data using a public key.
- * @param {string} data - The data to encrypt.
- * @param {Buffer} publicKey - The public key used for encryption.
- * @returns {Object} - An object containing the encrypted data and nonce.
- */
-const encryptData = async (data, publicKey) => {
-  await sodium.ready; // Ensure sodium is ready
-  const nonce = sodium.randombytes_buf(sodium.crypto_secretbox_NONCEBYTES); // Generate a random nonce
-  const encrypted = sodium.crypto_secretbox_easy(
-    Buffer.from(data), // Convert data to Buffer
-    nonce, // Use the generated nonce
-    publicKey // Use the provided public key
-  );
-  return { encrypted, nonce }; // Return encrypted data and nonce
+let masterKey;
+
+const initializeEncryption = async () => {
+  try {
+    await sodium.ready;
+    
+    if (!process.env.MASTER_KEY) {
+      throw new Error('MASTER_KEY is not defined in environment variables');
+    }
+
+    masterKey = sodium.from_base64(process.env.MASTER_KEY, sodium.base64_variants.ORIGINAL);
+
+    if (masterKey.length !== sodium.crypto_secretbox_KEYBYTES) {
+      throw new Error(`Invalid MASTER_KEY length. Expected ${sodium.crypto_secretbox_KEYBYTES} bytes`);
+    }
+
+    console.log('🔐 Encryption initialized successfully');
+  } catch (err) {
+    console.error('❌ Encryption initialization failed:', err);
+    throw err;
+  }
 };
 
-/**
- * Decrypts data using a secret key and nonce.
- * @param {Buffer} encryptedData - The encrypted data to decrypt.
- * @param {Buffer} nonce - The nonce used during encryption.
- * @param {Buffer} secretKey - The secret key used for decryption.
- * @returns {Buffer} - The decrypted data.
- */
-const decryptData = async (encryptedData, nonce, secretKey) => {
-  await sodium.ready; // Ensure sodium is ready
-  const decrypted = sodium.crypto_secretbox_open_easy(
-    encryptedData, // The encrypted data
-    nonce, // The nonce used during encryption
-    secretKey // The secret key
-  );
-  return decrypted; // Return the decrypted data
+const encryptPII = async (plainText) => {
+  try {
+    if (!masterKey) throw new Error('Encryption key not initialized');
+    if (!plainText) return null;
+
+    await sodium.ready;
+    const nonce = sodium.randombytes_buf(sodium.crypto_secretbox_NONCEBYTES);
+    const message = sodium.from_string(String(plainText));
+    const ciphertext = sodium.crypto_secretbox_easy(message, nonce, masterKey);
+
+    return `${sodium.to_base64(nonce)}:${sodium.to_base64(ciphertext)}`;
+  } catch (err) {
+    console.error('Encryption failed:', err);
+    throw err;
+  }
 };
 
-/**
- * Generates a re-encryption key for delegating access.
- * @param {Buffer} delegatorSecretKey - The secret key of the delegator.
- * @param {Buffer} delegateePublicKey - The public key of the delegatee.
- * @returns {Object} - The re-encryption key.
- */
-const generateReEncryptionKey = (delegatorSecretKey, delegateePublicKey) => {
-  return umbral.generateReEncryptionKey(delegatorSecretKey, delegateePublicKey);
-};
+const decryptPII = async (encrypted) => {
+  try {
+    if (!masterKey) throw new Error('Decryption key not initialized');
+    if (!encrypted) return null;
 
-/**
- * Re-encrypts data using a re-encryption key.
- * @param {Buffer} encryptedData - The encrypted data to re-encrypt.
- * @param {Object} reEncryptionKey - The re-encryption key.
- * @returns {Buffer} - The re-encrypted data.
- */
-const reEncryptData = (encryptedData, reEncryptionKey) => {
-  return umbral.reEncrypt(encryptedData, reEncryptionKey);
+    await sodium.ready;
+    const [nonceB64, cipherB64] = encrypted.split(':');
+    
+    if (!nonceB64 || !cipherB64) {
+      throw new Error('Invalid encrypted format - expected nonce:ciphertext');
+    }
+
+    const nonce = sodium.from_base64(nonceB64);
+    const ciphertext = sodium.from_base64(cipherB64);
+
+    const decrypted = sodium.crypto_secretbox_open_easy(ciphertext, nonce, masterKey);
+    if (!decrypted) throw new Error('Decryption failed - invalid ciphertext or key');
+
+    return sodium.to_string(decrypted);
+  } catch (err) {
+    console.error('Decryption failed:', err.message);
+    return null;
+  }
 };
 
 module.exports = {
-  encryptData,
-  decryptData,
-  generateReEncryptionKey,
-  reEncryptData,
+  initializeEncryption,
+  encryptPII,
+  decryptPII
 };
