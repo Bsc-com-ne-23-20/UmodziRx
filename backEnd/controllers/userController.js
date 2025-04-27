@@ -192,7 +192,7 @@ class UserController {
     if (!digitalId) return null;
     
     try {
-      await UserController.ensureTableExists(); // Fixed: Use UserController instead of this
+      await UserController.ensureTableExists(); 
       const encryptedId = encryptData(digitalId);
       
       if (!encryptedId) {
