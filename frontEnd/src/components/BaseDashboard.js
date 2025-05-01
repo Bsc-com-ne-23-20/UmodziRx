@@ -7,10 +7,12 @@ import {
   FiSun,
   FiMenu,
   FiLogOut,
-  FiEye
+  FiEye,
+  FiPhone,
+  FiHelpCircle
 } from 'react-icons/fi';
 
-const BaseDashboard = ({ children, navItems, title, userInfo }) => {
+const BaseDashboard = ({ children, navItems = [], title = '', userInfo = {} }) => {
   const navigate = useNavigate();
   const [activeView, setActiveView] = useState('dashboard');
   const [showProfileMenu, setShowProfileMenu] = useState(false);
@@ -19,6 +21,16 @@ const BaseDashboard = ({ children, navItems, title, userInfo }) => {
     return saved ? JSON.parse(saved) : false;
   });
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [showSupportModal, setShowSupportModal] = useState(false);
+
+  // Emergency contacts data
+  const emergencyContacts = [
+    { name: "Emergency Services", number: "911" },
+    { name: "Poison Control", number: "1-800-222-1222" },
+    { name: "Mental Health Crisis", number: "988" },
+    { name: "Hospital Main Line", number: "555-123-4567" },
+    { name: "Your Primary Doctor", number: "555-987-6543" }
+  ];
 
   useEffect(() => {
     if (darkMode) {
@@ -34,11 +46,14 @@ const BaseDashboard = ({ children, navItems, title, userInfo }) => {
       if (showProfileMenu && !event.target.closest('.profile-menu-container')) {
         setShowProfileMenu(false);
       }
+      if (showSupportModal && !event.target.closest('.support-modal-container')) {
+        setShowSupportModal(false);
+      }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [showProfileMenu]);
+  }, [showProfileMenu, showSupportModal]);
 
   const handleLogout = () => {
     localStorage.clear();
@@ -57,16 +72,19 @@ const BaseDashboard = ({ children, navItems, title, userInfo }) => {
     navigate('/patient');
   };
 
+  const toggleSupportModal = () => {
+    setShowSupportModal(!showSupportModal);
+  };
+
   return (
-    <div className="h-screen overflow-hidden bg-gray-50 dark:bg-gray-900">
+    <div className={`h-screen overflow-hidden ${darkMode ? 'dark bg-gray-900' : 'bg-gray-50'}`}>
       {/* Top Header */}
-      <header className="fixed top-0 left-0 right-0 h-16 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between px-6 z-20">
-        <div className="text-xl font-bold text-blue-600 dark:text-blue-400">UmodziRx</div>
+      <header className={`fixed top-0 left-0 right-0 h-16 ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} border-b flex items-center justify-between px-6 z-20`}>
+        <div className={`text-xl font-bold ${darkMode ? 'text-blue-400' : 'text-blue-600'}`}>UmodziRx</div>
         <div className="flex items-center space-x-4">
-          {/* Light/Dark Mode Toggle */}
           <button
             onClick={toggleDarkMode}
-            className="p-2 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
+            className={`p-2 rounded-lg ${darkMode ? 'text-gray-400 hover:bg-gray-700' : 'text-gray-500 hover:bg-gray-100'}`}
           >
             {darkMode ? <FiSun className="h-5 w-5" /> : <FiMoon className="h-5 w-5" />}
           </button>
@@ -74,29 +92,31 @@ const BaseDashboard = ({ children, navItems, title, userInfo }) => {
           <div className="relative profile-menu-container">
             <button
               onClick={() => setShowProfileMenu(!showProfileMenu)}
-              className="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
+              className={`flex items-center space-x-2 p-2 rounded-lg ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}
             >
-              <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
-                <span className="text-sm font-medium text-blue-600 dark:text-blue-400">
-                  {userInfo.name.split(' ').map(n => n[0]).join('')}
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${darkMode ? 'bg-blue-900' : 'bg-blue-100'}`}>
+                <span className={`text-sm font-medium ${darkMode ? 'text-blue-400' : 'text-blue-600'}`}>
+                  {userInfo?.name?.split(' ').map(n => n[0]).join('') || 'U'}
                 </span>
               </div>
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{userInfo.name}</span>
-              <FiMoreVertical className="h-5 w-5 text-gray-400 dark:text-gray-500" />
+              <span className={`text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                {userInfo?.name || 'User'}
+              </span>
+              <FiMoreVertical className={`h-5 w-5 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`} />
             </button>
 
             {showProfileMenu && (
-              <div className="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg py-1 z-10 border border-gray-200 dark:border-gray-700">
+              <div className={`absolute right-0 top-full mt-2 w-48 rounded-lg shadow-lg py-1 z-10 border ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
                 <button
-                  onClick={() => {/* Profile Settings Logic */}}
-                  className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                  onClick={() => {}}
+                  className={`flex items-center w-full px-4 py-2 text-sm ${darkMode ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-100'}`}
                 >
                   <FiSettings className="mr-3 h-4 w-4" />
                   Profile Settings
                 </button>
                 <button
                   onClick={handleLogout}
-                  className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                  className={`flex items-center w-full px-4 py-2 text-sm ${darkMode ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-100'}`}
                 >
                   <FiLogOut className="mr-3 h-4 w-4" />
                   Logout
@@ -110,14 +130,14 @@ const BaseDashboard = ({ children, navItems, title, userInfo }) => {
       {/* Sidebar + Main */}
       <div className="flex pt-16 h-full">
         {/* Left Sidebar */}
-        <div className={`${isSidebarCollapsed ? 'w-16' : 'min-w-[10rem]'} bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 p-4 flex flex-col h-full transition-all duration-300`}>
+        <div className={`${isSidebarCollapsed ? 'w-16' : 'min-w-[10rem]'} ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} border-r p-4 flex flex-col h-full transition-all duration-300`}>
           <div className="mb-8 flex justify-between items-center">
-            <h1 className={`font-bold text-blue-600 dark:text-blue-400 transition-all duration-300 ${isSidebarCollapsed ? 'text-xs truncate' : 'text-xl p-2'}`}>
+            <h1 className={`font-bold ${darkMode ? 'text-blue-400' : 'text-blue-600'} transition-all duration-300 ${isSidebarCollapsed ? 'text-xs truncate' : 'text-xl p-2'}`}>
               {title}
             </h1>
             <button
               onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-              className="p-2 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
+              className={`p-2 rounded-lg ${darkMode ? 'text-gray-400 hover:bg-gray-700' : 'text-gray-500 hover:bg-gray-100'}`}
             >
               <FiMenu className="h-5 w-5" />
             </button>
@@ -128,7 +148,7 @@ const BaseDashboard = ({ children, navItems, title, userInfo }) => {
               <button
                 key={item.id}
                 onClick={item.onClick || (() => {})}
-                className={`w-full flex items-center ${isSidebarCollapsed ? 'justify-center' : 'justify-start'} px-4 py-2.5 rounded-lg transition-colors text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-900 hover:text-blue-600 dark:hover:text-blue-400`}
+                className={`w-full flex items-center ${isSidebarCollapsed ? 'justify-center' : 'justify-start'} px-4 py-2.5 rounded-lg transition-colors ${darkMode ? 'text-gray-300 hover:bg-blue-900 hover:text-blue-400' : 'text-gray-700 hover:bg-blue-50 hover:text-blue-600'}`}
               >
                 <item.icon className="h-5 w-5 flex-shrink-0" />
                 {!isSidebarCollapsed && <span className="ml-3">{item.label}</span>}
@@ -139,12 +159,21 @@ const BaseDashboard = ({ children, navItems, title, userInfo }) => {
           <div className="mt-auto space-y-2">
             <button
               onClick={handlePatientView}
-              className={`w-full flex items-center ${isSidebarCollapsed ? 'justify-center' : 'justify-start'} px-4 py-2.5 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900 hover:text-blue-600 dark:hover:text-blue-400`}
+              className={`w-full flex items-center ${isSidebarCollapsed ? 'justify-center' : 'justify-start'} px-4 py-2.5 rounded-lg ${darkMode ? 'text-gray-300 hover:bg-blue-900 hover:text-blue-400' : 'text-gray-700 hover:bg-blue-50 hover:text-blue-600'}`}
             >
               <FiEye className="h-5 w-5 flex-shrink-0" />
               {!isSidebarCollapsed && <span className="ml-3">Patient View</span>}
             </button>
-            <button className={`w-full flex items-center ${isSidebarCollapsed ? 'justify-center' : 'justify-start'} px-4 py-2.5 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900 hover:text-blue-600 dark:hover:text-blue-400`}>
+
+            <button
+              onClick={toggleSupportModal}
+              className={`w-full flex items-center ${isSidebarCollapsed ? 'justify-center' : 'justify-start'} px-4 py-2.5 rounded-lg ${darkMode ? 'text-gray-300 hover:bg-blue-900 hover:text-blue-400' : 'text-gray-700 hover:bg-blue-50 hover:text-blue-600'}`}
+            >
+              <FiHelpCircle className="h-5 w-5 flex-shrink-0" />
+              {!isSidebarCollapsed && <span className="ml-3">Support</span>}
+            </button>
+
+            <button className={`w-full flex items-center ${isSidebarCollapsed ? 'justify-center' : 'justify-start'} px-4 py-2.5 rounded-lg ${darkMode ? 'text-gray-300 hover:bg-blue-900 hover:text-blue-400' : 'text-gray-700 hover:bg-blue-50 hover:text-blue-600'}`}>
               <FiSettings className="h-5 w-5 flex-shrink-0" />
               {!isSidebarCollapsed && <span className="ml-3">Settings</span>}
             </button>
@@ -153,9 +182,65 @@ const BaseDashboard = ({ children, navItems, title, userInfo }) => {
 
         {/* Main Content */}
         <div className="flex-1 overflow-auto p-6">
-          {children}
+          {React.Children.map(children, child => {
+            return React.cloneElement(child, { darkMode });
+          })}
         </div>
       </div>
+
+      {/* Support Modal */}
+      {showSupportModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className={`rounded-lg shadow-xl w-full max-w-md mx-4 support-modal-container ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className={`text-lg font-bold ${darkMode ? 'text-gray-200' : 'text-gray-900'}`}>
+                  Emergency Contacts
+                </h3>
+                <button
+                  onClick={toggleSupportModal}
+                  className={`p-1 rounded-full ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}
+                >
+                  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              
+              <div className="space-y-3">
+                {emergencyContacts.map((contact, index) => (
+                  <div key={index} className={`p-4 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
+                    <p className={`font-medium ${darkMode ? 'text-blue-400' : 'text-blue-600'}`}>
+                      {contact.name}
+                    </p>
+                    <p className={`mt-1 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                      {contact.number}
+                    </p>
+                    <div className="mt-2">
+                      <a 
+                        href={`tel:${contact.number.replace(/[^\d]/g, '')}`}
+                        className={`inline-flex items-center px-3 py-1 rounded-md text-sm ${darkMode ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-blue-100 text-blue-700 hover:bg-blue-200'}`}
+                      >
+                        <FiPhone className="mr-2 h-4 w-4" />
+                        Call
+                      </a>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              
+              <div className="mt-6">
+                <button
+                  onClick={toggleSupportModal}
+                  className={`w-full px-4 py-2 rounded-md ${darkMode ? 'bg-gray-700 hover:bg-gray-600 text-white' : 'bg-gray-100 hover:bg-gray-200 text-gray-700'}`}
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
