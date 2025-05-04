@@ -14,7 +14,7 @@ export default function Home() {
         {/* Overlay Gradient */}
         <div className="absolute inset-0 bg-gradient-to-l from-transparent to-blue-100 opacity-0"></div>
         <img 
-          src="/images/background-pattern.png" 
+          src="/images/background-image.png" 
           alt="" /*screen readers skip this*/
           className="w-full h-full object-cover"
           aria-hidden="true"
@@ -129,7 +129,7 @@ export default function Home() {
             </div>
           </div>
         </footer>
-        
+
       </div>
     </div>
   );
