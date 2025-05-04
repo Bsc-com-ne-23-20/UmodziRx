@@ -15,6 +15,7 @@ import SessionExpired from './pages/SessionExpired';
 import NewDoctorDashboard from './pages/NewDoctorDashboard';
 import NewAdminDashboard from './pages/NewAdminDashboard';
 import Learn from './pages/LearnMore';
+import Contact from "./pages/Contact";
 import "./App.css";
 
 function App() {
@@ -40,6 +41,7 @@ function App() {
             <Route path="/unauthorized" element={<Unauthorized />} />
             <Route path="/callback" element={<AuthCallback />} />
             <Route path="/learn" element={<Learn />} />
+            <Route path="/contact" element={<Contact />} />
 
             <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
               <Route path="/admin" element={<NewAdminDashboard />} />
