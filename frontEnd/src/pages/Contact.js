@@ -66,7 +66,7 @@ export default function Contact() {
           </div>
           <div className="hidden md:flex space-x-8">
             <Link to="/learn" className="text-gray-500 hover:text-gray-900 transition-colors">Features</Link>
-            <Link to="/contact" className="text-blue-600 font-medium hover:text-blue-800">Contact</Link>
+            <Link to="/contact" className="text-blue-600 font-medium hover:text-blue-800">Contact Us</Link>
           </div>
         </div>
       </nav>
