@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { FiHome, FiUsers, FiFileText } from 'react-icons/fi';
 import BaseDashboard from '../components/BaseDashboard';
 import DoctorContent from '../components/DoctorContent';
+import TableHeader from '../components/TableHeader';
 
 const NewDoctorDashboard = () => {
   const [activeView, setActiveView] = useState('dashboard');

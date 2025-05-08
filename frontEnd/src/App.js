@@ -4,9 +4,6 @@ import { AuthProvider } from "./context/AuthContext";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import ViewPatientPrescriptions from "./pages/ViewPatientPrescriptions";
-import AdminDashboard from "./pages/AdminDashboard";
-import DoctorDashboard from "./pages/DoctorDashboard";
-import PharmacistDashboard from "./pages/PharmacistDashboard";
 import PatientPrescriptions from "./pages/PatientDashboard";
 import Unauthorized from "./pages/Unauthorized";
 import AuthCallback from "./pages/AuthCallback";
@@ -15,7 +12,8 @@ import SessionExpired from './pages/SessionExpired';
 import NewDoctorDashboard from './pages/NewDoctorDashboard';
 import NewAdminDashboard from './pages/NewAdminDashboard';
 import Learn from './pages/LearnMore';
-import Contact from "./pages/Contact";
+import NewPharmacistDashboard from "./pages/NewPharmacistDashboard";
+import NewPatientDashboard from './pages/NewPatientDashboard';
 import "./App.css";
 
 function App() {
@@ -43,7 +41,7 @@ function App() {
             <Route path="/learn" element={<Learn />} />
             <Route path="/contact" element={<Contact />} />
 
-            <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
+            <Route element={<ProtectedRoute allowedRoles={["admin", "doctor", "pharmacist", "patient"]} />}>
               <Route path="/admin" element={<NewAdminDashboard />} />
               {/* <Route path="/admin/dashboard" element={<NewAdminDashboard />} /> */}
             </Route>
@@ -59,11 +57,12 @@ function App() {
             </Route>
 
             <Route element={<ProtectedRoute allowedRoles={["pharmacist"]} />}>
-              <Route path="/pharmacist" element={<PharmacistDashboard />} />
+              <Route path="/pharmacist" element={<NewPharmacistDashboard />} />
+              <Route path="/pharmacist/dashboard" element={<NewPharmacistDashboard />} />
             </Route>
 
             <Route element={<ProtectedRoute allowedRoles={["patient"]} />}>
-              <Route path="/patient" element={<PatientPrescriptions />} />
+              <Route path="/patient" element={<NewPatientDashboard />} />
             </Route>
 
             {/* <Route path="*" element={<Navigate to="/login" replace />} />

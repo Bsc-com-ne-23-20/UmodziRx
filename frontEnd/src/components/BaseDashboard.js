@@ -7,7 +7,10 @@ import {
   FiSun,
   FiMenu,
   FiLogOut,
-  FiEye
+  FiHome,
+  FiFileText,
+  FiUsers,
+  FiX
 } from 'react-icons/fi';
 
 const BaseDashboard = ({ children, navItems, title, userInfo }) => {
@@ -19,6 +22,7 @@ const BaseDashboard = ({ children, navItems, title, userInfo }) => {
     return saved ? JSON.parse(saved) : false;
   });
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
 
   useEffect(() => {
     if (darkMode) {
@@ -53,8 +57,51 @@ const BaseDashboard = ({ children, navItems, title, userInfo }) => {
     setActiveView(view);
   };
 
-  const handlePatientView = () => {
-    navigate('/patient');
+  const navigationItems = [
+    { id: 'dashboard', label: 'Dashboard', icon: FiHome },
+    { id: 'prescriptions', label: 'Prescriptions', icon: FiFileText },
+    { id: 'patients', label: 'Patient View', icon: FiUsers }, // Add this line
+    { id: 'settings', label: 'Settings', icon: FiSettings }
+  ];
+
+  const renderSettingsModal = () => {
+    if (!showSettingsModal) return null;
+
+    return (
+      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full m-4">
+          <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+            <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">Settings</h3>
+            <button
+              onClick={() => setShowSettingsModal(false)}
+              className="text-gray-400 hover:text-gray-500 dark:text-gray-500 dark:hover:text-gray-400"
+            >
+              <FiX className="h-6 w-6" />
+            </button>
+          </div>
+          <div className="px-6 py-4 space-y-6">
+            {/* Dark/Light Mode Toggle */}
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium text-gray-900 dark:text-gray-100">Dark Mode</span>
+              <button
+                onClick={toggleDarkMode}
+                className="p-2 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
+              >
+                {darkMode ? <FiSun className="h-5 w-5" /> : <FiMoon className="h-5 w-5" />}
+              </button>
+            </div>
+
+            {/* Help Section */}
+            <div>
+              <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">Help</h4>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                For assistance, please contact the system administrator at <a href="mailto:admin@umodzi.com" className="text-blue-600 dark:text-blue-400 hover:underline">admin@umodzi.com</a>.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -63,14 +110,6 @@ const BaseDashboard = ({ children, navItems, title, userInfo }) => {
       <header className="fixed top-0 left-0 right-0 h-16 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between px-6 z-20">
         <div className="text-xl font-bold text-blue-600 dark:text-blue-400">UmodziRx</div>
         <div className="flex items-center space-x-4">
-          {/* Light/Dark Mode Toggle */}
-          <button
-            onClick={toggleDarkMode}
-            className="p-2 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
-          >
-            {darkMode ? <FiSun className="h-5 w-5" /> : <FiMoon className="h-5 w-5" />}
-          </button>
-
           <div className="relative profile-menu-container">
             <button
               onClick={() => setShowProfileMenu(!showProfileMenu)}
@@ -138,13 +177,9 @@ const BaseDashboard = ({ children, navItems, title, userInfo }) => {
 
           <div className="mt-auto space-y-2">
             <button
-              onClick={handlePatientView}
+              onClick={() => setShowSettingsModal(true)}
               className={`w-full flex items-center ${isSidebarCollapsed ? 'justify-center' : 'justify-start'} px-4 py-2.5 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900 hover:text-blue-600 dark:hover:text-blue-400`}
             >
-              <FiEye className="h-5 w-5 flex-shrink-0" />
-              {!isSidebarCollapsed && <span className="ml-3">Patient View</span>}
-            </button>
-            <button className={`w-full flex items-center ${isSidebarCollapsed ? 'justify-center' : 'justify-start'} px-4 py-2.5 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900 hover:text-blue-600 dark:hover:text-blue-400`}>
               <FiSettings className="h-5 w-5 flex-shrink-0" />
               {!isSidebarCollapsed && <span className="ml-3">Settings</span>}
             </button>
@@ -156,6 +191,8 @@ const BaseDashboard = ({ children, navItems, title, userInfo }) => {
           {children}
         </div>
       </div>
+
+      {renderSettingsModal()}
     </div>
   );
 };
