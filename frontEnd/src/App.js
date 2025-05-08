@@ -39,6 +39,7 @@ function App() {
             <Route path="/unauthorized" element={<Unauthorized />} />
             <Route path="/callback" element={<AuthCallback />} />
             <Route path="/learn" element={<Learn />} />
+            <Route path="/contact" element={<Contact />} />
 
             <Route element={<ProtectedRoute allowedRoles={["admin", "doctor", "pharmacist", "patient"]} />}>
               <Route path="/admin" element={<NewAdminDashboard />} />
