@@ -1,5 +1,5 @@
 # UmodziRx Fabric Network
-- A Prescription-Fraud-Resistant Healthcare DLT Platform
+- A DLT Platform for UmodziRx
 
 ## Overview
 - UmodziRx is built on hyperledger fabric, an open source enterprise-grade permissioned distributed ledger technology (DLT) platform, designed for use in enterprise contexts.
@@ -34,7 +34,7 @@
     - The blockchain returns entire history of prescription ID:01, from creation to all updates.
 
 # Future Work
-## Consensus Upgrade: BFT-Smart
+## Consensus Upgrade to: BFT
 - Migration to BFT (Byzantine Fault Tolerance) consensus upon upgrade to Fabric 3.0 or greater.
 - Unlike RAFT, BFT enables reaching consensus when nodes act maliciously.
 

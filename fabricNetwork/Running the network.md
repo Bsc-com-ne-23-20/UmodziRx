@@ -31,20 +31,23 @@ Navigate to the `primary-network/bin` directory and update the path:
 
 ```bash
 cd primary-network/bin
-echo -e "\n### UMODZIRX NETWORK PATH\nexport PATH=\$PATH:$(pwd)" >> ~/.bashrc
+echo -e "\n### UmodziRx bin files\nexport PATH=\$PATH:$(pwd)" >> ~/.bashrc
 source ~/.bashrc
 cd ..
 ```
 
 ### Run the network
+First, bring down the network, get rid of any files from a previous run.
+```bash
+./primary-network.sh down
 
 You must be in the `primary-network/` directory to run the network:
 
 ```bash
-./network.sh up createChannel -ca -s couchdb
+./primary-network.sh up createChannel -ca -s couchdb
 ```
 
-This will launch the following Docker containers for the network:
+This will launch the following Docker containers for the network, one for each organization:
 - Peer nodes
 - Orderer nodes
 - Certificate Authorities
@@ -55,8 +58,8 @@ This will launch the following Docker containers for the network:
 To deploy the chaincode, use the following command:
 
 ```bash
-./network.sh deployCC -ccn basic -ccp ../asset-transfer-basic/chaincode-go -ccl go
+./primary-network.sh deployCC -ccn basic -ccp ../asset-transfer-basic/chaincode-go -ccl go
 ```
 
-- Chaincode may be deployed without bringing down the network.
+- Chaincode may be re-deployed without bringing down the network.
 - Several chaincodes may be deployed on a single channel, but each chaincode must be unique to each channel.
