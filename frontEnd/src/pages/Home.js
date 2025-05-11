@@ -1,100 +1,135 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
 
 export default function Home() {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white dark:from-gray-900 dark:to-gray-800">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
-        <div className="text-center">
-          <h1 className="text-4xl font-extrabold text-gray-900 dark:text-white sm:text-5xl md:text-6xl">
-          Secure Prescription Management with
-            <span className="block text-blue-600 dark:text-blue-400 mt-3">
-            UmodziRx   
-            </span>
-          </h1>
-          <p className="mt-6 text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-            Secure, efficient, and accessible prescription management powered by blockchain technology and MOSIP Digital ID
-          </p>
-        </div>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white relative">
 
-        <div className="mt-16 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
-          <div className="bg-white dark:bg-gray-800 p-8 rounded-xl shadow-xl hover:scale-105 transition-transform duration-300">
-            <div className="flex justify-center">
-              <div className="flex-shrink-0">
-                <svg className="h-12 w-12 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
+      {/* Slanted Background Image, hidden on mobile devices(small screens) */}
+      <div className="absolute top-0 right-0 bottom-0 z-0 overflow-hidden hidden md:block" 
+           style={{ width: '60%', clipPath: 'polygon(20% 0, 100% 0, 100% 100%, 0% 100%)' }}>
+
+        {/* Overlay Gradient */}
+        <div className="absolute inset-0 bg-gradient-to-l from-transparent to-blue-100 opacity-0"></div>
+        <img 
+          src="/images/background-image.png" 
+          alt="" /*screen readers skip this*/
+          className="w-full h-full object-cover"
+          aria-hidden="true"
+        />
+      </div>
+      
+      {/* Main Content */}
+      <div className="relative z-10">
+        {/* Navigation */}
+        <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <div className="h-12 w-12 rounded-full bg-blue-600 flex items-center justify-center">
+                <span className="text-white font-bold text-lg">U</span>
               </div>
-            </div>
-            <h2 className="mt-6 text-2xl font-bold text-gray-900 dark:text-white text-center">
-              Secure & Tamper-Proof
-            </h2>
-            <p className="mt-4 text-gray-600 dark:text-gray-300 text-center">
-              Blockchain technology ensures the integrity and security of all prescriptions
-            </p>
-          </div>
-
-          <div className="bg-white dark:bg-gray-800 p-8 rounded-xl shadow-xl hover:scale-105 transition-transform duration-300">
-            <div className="flex justify-center">
-              <div className="flex-shrink-0">
-                <svg className="h-12 w-12 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                </svg>
-              </div>
-            </div>
-            <h2 className="mt-6 text-2xl font-bold text-gray-900 dark:text-white text-center">
-              Role-Based Access
-            </h2>
-            <p className="mt-4 text-gray-600 dark:text-gray-300 text-center">
-              Tailored interfaces for doctors, pharmacists, and patients
-            </p>
-          </div>
-
-          <div className="bg-white dark:bg-gray-800 p-8 rounded-xl shadow-xl hover:scale-105 transition-transform duration-300">
-            <div className="flex justify-center">
-              <div className="flex-shrink-0">
-                <svg className="h-12 w-12 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z" />
-                </svg>
-              </div>
-            </div>
-            <h2 className="mt-6 text-2xl font-bold text-gray-900 dark:text-white text-center">
-              MOSIP Digital ID
-            </h2>
-            <p className="mt-4 text-gray-600 dark:text-gray-300 text-center">
-              MOSIP Digital ID provides a secure and efficient way to manage identities in the prescription system.
-            </p>
-          </div>
-
-        </div>
-
-        <div className="mt-10 text-center">
-
-
-          <div className="flex justify-center space-x-4">
-            <div className="flex justify-center space-x-4">
-            <div className="flex justify-center space-x-4">
-              <Link
-                to="/learn"
-                className="inline-flex items-center px-8 py-4 border border-transparent text-xl font-semibold rounded-full text-blue-600 bg-white hover:bg-gray-100 transition-colors duration-200 shadow-lg"
-              >
-                Learn More
-              </Link>
-              <Link
-                to="/login"
-                className="inline-flex items-center px-8 py-4 border border-transparent text-xl font-semibold rounded-full text-white bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 transition-colors duration-200 shadow-lg"
-              >
-                Get Started
-                <svg className="ml-3 -mr-1 h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                </svg>
+              <Link to="/">
+                <span className="ml-3 text-xl font-semibold text-gray-800 hover:text-blue-600 transition-colors">UmodziRx</span>
               </Link>
             </div>
-
+            
+            {/* Desktop Navigation */}
+            <div className="hidden md:flex space-x-4">
+              <Link to="/learn" className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50 hover:text-blue-600 transition-all">Features</Link>
+              <Link to="/contact" className="px-4 py-2 rounded-md text-white bg-blue-600 hover:bg-blue-700 transition-all">Contact Us</Link>
             </div>
-
+            
+            {/* Mobile Menu Button */}
+            <div className="md:hidden">
+              <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="text-gray-500 hover:text-blue-600 focus:outline-none">
+                <span className="sr-only">Open main menu</span>
+                <svg className="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                  {mobileMenuOpen ? (
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                  ) : (
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
+                  )}
+                </svg>
+              </button>
+            </div>
+          </div>
+          
+          {/* Mobile Navigation Menu */}
+          {mobileMenuOpen && (
+            <div className="md:hidden mt-4 pt-4 border-t border-gray-200">
+              <div className="flex flex-col space-y-4">
+                <Link to="/learn" className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50 hover:text-blue-600 transition-all text-center">Features</Link>
+                <Link to="/contact" className="px-4 py-2 rounded-md text-white bg-blue-600 hover:bg-blue-700 transition-all text-center">Contact Us</Link>
+              </div>
+            </div>
+          )}
+        </nav>
+        
+        {/* Hero Section - Simplified */}
+        <div className="relative overflow-hidden">
+          <div className="max-w-7xl mx-auto">
+            <div className="relative z-10 pb-8 bg-transparent sm:pb-16 md:pb-20 lg:pb-28 xl:pb-32">
+              <main className="mt-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 sm:mt-12 md:mt-16 lg:mt-20 xl:mt-28">
+                <div className="text-center lg:text-left lg:flex lg:items-center lg:justify-between">
+                  <div className="space-y-6 lg:max-w-2xl animate-fade-in-up">
+                    <h1 className="text-4xl font-extrabold tracking-tight text-gray-900 sm:text-5xl md:text-6xl lg:text-5xl xl:text-6xl leading-tight">
+                      <span className="block bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-blue-400 pr-1 pb-2">Secure Prescription Management with</span>
+                      <span className="block mt-2 text-gray-900"><span className="text-gray-900">UmodziRx</span></span>
+                    </h1>
+                    <p className="mt-3 text-base text-gray-500 sm:mt-5 sm:text-lg">
+                    {/* <p className="mt-3 text-base text-white sm:mt-5 sm:text-lg"> */}
+                      Leveraging Digital ID for secure and efficient healthcare delivery.
+                    </p>
+                    <div className="mt-8 sm:flex sm:justify-center lg:justify-start sm:space-x-4">
+                      <Link to="/login">
+                        <button className="w-full sm:w-auto mb-4 sm:mb-0 flex items-center justify-center px-8 py-3 text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 transition-all">
+                          Get Started
+                        </button>
+                      </Link>
+                      <Link to="/learn">
+                        <button className="w-full sm:w-auto flex items-center justify-center px-8 py-3 border border-gray-300 text-base font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-all">
+                          Learn More
+                        </button>
+                      </Link>
+                    </div>
+                  </div>
+                  {/* <div className="mt-12 lg:mt-0">
+                    <img className="w-full max-w-lg mx-auto rounded-lg shadow-xl lg:max-w-md" src="/images/prescription-hero.png" alt="UmodziRx Dashboard Preview" />
+                  </div> */}
+                </div>
+              </main>
+            </div>
           </div>
         </div>
+        
+        {/* Spacer to push footer down */}
+        <div className="flex-grow my-16"></div>
+        
+        {/* Footer */}
+        <footer className="bg-white py-4 border-t">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="md:flex md:justify-between md:items-center">
+              <div className="text-center md:text-left mb-2 md:mb-0">
+                <p className="text-gray-500 text-s">
+                  &copy; 2025 UmodziRx. All rights reserved.
+                </p>
+              </div>
+              <div className="flex justify-center md:justify-end space-x-6">
+                <a href="#" className="text-gray-400 hover:text-gray-500">
+                  <span className="sr-only">Privacy</span>
+                  <span className="text-s">Privacy</span>
+                </a>
+                <a href="#" className="text-gray-400 hover:text-gray-500">
+                  <span className="sr-only">Terms</span>
+                  <span className="text-s">Terms</span>
+                </a>
+              </div>
+            </div>
+          </div>
+        </footer>
+
       </div>
     </div>
   );

@@ -4,10 +4,7 @@ import { AuthProvider } from "./context/AuthContext";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import ViewPatientPrescriptions from "./pages/ViewPatientPrescriptions";
-import AdminDashboard from "./pages/AdminDashboard";
-import DoctorDashboard from "./pages/DoctorDashboard";
-import PharmacistDashboard from "./pages/PharmacistDashboard";
-import PatientDashboard from "./pages/PatientDashboard";
+import PatientPrescriptions from "./pages/PatientDashboard";
 import Unauthorized from "./pages/Unauthorized";
 import AuthCallback from "./pages/AuthCallback";
 import ProtectedRoute from "./components/ProtectedRoute"; 
@@ -15,8 +12,8 @@ import SessionExpired from './pages/SessionExpired';
 import NewDoctorDashboard from './pages/NewDoctorDashboard';
 import NewAdminDashboard from './pages/NewAdminDashboard';
 import Learn from './pages/LearnMore';
-import BaseDashboard from "./components/BaseDashboard";
-import { FiHome } from "react-icons/fi"; // Import required icons
+import NewPharmacistDashboard from "./pages/NewPharmacistDashboard";
+import NewPatientDashboard from './pages/NewPatientDashboard';
 import "./App.css";
 
 // Wrapper component for Patient Dashboard
@@ -67,9 +64,9 @@ function App() {
             <Route path="/unauthorized" element={<Unauthorized />} />
             <Route path="/callback" element={<AuthCallback />} />
             <Route path="/learn" element={<Learn />} />
+            <Route path="/contact" element={<Contact />} />
 
-            {/* Admin Routes */}
-            <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
+            <Route element={<ProtectedRoute allowedRoles={["admin", "doctor", "pharmacist", "patient"]} />}>
               <Route path="/admin" element={<NewAdminDashboard />} />
             </Route>
 
@@ -86,12 +83,13 @@ function App() {
 
             {/* Pharmacist Routes */}
             <Route element={<ProtectedRoute allowedRoles={["pharmacist"]} />}>
-              <Route path="/pharmacist" element={<PharmacistDashboard />} />
+              <Route path="/pharmacist" element={<NewPharmacistDashboard />} />
+              <Route path="/pharmacist/dashboard" element={<NewPharmacistDashboard />} />
             </Route>
 
             {/* Patient Routes with Wrapper */}
             <Route element={<ProtectedRoute allowedRoles={["patient"]} />}>
-              <Route path="/patient" element={<PatientDashboardWrapper />} />
+              <Route path="/patient" element={<NewPatientDashboard />} />
             </Route>
           </Routes>
         </div>
