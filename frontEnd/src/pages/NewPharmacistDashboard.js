@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FiHome, FiCheckSquare, FiPackage, FiList } from 'react-icons/fi';
+import { FiHome, FiCheckSquare, FiPackage, FiList, FiShoppingBag } from 'react-icons/fi';
 import BaseDashboard from '../components/BaseDashboard';
 import PharmacistContent from '../components/PharmacistContent';
 
@@ -30,6 +30,12 @@ const NewPharmacistDashboard = () => {
       label: 'Prescriptions', 
       id: 'prescriptions',
       onClick: () => setActiveView('prescriptions')
+    },
+    { 
+      icon: FiShoppingBag, 
+      label: 'Dispense Medicine', 
+      id: 'dispense',
+      onClick: () => setActiveView('dispense')
     }
   ];
 
