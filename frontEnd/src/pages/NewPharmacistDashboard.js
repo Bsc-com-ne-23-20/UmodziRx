@@ -44,17 +44,13 @@ const NewPharmacistDashboard = () => {
     id: localStorage.getItem('pharmaId'),
   };
 
-  const handleNavigation = (viewId) => {
-    setActiveView(viewId);
-  };
-
   return (
     <BaseDashboard
       navItems={navItems}
       title="Pharmacist"
       userInfo={pharmacistInfo}
     >
-      <PharmacistContent activeView={activeView} handleNavigation={handleNavigation} />
+      <PharmacistContent activeView={activeView} handleNavigation={setActiveView} />
     </BaseDashboard>
   );
 };

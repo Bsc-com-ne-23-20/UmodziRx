@@ -23,6 +23,7 @@ const BaseDashboard = ({ children, navItems, title, userInfo }) => {
   });
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [expandedNavItem, setExpandedNavItem] = useState(null);
 
   useEffect(() => {
     if (darkMode) {
@@ -57,10 +58,18 @@ const BaseDashboard = ({ children, navItems, title, userInfo }) => {
     setActiveView(view);
   };
 
+  const handleNavItemClick = (item) => {
+    if (item.subItems) {
+      setExpandedNavItem(expandedNavItem === item.id ? null : item.id);
+    } else if (item.onClick) {
+      item.onClick();
+    }
+  };
+
   const navigationItems = [
     { id: 'dashboard', label: 'Dashboard', icon: FiHome },
     { id: 'prescriptions', label: 'Prescriptions', icon: FiFileText },
-    { id: 'patients', label: 'Patient View', icon: FiUsers }, // Add this line
+    { id: 'patients', label: 'Patient View', icon: FiUsers },
     { id: 'settings', label: 'Settings', icon: FiSettings }
   ];
 
@@ -164,14 +173,45 @@ const BaseDashboard = ({ children, navItems, title, userInfo }) => {
 
           <nav className="space-y-2 flex-1">
             {navItems.map(item => (
-              <button
-                key={item.id}
-                onClick={item.onClick || (() => {})}
-                className={`w-full flex items-center ${isSidebarCollapsed ? 'justify-center' : 'justify-start'} px-4 py-2.5 rounded-lg transition-colors text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-900 hover:text-blue-600 dark:hover:text-blue-400`}
-              >
-                <item.icon className="h-5 w-5 flex-shrink-0" />
-                {!isSidebarCollapsed && <span className="ml-3">{item.label}</span>}
-              </button>
+              <div key={item.id}>
+                <button
+                  onClick={() => handleNavItemClick(item)}
+                  className={`w-full flex items-center ${isSidebarCollapsed ? 'justify-center' : 'justify-start'} px-4 py-2.5 rounded-lg transition-colors text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-900 hover:text-blue-600 dark:hover:text-blue-400`}
+                >
+                  <item.icon className="h-5 w-5 flex-shrink-0" />
+                  {!isSidebarCollapsed && (
+                    <>
+                      <span className="ml-3 flex-1 text-left">{item.label}</span>
+                      {item.subItems && (
+                        <svg
+                          className={`w-4 h-4 transition-transform ${
+                            expandedNavItem === item.id ? 'transform rotate-180' : ''
+                          }`}
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      )}
+                    </>
+                  )}
+                </button>
+                {!isSidebarCollapsed && item.subItems && expandedNavItem === item.id && (
+                  <div className="ml-6 mt-2 space-y-2">
+                    {item.subItems.map(subItem => (
+                      <button
+                        key={subItem.id}
+                        onClick={subItem.onClick}
+                        className="w-full flex items-center px-4 py-2 rounded-lg text-sm text-gray-600 dark:text-gray-400 hover:bg-blue-50 dark:hover:bg-blue-900 hover:text-blue-600 dark:hover:text-blue-400"
+                      >
+                        <subItem.icon className="h-4 w-4 mr-3" />
+                        {subItem.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             ))}
           </nav>
 
