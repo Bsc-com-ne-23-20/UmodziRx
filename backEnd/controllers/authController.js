@@ -4,7 +4,7 @@ const jwkToPem = require('jwk-to-pem');
 const { URLSearchParams } = require('url');
 const crypto = require('crypto');
 const dotenv = require('dotenv');
-const staffTable = require('../controllers/userController');
+const User = require('../models/User');
 
 dotenv.config();
 
@@ -93,8 +93,8 @@ const login = async (req, res) => {
     if (userInfo.email==='pharmacy@gmail.com') role ='pharmacist';
     if (userInfo.email==='admin@gmail.com') role ='admin';
 
-    const dbUser = await staffTable.findUserByDigitalID(userInfo.phone_number);
-    if (dbUser && !role.includes(dbUser.role)) role =(dbUser.role);
+    const dbUser = await User.findUserByDigitalID(userInfo.phone_number);
+    if (dbUser && !role.includes(dbUser.role)) role = dbUser.role;
 
     const user ={ 
       id: userInfo.phone_number, 

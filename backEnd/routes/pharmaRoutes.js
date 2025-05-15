@@ -8,6 +8,6 @@ router.get('/veripatient', PharmacistController.veripatient);
 
 // Prescription management routes
 router.get('/prescriptions', PharmacistController.getPrescriptions);
-router.post('/dispense',  PharmacistController.dispenseMedication);
+router.post('/dispense', PharmacistController.dispenseMedication);
 
 module.exports = router;
