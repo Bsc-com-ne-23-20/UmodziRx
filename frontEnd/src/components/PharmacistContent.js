@@ -32,7 +32,47 @@ const PharmacistContent = ({ activeView, handleNavigation }) => {
   const [newPrescriptions, setNewPrescriptions] = useState([{ drugName: '', dosage: '', advice: '' }]);
   const [selectedPrescriptions, setSelectedPrescriptions] = useState([]);
   const [dispenseStatus, setDispenseStatus] = useState({});
+  const [showDrugClassModal, setShowDrugClassModal] = useState(false);
+  const [selectedDrugClass, setSelectedDrugClass] = useState(null);
+  const [selectedDrug, setSelectedDrug] = useState(null);
+  const [selectedDrugsForDispense, setSelectedDrugsForDispense] = useState([]);
+  const [showConfirmationModal, setShowConfirmationModal] = useState(false);
+  const [currentDrugClass, setCurrentDrugClass] = useState(null);
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+  const [isConfirmed, setIsConfirmed] = useState(false);
   const location = useLocation();
+
+  const drugClasses = {
+    Analgesics: [
+      'Morphine', 
+      'Fentanyl', 
+      'Hydromorphone', 
+      'Acetaminophen', 
+      'Ibuprofen'
+    ],
+    Antibiotics: [
+      'Ceftriaxone', 
+      'Vancomycin', 
+      'Amoxicillin', 
+      'Azithromycin'
+    ],
+    Cardiovascular: [
+      'Lisinopril', 
+      'Metoprolol', 
+      'Amlodipine', 
+      'Heparin'
+    ],
+    Respiratory: [
+      'Albuterol', 
+      'Ipratropium', 
+      'Methylprednisolone'
+    ],
+    Anesthetics: [
+      'Propofol', 
+      'Sevoflurane', 
+      'Lidocaine'
+    ]
+  };
 
   const fetchPatientPrescriptions = async (patientId) => {
     try {
@@ -120,6 +160,18 @@ const PharmacistContent = ({ activeView, handleNavigation }) => {
       }
     }
   }, [activeView, location.search, showVerificationModal]);
+
+  useEffect(() => {
+    if (activeView === 'dispense') {
+      setShowDrugClassModal(true);
+    }
+  }, [activeView]);
+
+  React.useEffect(() => {
+    if (!showDrugClassModal && activeView === 'dispense') {
+      handleNavigation('dashboard');
+    }
+  }, [showDrugClassModal]);
 
   const generateRandomString = (length) => {
     const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -233,6 +285,84 @@ const PharmacistContent = ({ activeView, handleNavigation }) => {
     }
   };
 
+  const handleDispenseDrug = async (drug) => {
+    setSelectedDrugsForDispense(prev => {
+      if (prev.includes(drug)) {
+        return prev.filter(d => d !== drug);
+      }
+      return [...prev, drug];
+    });
+  };
+
+  const handleDrugClassSelect = (drugClass) => {
+    setSelectedDrugClass(drugClass);
+    setCurrentDrugClass(drugClass);
+    if (selectedDrugsForDispense.length > 0) {
+      setShowConfirmationModal(true);
+    }
+  };
+
+  const handleFinishSelection = () => {
+    if (selectedDrugsForDispense.length > 0) {
+      setShowConfirmationModal(true);
+      setShowDrugClassModal(false); // Close the drug class modal
+    }
+  };
+
+  const handleBackToDrugClasses = () => {
+    setSelectedDrugClass(null);
+    if (selectedDrugsForDispense.length === 0) {
+      setShowConfirmationModal(false);
+    }
+  };
+
+  const handleConfirmDispense = async () => {
+    try {
+      setLoading(true);
+      const response = await axios.post(`http://localhost:5000/pharmacist/dispense`, {
+        patientId: retrievedPatient?.id,
+        prescriptionId: null,
+        pharmacistId: 'pharmacist123',
+        comment: `Dispensed medications: ${selectedDrugsForDispense.join(', ')}`,
+        selectedDrugs: selectedDrugsForDispense
+      });
+
+      // Update the prescriptions in state with the new data
+      if (response.data.data.updatedPrescriptions) {
+        setPatientPrescriptions(response.data.data.updatedPrescriptions);
+      }
+
+      setShowSuccessMessage(true);
+      setTimeout(() => {
+        setShowSuccessMessage(false);
+        setShowDrugClassModal(false);
+        setSelectedDrugClass(null);
+        setSelectedDrug(null);
+        setSelectedDrugsForDispense([]);
+        setShowConfirmationModal(false);
+        setCurrentDrugClass(null);
+        setIsConfirmed(false);
+        
+        // Refresh prescriptions after dispensing
+        if (retrievedPatient?.id) {
+          fetchPatientPrescriptions(retrievedPatient.id);
+        }
+      }, 2000);
+    } catch (err) {
+      setError('Failed to dispense drugs: ' + (err.response?.data?.error || err.message));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleConfirmSelection = () => {
+    setIsConfirmed(true);
+  };
+
+  const handleBackToSelection = () => {
+    setIsConfirmed(false);
+  };
+
   const renderPrescriptionDropdown = () => (
     <div className="relative inline-block text-left mb-4">
       <button
@@ -262,20 +392,117 @@ const PharmacistContent = ({ activeView, handleNavigation }) => {
             </button>
             <button
               onClick={() => {
-                setShowDispenseModal(true);
+                setShowDrugClassModal(true);
                 setShowPrescriptionDropdown(false);
               }}
               className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-              disabled={!patientPrescriptions?.prescriptions?.length}
             >
               <FiCheckSquare className="mr-2 h-4 w-4" />
-              Dispense Prescriptions
+              Dispense Medicine
             </button>
           </div>
         </div>
       )}
     </div>
   );
+
+  const renderDrugClassModal = () => {
+    if (!showDrugClassModal) return null;
+
+    return (
+      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-4xl w-full m-4 max-h-[90vh] overflow-y-auto">
+          <div className="sticky top-0 bg-white dark:bg-gray-800 px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+            <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">
+              {selectedDrugClass ? `Select Medications from ${selectedDrugClass}` : 'Drug Classes'}
+            </h3>
+            <div className="flex items-center space-x-4">
+              {selectedDrugsForDispense.length > 0 && (
+                <button
+                  onClick={handleFinishSelection}
+                  className="px-4 py-2 text-sm text-white bg-green-600 rounded-md hover:bg-green-700 flex items-center space-x-2"
+                >
+                  <span>Finish Selection ({selectedDrugsForDispense.length})</span>
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                  </svg>
+                </button>
+              )}
+              <button 
+                onClick={() => {
+                  setShowDrugClassModal(false);
+                  setSelectedDrugClass(null);
+                  setSelectedDrug(null);
+                  setSelectedDrugsForDispense([]);
+                  setCurrentDrugClass(null);
+                  setShowConfirmationModal(false);
+                }} 
+                className="text-gray-400 hover:text-gray-500 dark:text-gray-500 dark:hover:text-gray-400"
+              >
+                <FiX className="h-6 w-6" />
+              </button>
+            </div>
+          </div>
+          <div className="px-6 py-4">
+            {!selectedDrugClass ? (
+              <div className="flex flex-wrap gap-4">
+                {Object.keys(drugClasses).map((drugClass) => (
+                  <button
+                    key={drugClass}
+                    onClick={() => handleDrugClassSelect(drugClass)}
+                    className="px-4 py-2 bg-blue-50 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400 rounded-md hover:bg-blue-100 dark:hover:bg-blue-900/75"
+                  >
+                    {drugClass}
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <>
+                <div className="flex flex-wrap gap-4">
+                  {drugClasses[selectedDrugClass].map((drug) => (
+                    <button
+                      key={drug}
+                      onClick={() => handleDispenseDrug(drug)}
+                      className={`px-4 py-2 rounded-md ${
+                        selectedDrugsForDispense.includes(drug)
+                          ? 'bg-green-600 text-white hover:bg-green-700'
+                          : 'bg-green-50 dark:bg-green-900/50 text-green-600 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-900/75'
+                      }`}
+                    >
+                      {drug}
+                      {selectedDrugsForDispense.includes(drug) && ' ✓'}
+                    </button>
+                  ))}
+                </div>
+                <div className="mt-6 flex justify-between">
+                  <button
+                    onClick={handleBackToDrugClasses}
+                    className="px-4 py-2 text-sm text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600"
+                  >
+                    Back to Drug Classes
+                  </button>
+                  {!showConfirmationModal && (
+                    <button
+                      onClick={handleFinishSelection}
+                      disabled={selectedDrugsForDispense.length === 0}
+                      className="px-4 py-2 text-sm text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:bg-gray-400"
+                    >
+                      Show Selected ({selectedDrugsForDispense.length})
+                    </button>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+        {showSuccessMessage && (
+          <div className="fixed top-4 right-4 bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded shadow-lg z-50">
+            Medications dispensed successfully!
+          </div>
+        )}
+      </div>
+    );
+  };
 
   const renderAddPrescriptionModal = () => {
     if (!showAddPrescriptionModal) return null;
@@ -580,6 +807,124 @@ const PharmacistContent = ({ activeView, handleNavigation }) => {
     );
   };
 
+  const renderConfirmationModal = () => {
+    if (!showConfirmationModal) return null;
+
+    return (
+      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full m-4">
+          <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+            <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">
+              {isConfirmed ? 'Ready to Dispense' : 'Selected Medications'}
+            </h3>
+            <button 
+              onClick={() => {
+                setShowConfirmationModal(false);
+                setIsConfirmed(false);
+              }}
+              className="text-gray-400 hover:text-gray-500 dark:text-gray-500 dark:hover:text-gray-400"
+            >
+              <FiX className="h-6 w-6" />
+            </button>
+          </div>
+          <div className="px-6 py-4">
+            <div className="flex justify-between items-center mb-4">
+              <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                {isConfirmed ? 'Medications to dispense:' : 'Review selected medications:'}
+              </h4>
+              {!isConfirmed && (
+                <button
+                  onClick={() => {
+                    setShowConfirmationModal(false);
+                    setShowDrugClassModal(true);
+                  }}
+                  className="px-3 py-1 text-sm text-blue-600 bg-blue-50 hover:bg-blue-100 dark:text-blue-400 dark:bg-blue-900/50 dark:hover:bg-blue-900/75 rounded-md flex items-center space-x-1"
+                >
+                  <FiPlus className="h-4 w-4" />
+                  <span>Add More</span>
+                </button>
+              )}
+            </div>
+            {selectedDrugsForDispense.length > 0 ? (
+              <ul className="space-y-2 mb-6 max-h-[40vh] overflow-y-auto">
+                {selectedDrugsForDispense.map((drug, index) => (
+                  <li key={index} className="flex justify-between items-center bg-gray-50 dark:bg-gray-700 p-3 rounded-md">
+                    <span className="text-gray-900 dark:text-gray-100">{drug}</span>
+                    {!isConfirmed && (
+                      <button
+                        onClick={() => setSelectedDrugsForDispense(prev => prev.filter((_, i) => i !== index))}
+                        className="text-red-600 hover:text-red-700 dark:text-red-400"
+                      >
+                        <FiX className="h-4 w-4" />
+                      </button>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                No medications selected. Click "Add More" to select medications.
+              </div>
+            )}
+            <div className="flex justify-end space-x-3">
+              {!isConfirmed ? (
+                <>
+                  <button
+                    onClick={() => {
+                      setShowConfirmationModal(false);
+                      setIsConfirmed(false);
+                    }}
+                    className="px-4 py-2 text-sm text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleConfirmSelection}
+                    disabled={selectedDrugsForDispense.length === 0}
+                    className="px-4 py-2 text-sm text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:bg-gray-400 flex items-center space-x-2"
+                  >
+                    <span>Confirm Selection</span>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                    </svg>
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    onClick={handleBackToSelection}
+                    className="px-4 py-2 text-sm text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600"
+                  >
+                    Back
+                  </button>
+                  <button
+                    onClick={handleConfirmDispense}
+                    disabled={loading}
+                    className="px-4 py-2 text-sm text-white bg-green-600 rounded-md hover:bg-green-700 disabled:bg-gray-400 flex items-center space-x-2"
+                  >
+                    {loading ? (
+                      <>
+                        <span>Dispensing...</span>
+                        <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></div>
+                      </>
+                    ) : (
+                      <>
+                        <span>Dispense Medications</span>
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                        </svg>
+                      </>
+                    )}
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   const renderVerificationModal = () => {
     if (!showVerificationModal) return null;
 
@@ -616,21 +961,10 @@ const PharmacistContent = ({ activeView, handleNavigation }) => {
           <h3 className="text-lg font-medium mb-2 text-gray-900 dark:text-gray-100">Quick Actions</h3>
           <div className="space-y-2">
             <button 
-              onClick={handleVerifyClick}
+              onClick={() => retrievedPatient ? setShowDrugClassModal(true) : handleVerifyClick()}
               className="w-full px-4 py-2 text-sm text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/50 rounded-md hover:bg-blue-100 dark:hover:bg-blue-900/75"
             >
-              Verify New Patient
-            </button>
-            <button
-              onClick={() => retrievedPatient ? setShowAddPrescriptionModal(true) : alert("Please verify a patient first")}
-              disabled={!retrievedPatient}
-              className={`w-full px-4 py-2 text-sm rounded-md ${
-                retrievedPatient
-                  ? "text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/50 hover:bg-green-100 dark:hover:bg-green-900/75"
-                  : "text-gray-400 dark:text-gray-500 bg-gray-100 dark:bg-gray-700 cursor-not-allowed"
-              }`}
-            >
-              + Add Prescription
+              Dispense Medicine
             </button>
           </div>
         </div>
@@ -652,6 +986,23 @@ const PharmacistContent = ({ activeView, handleNavigation }) => {
       <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">All Prescriptions</h2>
       <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
         {/* All prescriptions content */}
+      </div>
+    </div>
+  );
+
+  const renderDrugClasses = () => (
+    <div className="space-y-6">
+      <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">Drug Classes</h2>
+      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
+        <ul className="list-disc pl-6">
+          <li className="text-gray-900 dark:text-gray-100">Antibiotics</li>
+          <li className="text-gray-900 dark:text-gray-100">Analgesics</li>
+          <li className="text-gray-900 dark:text-gray-100">Antidepressants</li>
+          <li className="text-gray-900 dark:text-gray-100">Antihistamines</li>
+          <li className="text-gray-900 dark:text-gray-100">Antipyretics</li>
+          <li className="text-gray-900 dark:text-gray-100">Antifungals</li>
+          <li className="text-gray-900 dark:text-gray-100">Antivirals</li>
+        </ul>
       </div>
     </div>
   );
@@ -779,6 +1130,7 @@ const PharmacistContent = ({ activeView, handleNavigation }) => {
           {activeView === 'verify' && renderVerifySection()}
           {activeView === 'inventory' && renderInventory()}
           {activeView === 'prescriptions' && renderPrescriptions()}
+          {activeView === 'drugClasses' && renderDrugClasses()}
         </>
       )}
 
@@ -786,6 +1138,8 @@ const PharmacistContent = ({ activeView, handleNavigation }) => {
       {renderVerificationModal()}
       {renderAddPrescriptionModal()}
       {renderDispenseModal()}
+      {renderDrugClassModal()}
+      {renderConfirmationModal()}
     </div>
   );
 };
