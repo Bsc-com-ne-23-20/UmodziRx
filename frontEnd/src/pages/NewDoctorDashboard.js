@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
-import { FiHome, FiUsers, FiFileText } from 'react-icons/fi';
+import { FiHome, FiUsers, FiFileText, FiPlus, FiList } from 'react-icons/fi';
 import BaseDashboard from '../components/BaseDashboard';
 import DoctorContent from '../components/DoctorContent';
-import TableHeader from '../components/TableHeader';
 
 const NewDoctorDashboard = () => {
   const [activeView, setActiveView] = useState('dashboard');
@@ -24,7 +23,20 @@ const NewDoctorDashboard = () => {
       icon: FiFileText, 
       label: 'Prescriptions', 
       id: 'prescriptions',
-      onClick: () => setActiveView('prescriptions')
+      subItems: [
+        {
+          icon: FiPlus,
+          label: 'Add Prescription',
+          id: 'add-prescription',
+          onClick: () => setActiveView('add-prescription')
+        },
+        {
+          icon: FiList,
+          label: 'View History',
+          id: 'prescription-history',
+          onClick: () => setActiveView('prescription-history')
+        }
+      ]
     }
   ];
 
@@ -33,17 +45,13 @@ const NewDoctorDashboard = () => {
     id: localStorage.getItem('doctorId'),
   };
 
-  const handleNavigation = (viewId) => {
-    setActiveView(viewId);
-  };
-
   return (
     <BaseDashboard
       navItems={navItems}
-      title="Doctor"
+      title="Doctor Portal"
       userInfo={doctorInfo}
     >
-      <DoctorContent activeView={activeView} handleNavigation={handleNavigation} />
+      <DoctorContent activeView={activeView} handleNavigation={setActiveView} />
     </BaseDashboard>
   );
 };

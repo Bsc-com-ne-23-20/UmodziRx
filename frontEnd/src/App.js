@@ -15,6 +15,8 @@ import Learn from './pages/LearnMore';
 import NewPharmacistDashboard from "./pages/NewPharmacistDashboard";
 import NewPatientDashboard from './pages/NewPatientDashboard';
 import Contact from './pages/Contact';
+import AuthError from './pages/AuthError';
+
 import "./App.css";
 
 function App() {
@@ -36,6 +38,7 @@ function App() {
             {/* Public Routes */}
             <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login />} />
+            <Route path="/auth/error" element={<AuthError />} />
             <Route path="/session-expired" element={<SessionExpired />} />
             <Route path="/unauthorized" element={<Unauthorized />} />
             <Route path="/callback" element={<AuthCallback />} />
@@ -66,8 +69,7 @@ function App() {
               <Route path="/patient" element={<NewPatientDashboard />} />
             </Route>
 
-            {/* <Route path="*" element={<Navigate to="/login" replace />} />
-            <Route path="/" element={<Navigate to="/login" replace />} /> */}
+            <Route path="*" element={<Navigate to="/auth/error" replace />} />
           </Routes>
         </div>
       </Router>

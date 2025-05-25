@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FiFileText, FiArchive } from 'react-icons/fi';
+import { FiFileText, FiArchive, FiMap } from 'react-icons/fi';
 import BaseDashboard from '../components/BaseDashboard';
 import PatientContent from '../components/PatientContent';
 
@@ -18,6 +18,12 @@ const NewPatientDashboard = () => {
       label: 'Medical Records',
       id: 'records',
       onClick: () => setActiveView('records')
+    },
+    {
+      icon: FiMap,
+      label: 'Find Healthcare',
+      id: 'locations',
+      onClick: () => setActiveView('locations')
     }
   ];
 
