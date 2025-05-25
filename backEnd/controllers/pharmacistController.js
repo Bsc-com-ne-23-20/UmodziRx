@@ -7,6 +7,9 @@ const jwt = require('jsonwebtoken');
 
 dotenv.config();
 
+// Import blockchain utilities
+const { processBlockchainResponse, queryBlockchainWithRetries } = require('../utils/blockchainUtils');
+
 const TOKEN_EXPIRATION = parseInt(process.env.TOKEN_EXPIRATION_SEC || '300', 10);
 
 // Initialize private key for JWT signing
@@ -107,30 +110,45 @@ class PharmacistController {
     }
 
     try {
-      // Query blockchain for prescriptions
-      const response = await axios.get(`${process.env.BLOCKCHAIN_API_URL}/query`, {
+      // Query blockchain for prescriptions using the correct function
+      const response = await axios.get(`${process.env.BLOCKCHAIN_API_URL || 'http://localhost:45000'}/query`, {
         params: {
-          channelid: process.env.CHANNEL_ID,
-          chaincodeid: process.env.CHAINCODE_ID,
-          function: "GetAssetHistory",
+          channelid: process.env.CHANNEL_ID || 'mychannel',
+          chaincodeid: process.env.CHAINCODE_ID || 'basic',
+          function: "ReadAsset",
           args: patientId,
         },
       });
 
-      // Process the response
-      let rawData = response.data;
-      if (typeof rawData === "string" && rawData.startsWith("Response: ")) {
-        rawData = rawData.replace("Response: ", "").trim();
-      }
+      // Log the raw response for debugging
+      console.log(`Raw blockchain response for patient ${patientId}:`, response.data);
       
-      let historyData;
+      // Check for "does not exist" error in the raw data
+      if (typeof response.data === "string" && response.data.includes("does not exist")) {
+        // This is not an error - it just means the patient has no prescriptions
+        return res.status(200).json({
+          success: true,
+          message: "No prescriptions found for this patient",
+          data: {
+            patientId: patientId,
+            patientName: "Unknown",
+            prescriptions: []
+          }
+        });
+      }
+
+      // Process the response
+      let asset;
       try {
-        historyData = JSON.parse(rawData);
+        asset = processBlockchainResponse(response.data);
       } catch (err) {
         return res.status(500).json({
           success: false,
           error: "Failed to parse blockchain response",
           details: err.message,
+          rawResponse: typeof response.data === 'string' 
+            ? response.data.substring(0, 200) 
+            : 'non-string response'
         });
       }
 
@@ -138,27 +156,24 @@ class PharmacistController {
       const prescriptions = [];
       let patientName = "N/A";
       
-      if (Array.isArray(historyData)) {
-        historyData.forEach(entry => {
-          if (entry.patientId === patientId) {
-            patientName = entry.patientName || patientName;
-            
-            if (entry.prescriptions) {
-              entry.prescriptions.forEach(prescription => {
-                prescriptions.push({
-                  medicationName: prescription.MedicationName || "Unknown",
-                  dosage: prescription.Dosage || "N/A",
-                  instructions: prescription.Instructions || "N/A",
-                  doctorId: prescription.DoctorId || "N/A",
-                  timestamp: prescription.Timestamp ? 
-                    new Date(prescription.Timestamp.seconds * 1000).toISOString() : 
-                    new Date().toISOString(),
-                  txId: prescription.TxId || crypto.randomUUID()
-                });
-              });
-            }
-          }
-        });
+      if (asset) {
+        patientName = asset.PatientName || "N/A";
+        
+        if (asset.Prescriptions && Array.isArray(asset.Prescriptions)) {
+          asset.Prescriptions.forEach(prescription => {
+            prescriptions.push({
+              prescriptionId: prescription.PrescriptionId || crypto.randomBytes(8).toString('hex'),
+              medicationName: prescription.MedicationName || "Unknown",
+              dosage: prescription.Dosage || "N/A",
+              instructions: prescription.Instructions || "N/A",
+              status: prescription.Status || "Active",
+              createdBy: prescription.CreatedBy || asset.DoctorId || "N/A",
+              timestamp: prescription.Timestamp || new Date().toISOString(),
+              expiryDate: prescription.ExpiryDate || "",
+              txId: prescription.TxID || crypto.randomUUID()
+            });
+          });
+        }
       }
 
       return res.status(200).json({
@@ -183,30 +198,56 @@ class PharmacistController {
     const { patientId, prescriptionId, pharmacistId, comment } = req.body;
 
     // Validate request
-    if (!patientId || !prescriptionId || !pharmacistId || !comment) {
+    if (!patientId || !prescriptionId || !pharmacistId) {
       return res.status(400).json({ 
-        error: "All fields are required",
+        error: "Patient ID, Prescription ID, and Pharmacist ID are required",
         success: false
       });
     }
 
     try {
-      // Prepare blockchain request
+      // Prepare blockchain request for DispensePrescription
       const requestData = new URLSearchParams();
-      requestData.append('channelid', process.env.CHANNEL_ID);
-      requestData.append('chaincodeid', process.env.CHAINCODE_ID);
-      requestData.append('function', 'DispensePrecription');
-      requestData.append('args', patientId);
-    //requestData.append('args', prescriptionId);
-      requestData.append('args', pharmacistId);
-      requestData.append('args', comment);
+      requestData.append('channelid', process.env.CHANNEL_ID || 'mychannel');
+      requestData.append('chaincodeid', process.env.CHAINCODE_ID || 'basic');
+      requestData.append('function', 'DispensePrescription');
+      
+      // Format args as a JSON object with EXACT field names matching the smart contract
+      // The smart contract expects: patientId, prescriptionId, pharmacistId, note
+      // Case sensitivity is important!
+      const dispensationData = {
+        patientId: patientId,           // Field name matches smart contract
+        prescriptionId: prescriptionId, // Field name matches smart contract
+        pharmacistId: pharmacistId,     // Field name matches smart contract
+        note: comment || ""             // Optional dispensing note
+      };
+      
+      // Log the dispensation data for debugging
+      console.log(`Dispensation data sent to blockchain: ${JSON.stringify(dispensationData)}`);
+      
+      // We need to pass a single argument: the JSON string of the dispensationData
+      requestData.append('args', JSON.stringify(dispensationData));
 
       // Send to blockchain
       const blockchainResponse = await axios.post(
-        `${process.env.BLOCKCHAIN_API_URL}/invoke`, 
+        `${process.env.BLOCKCHAIN_API_URL || 'http://localhost:45000'}/invoke`, 
         requestData,
         { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
       );
+
+      // Log the raw blockchain response for debugging
+      console.log(`Raw blockchain response from dispensation: ${JSON.stringify(blockchainResponse.data)}`);
+
+      // Check if the response contains an error
+      if (typeof blockchainResponse.data === 'string' && blockchainResponse.data.includes('Error:')) {
+        console.error('Blockchain error during dispensation:', blockchainResponse.data);
+        return res.status(400).json({
+          success: false,
+          message: 'Failed to dispense medication',
+          error: blockchainResponse.data,
+          data: { patientId, prescriptionId, pharmacistId }
+        });
+      }
 
       return res.status(200).json({
         success: true,
@@ -215,16 +256,92 @@ class PharmacistController {
           patientId,
           prescriptionId,
           pharmacistId,
-          txId: blockchainResponse.data.txId,
+          txId: blockchainResponse.data.txId || 'unknown',
           dispensedAt: new Date().toISOString()
         }
       });
     } catch (error) {
-      console.error('Error:', error.response?.data || error.message);
+      console.error('Dispensation error:', error.message);
+      if (error.response) {
+        console.error('Response data:', error.response.data);
+        console.error('Response status:', error.response.status);
+      }
       return res.status(500).json({ 
         success: false,
         error: 'Failed to dispense medication',
-        details: error.response?.data || error.message
+        details: error.response?.data || error.message,
+        request: {
+          patientId,
+          prescriptionId,
+          pharmacistId
+        }
+      });
+    }
+  }
+
+  static async getDispenseHistory(req, res) {
+    const { pharmacistId } = req.params;
+
+    // Validate request
+    if (!pharmacistId) {
+      return res.status(400).json({ 
+        error: "Pharmacist ID is required",
+        success: false
+      });
+    }
+
+    try {
+      // Query blockchain for dispensed prescriptions
+      const response = await axios.get(`${process.env.BLOCKCHAIN_API_URL || 'http://localhost:45000'}/query`, {
+        params: {
+          channelid: process.env.CHANNEL_ID || 'mychannel',
+          chaincodeid: process.env.CHAINCODE_ID || 'basic',
+          function: "GetDispenseHistory",
+          args: pharmacistId,
+        },
+      });
+
+      // Process the response
+      let historyData;
+      try {
+        historyData = processBlockchainResponse(response.data);
+      } catch (err) {
+        return res.status(500).json({
+          success: false,
+          error: "Failed to parse blockchain response",
+          details: err.message,
+        });
+      }
+
+      // Format dispensed prescriptions
+      // This might need adjustment based on what your GetDispenseHistory function returns
+      const dispensedPrescriptions = Array.isArray(historyData) ? historyData : [];
+      
+      const formattedDispenses = dispensedPrescriptions.map(prescription => ({
+        prescriptionId: prescription.PrescriptionId,
+        patientId: prescription.PatientId,
+        patientName: prescription.PatientName || "Unknown",
+        medicationName: prescription.MedicationName,
+        dosage: prescription.Dosage,
+        instructions: prescription.Instructions,
+        dispensingTimestamp: prescription.DispensingTimestamp,
+        txId: prescription.TxID
+      }));
+
+      return res.status(200).json({
+        success: true,
+        data: {
+          pharmacistId,
+          dispensedCount: formattedDispenses.length,
+          dispensedPrescriptions: formattedDispenses
+        }
+      });
+    } catch (error) {
+      console.error("Error:", error.response?.data || error.message);
+      return res.status(500).json({
+        success: false,
+        error: "Failed to retrieve dispense history",
+        details: error.response?.data || error.message,
       });
     }
   }
