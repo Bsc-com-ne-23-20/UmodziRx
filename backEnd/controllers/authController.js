@@ -89,11 +89,7 @@ const login = async (req, res) => {
 
     // Determine user roles
     let role = 'patient';
-    if (userInfo.email==='doctor@gmail.com') role ='doctor';
-    if (userInfo.email==='pharmacy@gmail.com') role ='pharmacist';
-    if (userInfo.email==='admin@gmail.com') role ='admin';
-
-    const dbUser = await staffTable.findUserByDigitalID(userInfo.phone_number);
+    const dbUser = await staffTable.findUserById(userInfo.phone_number);
     if (dbUser && !role.includes(dbUser.role)) role =(dbUser.role);
 
     const user ={ 

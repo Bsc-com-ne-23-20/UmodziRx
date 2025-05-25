@@ -14,7 +14,9 @@ import NewAdminDashboard from './pages/NewAdminDashboard';
 import Learn from './pages/LearnMore';
 import NewPharmacistDashboard from "./pages/NewPharmacistDashboard";
 import NewPatientDashboard from './pages/NewPatientDashboard';
+import Contact from './pages/Contact';
 import AuthError from './pages/AuthError';
+
 import "./App.css";
 
 function App() {
