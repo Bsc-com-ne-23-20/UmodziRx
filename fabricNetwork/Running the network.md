@@ -1,5 +1,3 @@
-Download network here: https://drive.google.com/drive/folders/129sgfIQGC2VBIPoHJvGbj0YAIFi8zkvS?usp=sharing
-
 # Prerequisites
 Ensure you have the following installed:
 - `git`
@@ -45,28 +43,11 @@ export PATH=$GOPATH/bin:$GOROOT/bin:$PATH
 source ~/.profile
 ```
 
-# Clone the repository
-
-```bash
-git clone https://github.com/Bsc-com-ne-23-20/UmodziRx.git
-```
-
-If using Windows, copy the cloned repository to wsl ubuntu 22.04 or later version home
-open explorer from wsl by executing:
-
-```bash
-/mnt/c/Windows/explorer.exe .
-```
-copy the fabric folder to the the repository
-
 Navigate to the `fabricNetwork` directory:
 
 ```bash
 cd fabricNetwork
 ```
-
-
-Navigate to the `fabricNetwork` directory
 
 # Bootstrap the network
 
@@ -113,3 +94,45 @@ To deploy the chaincode, use the following command:
 
 - Chaincode may be re-deployed without bringing down the network.
 - Several chaincodes may be deployed on a single channel, but each chaincode must be unique to each channel.
+
+## Setup paths and env variables
+
+```bash
+export PATH=${PWD}/../bin:$PATH
+export FABRIC_CFG_PATH=${PWD}/../config/
+export CORE_PEER_TLS_ENABLED=true
+export CORE_PEER_LOCALMSPID="Org1MSP"
+export CORE_PEER_TLS_ROOTCERT_FILE=${PWD}/organizations/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt
+export CORE_PEER_MSPCONFIGPATH=${PWD}/organizations/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp
+export CORE_PEER_ADDRESS=localhost:7051
+```
+
+### Example: Querying the chaincode name
+
+```bash
+peer lifecycle chaincode queryinstalled
+```
+
+### Example: Invoking a transaction via CLI
+
+```bash
+peer chaincode invoke -o localhost:7050 \
+--ordererTLSHostnameOverride orderer.example.com \
+--tls \
+--cafile ${PWD}/organizations/ordererOrganizations/example.com/tlsca/tlsca.example.com-cert.pem \
+--channelID mychannel \
+--name basic \
+--peerAddresses localhost:7051 \
+--tlsRootCertFiles ${PWD}/organizations/peerOrganizations/org1.example.com/tlsca/tlsca.org1.example.com-cert.pem \
+--peerAddresses localhost:9051 \
+--tlsRootCertFiles ${PWD}/organizations/peerOrganizations/org2.example.com/tlsca/tlsca.org2.example.com-cert.pem \
+--ctor '{"Function":"CreateAsset","Args":["{\"PatientId\":\"001\",\"DoctorId\":\"doctor456\",\"PatientName\":\"John Doe\",\"DateOfBirth\":\"1990-01-01\",\"Prescriptions\":[{\"PrescriptionId\":\"rx789\",\"MedicationName\":\"Aspirin\",\"Dosage\":\"100mg\",\"Instructions\":\"Take once daily\"}]}"]}'
+```
+
+## REST API
+Navigate to `rest-api-go/` to run the rest api server
+
+```bash
+cd ../asset-transfer-basic/rest-api-go/
+go run main.go
+```
