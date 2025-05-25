@@ -43,6 +43,27 @@ export PATH=$GOPATH/bin:$GOROOT/bin:$PATH
 source ~/.profile
 ```
 
+# Clone the repository
+
+```bash
+git clone https://github.com/Bsc-com-ne-23-20/UmodziRx.git
+```
+
+If using Windows, copy the cloned repository to wsl ubuntu 22.04 or later version home
+open explorer from wsl by executing:
+
+```bash
+/mnt/c/Windows/explorer.exe .
+```
+copy the fabric folder to the the repository
+
+Navigate to the `fabricNetwork` directory:
+
+```bash
+cd fabricNetwork
+```
+
+
 Navigate to the `fabricNetwork` directory
 
 # Bootstrap the network
