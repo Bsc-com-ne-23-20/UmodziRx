@@ -293,7 +293,6 @@ const DoctorContent = ({ activeView, handleNavigation }) => {
       return { ...prev, medications: newMeds };
     });
   };
-
   const handleSubmitPrescription = async (e) => {
     e.preventDefault();
 
@@ -319,19 +318,33 @@ const DoctorContent = ({ activeView, handleNavigation }) => {
         patient: retrievedPatient,
         ...prescriptionForm,
       });
-
-      // Example API call (replace with your actual endpoint)
-      const response = await axios.post('/api/prescriptions', {
-        patient: retrievedPatient,
-        ...prescriptionForm,
+      
+      // Format medications for the backend
+      const formattedMedications = prescriptionForm.medications.map(med => ({
+        medicationName: med.name,
+        dosage: med.dosage,
+        instructions: `${med.frequency}${med.notes ? ` - ${med.notes}` : ''}`
+      }));
+      
+      // Make API call to the updated backend endpoint
+      const response = await axios.post('http://localhost:5000/prescriptions', {
+        patientId: retrievedPatient.id,
+        doctorId: localStorage.getItem('userId') || 'DOC-001', // Should be obtained from login/session
+        patientName: retrievedPatient.name,
+        prescriptions: formattedMedications
       });
 
-      if (response.status === 200) {
+      if (response.data.success) {
         alert('Prescription created successfully!');
         setShowPrescriptionModal(false);
         handleClearForm();
+        
+        // Refresh prescriptions if we're on the prescriptions view
+        if (activeView === 'prescriptions') {
+          fetchPrescriptions();
+        }
       } else {
-        throw new Error('Failed to create prescription.');
+        throw new Error(response.data.error || 'Failed to create prescription.');
       }
     } catch (err) {
       console.error('Error submitting prescription:', err);
@@ -477,6 +490,80 @@ const DoctorContent = ({ activeView, handleNavigation }) => {
     }
     setFilteredRecentPrescriptions(filtered);
   };
+
+  // Fetch prescriptions from the blockchain
+  const fetchPrescriptions = async () => {
+    try {
+      setError(null);
+      const doctorId = localStorage.getItem('userId') || 'DOC-001'; // Should be obtained from login/session
+      
+      const response = await axios.get(`http://localhost:5000/prescriptions/doctor/${doctorId}`);
+      
+      if (response.data.success) {
+        // Update recentPrescriptions state with real data
+        const fetchedPrescriptions = response.data.data.prescriptions.map(p => ({
+          id: p.prescriptionId,
+          patientName: p.patientName,
+          patientId: p.patientId,
+          medications: p.medicationName,
+          issuedDate: new Date(p.timestamp).toISOString().split('T')[0],
+          status: p.status
+        }));
+        
+        setRecentPrescriptions(fetchedPrescriptions);
+        setFilteredRecentPrescriptions(fetchedPrescriptions);
+      }
+    } catch (err) {
+      console.error('Error fetching prescriptions:', err);
+      setError('Failed to fetch prescriptions. Please try again.');
+    }
+  };
+
+  // Function to handle prescription revocation
+  const handleRevokePrescription = async (patientId, prescriptionId) => {
+    if (!window.confirm('Are you sure you want to revoke this prescription?')) {
+      return;
+    }
+
+    try {
+      setError(null);
+      const doctorId = localStorage.getItem('userId') || 'DOC-001'; // Should be obtained from login/session
+      
+      const response = await axios.post('http://localhost:5000/prescriptions/revoke', {
+        patientId,
+        prescriptionId,
+        doctorId
+      });
+      
+      if (response.data.success) {
+        alert('Prescription revoked successfully!');
+        
+        // Update local state to reflect the change
+        const updatedPrescriptions = recentPrescriptions.map(p => 
+          p.id === prescriptionId ? { ...p, status: 'Revoked' } : p
+        );
+        
+        setRecentPrescriptions(updatedPrescriptions);
+        setFilteredRecentPrescriptions(
+          filteredRecentPrescriptions.map(p => 
+            p.id === prescriptionId ? { ...p, status: 'Revoked' } : p
+          )
+        );
+      } else {
+        throw new Error(response.data.error || 'Failed to revoke prescription.');
+      }
+    } catch (err) {
+      console.error('Error revoking prescription:', err);
+      setError('Failed to revoke prescription. Please try again.');
+    }
+  };
+
+  // Use effect to fetch prescriptions when the prescriptions view is active
+  useEffect(() => {
+    if (activeView === 'prescriptions') {
+      fetchPrescriptions();
+    }
+  }, [activeView]);
 
   const renderDashboard = () => (
     <div className="flex flex-col h-full gap-4 p-4">
@@ -680,19 +767,20 @@ const DoctorContent = ({ activeView, handleNavigation }) => {
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 Patient
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+              </th>              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 Medications
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 Status
               </th>
+              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                Actions
+              </th>
             </tr>
           </thead>
           <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
             {filteredRecentPrescriptions.length > 0 ? (
-              filteredRecentPrescriptions.map((prescription) => (
-                <tr key={prescription.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+              filteredRecentPrescriptions.map((prescription) => (                <tr key={prescription.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                     {new Date(prescription.issuedDate).toLocaleDateString()}
                   </td>
@@ -712,11 +800,20 @@ const DoctorContent = ({ activeView, handleNavigation }) => {
                       {prescription.status}
                     </span>
                   </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    {(prescription.status === 'Active' || prescription.status === 'Pending') && (
+                      <button
+                        onClick={() => handleRevokePrescription(prescription.patientId, prescription.id)}
+                        className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
+                      >
+                        Revoke
+                      </button>
+                    )}
+                  </td>
                 </tr>
               ))
-            ) : (
-              <tr>
-                <td colSpan="5" className="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
+            ) : (              <tr>
+                <td colSpan="6" className="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
                   No prescriptions found
                 </td>
               </tr>
@@ -810,12 +907,12 @@ const DoctorContent = ({ activeView, handleNavigation }) => {
       </div>
     );
   };
-
   const handleAddPrescriptionClick = () => {
     if (retrievedPatient) {
       setShowPrescriptionModal(true);
     } else {
-      alert("Please verify a patient first.");
+      // Show verification modal instead of an alert
+      setShowVerificationModal(true);
     }
   };
 
@@ -837,13 +934,9 @@ const DoctorContent = ({ activeView, handleNavigation }) => {
             activeView,
             retrievedPatient,
             isVisible: activeView === 'prescriptions' || activeView === 'dashboard',
-          })}
-          <button
+          })}          <button
             onClick={handleAddPrescriptionClick}
-            className={`fixed bottom-6 right-6 w-14 h-14 ${
-              retrievedPatient ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gray-400 cursor-not-allowed'
-            } text-white rounded-full shadow-lg flex items-center justify-center transition-colors z-10`}
-            disabled={!retrievedPatient}
+            className="fixed bottom-6 right-6 w-14 h-14 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg flex items-center justify-center transition-colors z-10"
           >
             <FiPlus className="h-6 w-6" />
           </button>

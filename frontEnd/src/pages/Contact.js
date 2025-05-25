@@ -56,18 +56,18 @@ export default function Contact() {
       {/* Navigation */}
       <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="flex items-center justify-between">
-          <div className="flex items-center">
-            <div className="h-12 w-12 rounded-full bg-blue-600 flex items-center justify-center">
+          <div className="flex items-center space-x-3">
+            <div className="h-8 w-8 rounded-full bg-blue-600 flex items-center justify-center">
               <span className="text-white font-bold text-lg">U</span>
-            </div>
-            <Link to="/">
-              <span className="ml-3 text-xl font-semibold text-gray-800 hover:text-blue-600 transition-colors">UmodziRx</span>
-            </Link>
-          </div>
-          <div className="hidden md:flex space-x-8">
-            <Link to="/learn" className="text-gray-500 hover:text-gray-900 transition-colors">Features</Link>
+              </div>
+              <Link to="/" className="text-xl font-bold text-gray-800 hover:text-blue-600 transition-colors">
+              UmodziRx<span className="text-blue-600"></span>
+              </Link>
+              </div>
+              <div className="hidden md:flex space-x-8">
+                <Link to="/learn" className="text-gray-500 hover:text-gray-900 transition-colors">Features</Link>
             <Link to="/contact" className="text-blue-600 font-medium hover:text-blue-800">Contact Us</Link>
-          </div>
+            </div>
         </div>
       </nav>
 
@@ -210,7 +210,7 @@ export default function Contact() {
           <div className="md:flex md:justify-between md:items-center">
             <div className="text-center md:text-left mb-2 md:mb-0">
               <p className="text-gray-500 text-s">
-                &copy; 2025 UmodziRx. All rights reserved.
+                2025 UmodziRx.
               </p>
             </div>
             <div className="flex justify-center md:justify-end space-x-6">
