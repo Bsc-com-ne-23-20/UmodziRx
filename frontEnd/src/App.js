@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
@@ -14,32 +14,8 @@ import NewAdminDashboard from './pages/NewAdminDashboard';
 import Learn from './pages/LearnMore';
 import NewPharmacistDashboard from "./pages/NewPharmacistDashboard";
 import NewPatientDashboard from './pages/NewPatientDashboard';
+import Contact from './pages/Contact';
 import "./App.css";
-
-// Wrapper component for Patient Dashboard
-const PatientDashboardWrapper = () => {
-  const navigate = useNavigate();
-  
-  const navItems = [
-    {
-      id: 'dashboard',
-      label: 'Dashboard',
-      icon: FiHome,
-      onClick: () => navigate('/patient')
-    },
-    // Add more navigation items as needed
-  ];
-
-  return (
-    <BaseDashboard 
-      title="Patient Dashboard"
-      navItems={navItems}
-      userInfo={{ name: localStorage.getItem('patientName') || 'Patient' }}
-    >
-      <PatientDashboard />
-    </BaseDashboard>
-  );
-};
 
 function App() {
   const [darkMode] = useState(false);
@@ -68,9 +44,9 @@ function App() {
 
             <Route element={<ProtectedRoute allowedRoles={["admin", "doctor", "pharmacist", "patient"]} />}>
               <Route path="/admin" element={<NewAdminDashboard />} />
+              {/* <Route path="/admin/dashboard" element={<NewAdminDashboard />} /> */}
             </Route>
 
-            {/* Doctor Routes */}
             <Route element={<ProtectedRoute allowedRoles={["doctor"]} />}>
               <Route path="/doctor" element={<NewDoctorDashboard />} />
               <Route path="/doctor/prescriptions" element={<NewDoctorDashboard />} />
@@ -81,16 +57,17 @@ function App() {
               <Route path="/view-patient-prescriptions" element={<ViewPatientPrescriptions />} />
             </Route>
 
-            {/* Pharmacist Routes */}
             <Route element={<ProtectedRoute allowedRoles={["pharmacist"]} />}>
               <Route path="/pharmacist" element={<NewPharmacistDashboard />} />
               <Route path="/pharmacist/dashboard" element={<NewPharmacistDashboard />} />
             </Route>
 
-            {/* Patient Routes with Wrapper */}
             <Route element={<ProtectedRoute allowedRoles={["patient"]} />}>
               <Route path="/patient" element={<NewPatientDashboard />} />
             </Route>
+
+            {/* <Route path="*" element={<Navigate to="/login" replace />} />
+            <Route path="/" element={<Navigate to="/login" replace />} /> */}
           </Routes>
         </div>
       </Router>
