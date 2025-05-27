@@ -20,5 +20,18 @@ router.get('/prescriptions/doctor/:doctorId', PrescriptionController.getDoctorPr
 // GET: Patient verification callback
 router.get('/verifypatient', PrescriptionController.verifypatient);
 
+// GET: Retrieve doctor statistics
+router.get('/statistics', PrescriptionController.getStatistics);
+
+// GET: Handle authentication errors
+router.get('/auth/error', (req, res) => {
+  const { error } = req.query;
+  res.status(401).json({
+    success: false,
+    error: error || 'Authentication failed',
+    details: 'Please try verifying the patient again'
+  });
+});
+
 module.exports = router;
 

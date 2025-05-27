@@ -110,6 +110,7 @@ class PharmacistController {
     }
 
     try {
+
       // Query blockchain for prescriptions using the correct function
       const response = await axios.get(`${process.env.BLOCKCHAIN_API_URL || 'http://localhost:45000'}/query`, {
         params: {
@@ -119,7 +120,6 @@ class PharmacistController {
           args: patientId,
         },
       });
-
       // Log the raw response for debugging
       console.log(`Raw blockchain response for patient ${patientId}:`, response.data);
       
@@ -152,7 +152,7 @@ class PharmacistController {
         });
       }
 
-      // Format prescriptions
+      // Format prescriptions if they exist
       const prescriptions = [];
       let patientName = "N/A";
       
@@ -179,24 +179,36 @@ class PharmacistController {
       return res.status(200).json({
         success: true,
         data: {
-          patientId,
-          patientName,
+          patientId: rawData.PatientId || patientId,
+          patientName: rawData.PatientName || "N/A",
+          doctorId: rawData.DoctorId || "N/A",
           prescriptions
         }
       });
+
     } catch (error) {
-      console.error("Error:", error.response?.data || error.message);
+      console.error('Error details:', error.response?.data || error.message);
+      
+      // Handle specific error cases
+      if (error.response?.data && typeof error.response.data === 'string' && 
+          error.response.data.includes('does not exist')) {
+        return res.status(404).json({
+          success: false,
+          error: `No prescriptions found for patient ID: ${patientId}`,
+          details: "Patient has no prescription records on blockchain"
+        });
+      }
+
       return res.status(500).json({
         success: false,
         error: "Failed to retrieve prescriptions",
-        details: error.response?.data || error.message,
+        details: error.response?.data || error.message
       });
     }
   }
 
   static async dispenseMedication(req, res) {
-    const { patientId, prescriptionId, pharmacistId, comment } = req.body;
-
+    const { patientId, prescriptionId, pharmacistId, comment, selectedDrugs } = req.body;
     // Validate request
     if (!patientId || !prescriptionId || !pharmacistId) {
       return res.status(400).json({ 

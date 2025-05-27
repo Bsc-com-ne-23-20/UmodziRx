@@ -152,6 +152,41 @@ class UserController {
     }
   }
 
+  static async findUserById(digitalId) {
+    if (!digitalId) return null;
+    
+    try {
+      await UserController.ensureTableExists(); // Fixed: Use UserController instead of this
+      const encryptedId = await encryptPII(digitalId);
+      
+      if (!encryptedId) {
+        throw new Error('Failed to encrypt digitalId');
+      }
+
+      const result = await pool.query(
+        'SELECT * FROM registered_users WHERE digitalID = $1', 
+        [encryptedId]
+      );
+      const users = result.rows;
+      
+      if (users.length === 0) {
+        return null;
+      }
+
+      // Decrypt all user data
+      const user = users[0];
+      return {
+        digitalID: await decryptPII(user.digitalid),
+        name: await decryptPII(user.name),
+        role: await decryptPII(user.role)
+      };
+    } catch (error) {
+      console.error('Error in findUserById:', error);
+      return null;
+    }
+  }
+
+
   static async updateUser(req, res) {
     try {
       const { digitalID } = req.params;
