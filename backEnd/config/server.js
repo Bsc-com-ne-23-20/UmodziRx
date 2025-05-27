@@ -13,6 +13,7 @@ const prescriptionRoutes = require('../routes/prescriptionRoutes');
 const pharmaRoutes = require('../routes/pharmaRoutes');
 const userRoutes = require('../routes/userRoutes');
 const patientRoutes = require('../routes/patientRoutes');
+const prescriptionEndpoints = require('../routes/prescriptionEndpoints'); // Add the new route file
 
 const app = express();
 
@@ -44,6 +45,7 @@ app.use('/doctor', prescriptionRoutes);
 app.use('/pharmacist', pharmaRoutes);
 app.use('/admin', userRoutes);
 app.use('/patient', patientRoutes);
+app.use('/prescriptions', prescriptionEndpoints); // Add the new route
 
 // Global error handler
 app.use((err, req, res, next) => {
