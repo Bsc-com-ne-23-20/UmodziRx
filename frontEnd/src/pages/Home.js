@@ -213,11 +213,64 @@ export default function Home() {
                     aria-label={`Go to feature ${index + 1}`}
                   />
                 ))}
+
               </div>
+            </div>
+          </div>
+        </section
+        {/* Trust Badges */}
+        <section className="bg-gray-50 py-8 border-y border-gray-200">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <p className="text-center text-sm text-gray-500 mb-6">Trusted by leading healthcare organizations</p>
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-8 items-center justify-center">
+              <img src="/images/logo-hospital-1.png" alt="Hospital Partner" className="h-8 mx-auto opacity-70 hover:opacity-100 transition-opacity" />
+              <img src="/images/logo-pharmacy-1.png" alt="Pharmacy Partner" className="h-10 mx-auto opacity-70 hover:opacity-100 transition-opacity" />
+              <img src="/images/logo-health-system.png" alt="Health System" className="h-12 mx-auto opacity-70 hover:opacity-100 transition-opacity" />
+              <img src="/images/logo-clinic.png" alt="Clinic Network" className="h-9 mx-auto opacity-70 hover:opacity-100 transition-opacity" />
+              <img src="/images/logo-emr.png" alt="EMR Partner" className="h-7 mx-auto opacity-70 hover:opacity-100 transition-opacity" />
             </div>
           </div>
         </section>
 
+        {/* Features Carousel */}
+        <section className="py-16 sm:py-24">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-16">
+              <h2 className="text-3xl font-bold text-gray-900 sm:text-4xl">Clinical Workflow Revolution</h2>
+              <p className="mt-4 text-lg text-gray-600 max-w-3xl mx-auto">
+                Designed by physicians to eliminate friction in medication management
+              </p>
+            </div>
+            
+            <div className="relative">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                {features.map((feature, index) => (
+                  <div 
+                    key={index}
+                    className={`p-6 rounded-xl transition-all duration-300 ${activeFeature === index ? 'bg-white shadow-lg border border-blue-100 transform scale-105' : 'bg-gray-50 shadow-md hover:shadow-lg'}`}
+                    onMouseEnter={() => setActiveFeature(index)}
+                  >
+                    <div className="text-4xl mb-4">{feature.icon}</div>
+                    <h3 className="text-xl font-bold text-gray-900 mb-2">{feature.title}</h3>
+                    <p className="text-gray-600 mb-4">{feature.desc}</p>
+                    <p className="text-sm font-medium text-blue-600">{feature.stat}</p>
+                  </div>
+                ))}
+              </div>
+              
+              <div className="flex justify-center mt-8 space-x-2">
+                {features.map((_, index) => (
+                  <button
+                    key={index}
+                    onClick={() => setActiveFeature(index)}
+                    className={`w-3 h-3 rounded-full transition-all ${activeFeature === index ? 'bg-blue-600 w-6' : 'bg-gray-300'}`}
+                    aria-label={`Go to feature ${index + 1}`}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
         {/* EHR Integration */}
         <section className="py-16 bg-gray-50">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -226,25 +279,30 @@ export default function Home() {
                 <h2 className="text-3xl font-bold text-gray-900 sm:text-4xl mb-6">What is a Digital ID?</h2>
                 <p className="text-lg text-gray-600 mb-8">
                   A Digital ID is an electronic version of a person’s identity that can be used to verify who they are online, or in digital systems. This helps us:
+
                 </p>
                 <ul className="space-y-4">
                   <li className="flex items-start">
                     <svg className="h-6 w-6 text-green-500 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
                     </svg>
+
                     <span className="text-gray-700">Foster digital inclusion, allowing patients to easily access their health information.</span>
+
                   </li>
                   <li className="flex items-start">
                     <svg className="h-6 w-6 text-green-500 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
                     </svg>
                     <span className="text-gray-700">Maintain medical history and ensure continuity of care.</span>
+
                   </li>
                   <li className="flex items-start">
                     <svg className="h-6 w-6 text-green-500 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
                     </svg>
                     <span className="text-gray-700">Tie users to prescription lifecycles, mitigating fraud.</span>
+
                   </li>
                 </ul>
               </div>
@@ -253,6 +311,7 @@ export default function Home() {
                   src="https://placehold.co/600x400/e6f7ff/0099cc?text=Digital+ID+Concept" 
                   // src="/images/digital-id-concept.jpg" // Replace this with actual image source path
                   alt="Diagram illustrating digital ID, e.g. hand holding out a digital profile" 
+
                   className="w-full h-auto rounded-lg"
                   loading="lazy"
                 />
@@ -336,6 +395,7 @@ export default function Home() {
             <div className="flex space-x-6">
               <a href="#" className="text-sm text-gray-400 hover:text-white transition-colors">Privacy</a>
               <a href="#" className="text-sm text-gray-400 hover:text-white transition-colors">Terms</a>
+
             </div>
           </div>
         </div>

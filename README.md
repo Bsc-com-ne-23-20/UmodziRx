@@ -1,3 +1,5 @@
+For ease of local testing, the blockchain network is now available at https://github.com/Bsc-com-ne-23-20/fabricNetwork.git. Please clone this repo to your Ubuntu 22.04 distribution and follow instructions from the README.md file to set it up
+
 # UmodziRx Implementation
 
 ## Overview
