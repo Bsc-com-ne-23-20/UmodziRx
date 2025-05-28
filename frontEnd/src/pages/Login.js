@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import React, { useState, useCallback, useEffect } from "react";
 import prescriptionImage from "./Prescription_medication.jpeg";
+import { setRoleSpecificItem, setCurrentUserRole } from "../utils/storageUtils";
 
 function generateRandomString(length) {
   const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -69,10 +70,48 @@ function Login() {
       }
   
       const data = await response.json();
-      const { token, role } = data;
+      const { token, role, user } = data;
   
-      localStorage.setItem("token", token);
-      localStorage.setItem("userRole", role);
+      // Use role-specific storage
+      setRoleSpecificItem("token", token, role);
+      setCurrentUserRole(role);
+      
+      // Store role-specific user data if available
+      if (user) {
+        // Store with role-specific key names
+        if (role === 'doctor') {
+          if (user.id) setRoleSpecificItem("doctorId", user.id, role);
+          if (user.name) setRoleSpecificItem("doctorName", user.name, role);
+          if (user.email) setRoleSpecificItem("doctorEmail", user.email, role);
+          if (user.birthday) setRoleSpecificItem("doctorBirthday", user.birthday, role);
+          if (user.gender) setRoleSpecificItem("doctorGender", user.gender, role);
+        } else if (role === 'patient') {
+          if (user.id) setRoleSpecificItem("patientId", user.id, role);
+          if (user.name) setRoleSpecificItem("patientName", user.name, role);
+          if (user.email) setRoleSpecificItem("patientEmail", user.email, role);
+          if (user.birthday) setRoleSpecificItem("patientBirthday", user.birthday, role);
+          if (user.gender) setRoleSpecificItem("patientGender", user.gender, role);
+        } else if (role === 'pharmacist') {
+          if (user.id) setRoleSpecificItem("pharmaId", user.id, role);
+          if (user.name) setRoleSpecificItem("pharmaName", user.name, role);
+          if (user.email) setRoleSpecificItem("pharmaEmail", user.email, role);
+          if (user.birthday) setRoleSpecificItem("pharmaBirthday", user.birthday, role);
+          if (user.gender) setRoleSpecificItem("pharmaGender", user.gender, role);
+        } else if (role === 'admin') {
+          if (user.id) setRoleSpecificItem("adminId", user.id, role);
+          if (user.name) setRoleSpecificItem("adminName", user.name, role);
+          if (user.email) setRoleSpecificItem("adminEmail", user.email, role);
+          if (user.birthday) setRoleSpecificItem("adminBirthday", user.birthday, role);
+          if (user.gender) setRoleSpecificItem("adminGender", user.gender, role);
+        }
+        
+        // Also store with generic keys for backward compatibility
+        if (user.id) setRoleSpecificItem("userId", user.id, role);
+        if (user.name) setRoleSpecificItem("userName", user.name, role);
+        if (user.email) setRoleSpecificItem("userEmail", user.email, role);
+        if (user.birthday) setRoleSpecificItem("userBirthday", user.birthday, role);
+        if (user.gender) setRoleSpecificItem("userGender", user.gender, role);
+      }
   
       // Handle different role redirections
       switch(role) {

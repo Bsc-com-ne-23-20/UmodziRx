@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 import { useAuth } from "../context/AuthContext";
 import LoadingSpinner from "../components/common/LoadingSpinner";
+import { setRoleSpecificItem, setCurrentUserRole } from "../utils/storageUtils";
 
 const AuthCallback = () => {
   const navigate = useNavigate();
@@ -36,43 +37,73 @@ const AuthCallback = () => {
 
         console.log("[AuthCallback] Backend response:", response.data);
         const { token, user } = response.data;
-        const userRole = response.data.role;
-
-        if (!token || !user) {
+        const userRole = response.data.role;        if (!token || !user) {
           console.error("[AuthCallback] Missing token or user in response");
           setError("Invalid authentication response");
           navigate("/login");
           return;
         }
-
+        
         // Store user info in localStorage based on role
-        localStorage.setItem("userRole", userRole);
-        localStorage.setItem("userId", user.id);
-        localStorage.setItem("userName", user.name);
-        localStorage.setItem("userEmail", user.email);
+        setCurrentUserRole(userRole);
+        
+        // Store role-specific user data with role-specific key names
+        if (userRole === 'doctor') {
+          setRoleSpecificItem("doctorId", user.id, userRole);
+          setRoleSpecificItem("doctorName", user.name, userRole);
+          setRoleSpecificItem("doctorEmail", user.email, userRole);
+          if (user.birthday) setRoleSpecificItem("doctorBirthday", user.birthday, userRole);
+          if (user.gender) setRoleSpecificItem("doctorGender", user.gender, userRole);
+        } else if (userRole === 'patient') {
+          setRoleSpecificItem("patientId", user.id, userRole);
+          setRoleSpecificItem("patientName", user.name, userRole);
+          setRoleSpecificItem("patientEmail", user.email, userRole);
+          if (user.birthday) setRoleSpecificItem("patientBirthday", user.birthday, userRole);
+          if (user.gender) setRoleSpecificItem("patientGender", user.gender, userRole);
+        } else if (userRole === 'pharmacist') {
+          setRoleSpecificItem("pharmaId", user.id, userRole);
+          setRoleSpecificItem("pharmaName", user.name, userRole);
+          setRoleSpecificItem("pharmaEmail", user.email, userRole);
+          if (user.birthday) setRoleSpecificItem("pharmaBirthday", user.birthday, userRole);
+          if (user.gender) setRoleSpecificItem("pharmaGender", user.gender, userRole);
+        } else if (userRole === 'admin') {
+          setRoleSpecificItem("adminId", user.id, userRole);
+          setRoleSpecificItem("adminName", user.name, userRole);
+          setRoleSpecificItem("adminEmail", user.email, userRole);
+          if (user.birthday) setRoleSpecificItem("adminBirthday", user.birthday, userRole);
+          if (user.gender) setRoleSpecificItem("adminGender", user.gender, userRole);
+        }
+        
+        // Also store with generic keys for backward compatibility
+        setRoleSpecificItem("userId", user.id, userRole);
+        setRoleSpecificItem("userName", user.name, userRole);
+        setRoleSpecificItem("userEmail", user.email, userRole);
+        if (user.birthday) setRoleSpecificItem("userBirthday", user.birthday, userRole);
+        if (user.gender) setRoleSpecificItem("userGender", user.gender, userRole);
         
         // Set auth context
-        handleOIDCCallback(token, { ...user, role: userRole });
-
-        // Role-specific storage and navigation
+        handleOIDCCallback(token, { ...user, role: userRole });        // Role-specific storage and navigation
+        console.log(`[AuthCallback] Navigating to role-specific dashboard for role: ${userRole}`);
+        
+        // Our enhanced setRoleSpecificItem will automatically handle role-specific keys
+        // so we don't need separate calls for each role
+        
         if (userRole === "admin") {
-          localStorage.setItem("adminName", user.name);
-          localStorage.setItem("adminId", user.id);
-          navigate("/admin", { state: { enableSearch: true } });
+          console.log("[AuthCallback] Navigating to /admin");
+          navigate("/admin", { state: { enableSearch: true }, replace: true });
         } else if (userRole === "doctor") { 
-          localStorage.setItem("doctorName", user.name);
-          localStorage.setItem("doctorId", user.id);
-          navigate("/doctor");
+          console.log("[AuthCallback] Navigating to /doctor");
+          navigate("/doctor", { replace: true });
         } else if (userRole === "pharmacist") {
-          localStorage.setItem("pharmaName", user.name);
-          localStorage.setItem("pharmaId", user.id);
-          localStorage.setItem("pharmaEmail", user.email);
-          navigate("/pharmacist");
+          if (user.email) {
+            setRoleSpecificItem("userEmail", user.email, userRole);
+          }
+          console.log("[AuthCallback] Navigating to /pharmacist");
+          navigate("/pharmacist", { replace: true });
         } else {
           // Default to patient
-          localStorage.setItem("patientName", user.name);
-          localStorage.setItem("patientId", user.id);
-          navigate("/patient");
+          console.log("[AuthCallback] Navigating to /patient");
+          navigate("/patient", { replace: true });
         }
       } catch (error) {
         console.error("[AuthCallback] Error processing callback:", error);
