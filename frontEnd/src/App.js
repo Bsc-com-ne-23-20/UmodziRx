@@ -13,6 +13,7 @@ import Contact from './pages/Contact';
 import VerifyPrescriptionPage from './pages/VerifyPrescriptionPage';
 import Dashboard from './pages/Dashboard';
 import FindHealthcare from './components/dashboard/patient/FindHealthcare';
+
 import "./App.css";
 
 function App() {
@@ -85,8 +86,6 @@ function App() {
             <Route path="/auth/callback" element={<AuthCallback />} />
             <Route path="/learn" element={<Learn />} />
             <Route path="/contact" element={<Contact />} />
-            <Route path="/verify-prescription/:id?" element={<VerifyPrescriptionPage />} />
-            <Route path="/find-healthcare" element={<FindHealthcare />} />
 
             {/* Protected Routes with Role-Based Access Control */}
             <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>

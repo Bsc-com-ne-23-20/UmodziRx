@@ -32,6 +32,7 @@ const PharmacistContent = ({ activeView, handleNavigation }) => {
   const [newPrescriptions, setNewPrescriptions] = useState([{ drugName: '', dosage: '', advice: '' }]);
   const [selectedPrescriptions, setSelectedPrescriptions] = useState([]);
   const [dispenseStatus, setDispenseStatus] = useState({});
+  const [dispensingNotes, setDispensingNotes] = useState({});
   const [showDrugClassModal, setShowDrugClassModal] = useState(false);
   const [selectedDrugClass, setSelectedDrugClass] = useState(null);
   const [selectedDrug, setSelectedDrug] = useState(null);
@@ -242,18 +243,32 @@ const PharmacistContent = ({ activeView, handleNavigation }) => {
   const togglePrescriptionSelection = (prescription) => {
     setSelectedPrescriptions(prev => {
       const isSelected = prev.some(p => p.prescriptionId === prescription.prescriptionId);
-      return isSelected
-        ? prev.filter(p => p.prescriptionId !== prescription.prescriptionId)
-        : [...prev, prescription];
+      if (isSelected) {
+        // Remove prescription from selection and its notes
+        const updatedNotes = {...dispensingNotes};
+        delete updatedNotes[prescription.prescriptionId];
+        setDispensingNotes(updatedNotes);
+        return prev.filter(p => p.prescriptionId !== prescription.prescriptionId);
+      } else {
+        // Add prescription to selection with any existing notes
+        const notes = dispensingNotes[prescription.prescriptionId] || '';
+        return [...prev, {...prescription, dispensingNotes: notes}];
+      }
     });
   };
 
-  const handleDispensePrescription = async (prescriptionId) => {
+  const handleDispensePrescription = async (prescriptionId, dispensingNotes = '') => {
     try {
       setLoading(true);
       setDispenseStatus(prev => ({ ...prev, [prescriptionId]: 'processing' }));
       
-      await axios.post(`http://localhost:5000/pharmacist/prescriptions/${prescriptionId}/dispense`);
+      // Use the updated endpoint with notes
+      await axios.post(`http://localhost:5000/pharmacist/dispense`, {
+        patientId: retrievedPatient.id,
+        prescriptionId: prescriptionId,
+        pharmacistId: localStorage.getItem('userId') || 'PHARM-001',
+        notes: dispensingNotes
+      });
       
       const updatedPrescriptions = patientPrescriptions.prescriptions.map(p => 
         p.prescriptionId === prescriptionId ? { ...p, status: 'Dispensed' } : p
@@ -272,9 +287,17 @@ const PharmacistContent = ({ activeView, handleNavigation }) => {
   const handleDispensePrescriptions = async () => {
     try {
       setLoading(true);
-      await axios.post(`http://localhost:5000/pharmacist/prescriptions/dispense`, {
-        prescriptionIds: selectedPrescriptions.map(p => p.prescriptionId)
-      });
+      // We need to handle each prescription individually to include notes
+      const dispensingPromises = selectedPrescriptions.map(p => 
+        axios.post(`http://localhost:5000/pharmacist/dispense`, {
+          patientId: retrievedPatient.id,
+          prescriptionId: p.prescriptionId,
+          pharmacistId: localStorage.getItem('userId') || 'PHARM-001',
+          notes: p.dispensingNotes || ''
+        })
+      );
+      
+      await Promise.all(dispensingPromises);
       fetchPatientPrescriptions(retrievedPatient.id);
       setSelectedPrescriptions([]);
       setShowDispenseModal(false);
@@ -643,34 +666,61 @@ const PharmacistContent = ({ activeView, handleNavigation }) => {
                       </tr>
                     </thead>
                     <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                      {patientPrescriptions.prescriptions.map((prescription) => (
-                        <tr key={prescription.prescriptionId}>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <input
-                              type="checkbox"
-                              checked={selectedPrescriptions.some(p => p.prescriptionId === prescription.prescriptionId)}
-                              onChange={() => togglePrescriptionSelection(prescription)}
-                              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                              disabled={prescription.status !== 'Active'}
-                            />
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                            {prescription.medicationName}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                            {prescription.dosage}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span className={`px-2 py-1 text-xs rounded-full ${
-                              prescription.status === 'Active' 
-                                ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-400' 
-                                : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
-                            }`}>
-                              {prescription.status}
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
+                      {patientPrescriptions.prescriptions.flatMap((prescription) => {
+                        const isSelected = selectedPrescriptions.some(p => p.prescriptionId === prescription.prescriptionId);
+                        
+                        return [
+                          <tr key={prescription.prescriptionId}>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <input
+                                type="checkbox"
+                                checked={isSelected}
+                                onChange={() => togglePrescriptionSelection(prescription)}
+                                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                                disabled={prescription.status !== 'Active'}
+                              />
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+                              {prescription.medicationName}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+                              {prescription.dosage}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <span className={`px-2 py-1 text-xs rounded-full ${
+                                prescription.status === 'Active' 
+                                  ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-400' 
+                                  : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
+                              }`}>
+                                {prescription.status}
+                              </span>
+                            </td>
+                          </tr>,
+                          
+                          // Only add notes row if prescription is selected
+                          isSelected && (
+                            <tr key={`${prescription.prescriptionId}-notes`}>
+                              <td colSpan="4" className="px-6 py-2">
+                                <textarea
+                                  placeholder="Add dispensing notes (optional)"
+                                  className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-gray-700"
+                                  value={dispensingNotes[prescription.prescriptionId] || ''}
+                                  onChange={(e) => {
+                                    setDispensingNotes({...dispensingNotes, [prescription.prescriptionId]: e.target.value});
+                                    // Also update the selected prescription with the notes
+                                    setSelectedPrescriptions(selectedPrescriptions.map(p => 
+                                      p.prescriptionId === prescription.prescriptionId 
+                                        ? {...p, dispensingNotes: e.target.value} 
+                                        : p
+                                    ));
+                                  }}
+                                  rows={2}
+                                />
+                              </td>
+                            </tr>
+                          )
+                        ].filter(Boolean); // Filter out falsy values (when notes row is not shown)
+                      })}
                     </tbody>
                   </table>
                 </div>

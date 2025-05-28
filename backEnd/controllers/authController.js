@@ -26,7 +26,7 @@ try {
 // strore value of token expiration in seconds
 let temporaryInfo ={
   code:'',
-  userInfor:'',
+  user:'',
   token:''
 } ;
 

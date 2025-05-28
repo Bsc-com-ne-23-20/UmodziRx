@@ -8,11 +8,27 @@ router.post('/prescriptions', PrescriptionController.issuePrescription);
 // GET: Retrieve a prescription by patientId (query param)
 router.get('/prescriptions', PrescriptionController.getPrescription);
 
-// GET: Verify patient
+// POST: Revoke a prescription
+router.post('/prescriptions/revoke', PrescriptionController.revokePrescription);
+
+// PUT: Update a prescription
+router.put('/prescriptions', PrescriptionController.updatePrescription);
+
+// GET: Get prescription history for a doctor
+router.get('/prescriptions/doctor/:doctorId', PrescriptionController.getDoctorPrescriptionHistory);
+
+// GET: Patient verification callback
 router.get('/verifypatient', PrescriptionController.verifypatient);
 
 // GET: Retrieve doctor statistics
-router.get('/statistics', PrescriptionController.getStatistics);
+router.get('/statistics', (req, res) => {
+  // Placeholder: No statistics implemented yet
+  res.status(501).json({
+    success: false,
+    error: 'Not implemented',
+    details: 'Doctor statistics endpoint is not implemented in the backend.'
+  });
+});
 
 // GET: Handle authentication errors
 router.get('/auth/error', (req, res) => {

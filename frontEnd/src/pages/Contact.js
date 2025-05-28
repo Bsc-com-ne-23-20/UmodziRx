@@ -78,10 +78,10 @@ export default function Contact() {
             Contact Us
           </h1>
           <p className="mt-3 sm:mt-4 text-base sm:text-lg text-gray-500">
+
             Have questions about UmodziRx? We're here to help.
           </p>
         </div>
-
         <div className="flex flex-col md:flex-row md:gap-8 md:items-start">
           {/* Form Column */}
           <div className="md:flex-1">
