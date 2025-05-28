@@ -58,6 +58,36 @@ const MEDICATION_CATEGORIES = {
   ]
 };
 
+// Example dosage/frequency suggestions by medication and age group
+const DOSAGE_SUGGESTIONS = {
+  'Paracetamol': {
+    child: { dosage: '250mg', frequency: 'Every 6 hours' },
+    adult: { dosage: '500mg', frequency: 'Every 8 hours' }
+  },
+  'Amoxicillin': {
+    child: { dosage: '125mg', frequency: 'Every 8 hours' },
+    adult: { dosage: '500mg', frequency: 'Every 8 hours' }
+  },
+  'Ibuprofen': {
+    child: { dosage: '100mg', frequency: 'Every 8 hours' },
+    adult: { dosage: '400mg', frequency: 'Every 8 hours' }
+  },
+  'Ciprofloxacin': {
+    child: { dosage: 'Not recommended', frequency: 'N/A' },
+    adult: { dosage: '500mg', frequency: 'Every 12 hours' }
+  },
+  'Azithromycin': {
+    child: { dosage: '10mg/kg', frequency: 'Once daily' },
+    adult: { dosage: '500mg', frequency: 'Once daily' }
+  },
+  // ...add more medications as needed
+};
+
+const getAgeGroup = (age) => {
+  if (!age || isNaN(age)) return 'adult';
+  return Number(age) < 12 ? 'child' : 'adult';
+};
+
 const PrescriptionButton = ({ activeView }) => {
   const [showModal, setShowModal] = useState(false);
   const [showVerificationModal, setShowVerificationModal] = useState(false);
@@ -73,6 +103,9 @@ const PrescriptionButton = ({ activeView }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedCategories, setExpandedCategories] = useState({});
   const [filteredMedications, setFilteredMedications] = useState([]);
+  const [patientAge, setPatientAge] = useState('');
+  const [diagnosis, setDiagnosis] = useState('');
+  const [suggestions, setSuggestions] = useState([]); // Array of { dosage, frequency, index }
   const modalRef = useRef();
   const medicationModalRef = useRef();
   const searchInputRef = useRef();
@@ -209,7 +242,7 @@ const PrescriptionButton = ({ activeView }) => {
       
       // Ensure patient is verified
       if (!verifiedPatient) {
-        setError('Patient verification is required before creating a prescription.');
+        setError('Patient verification is required before issuing a prescription.');
         setShowVerificationModal(true);
         return;
       }
@@ -246,7 +279,7 @@ const PrescriptionButton = ({ activeView }) => {
         console.log('Prescription created successfully:', response.data);
         
         // Set success message
-        setSuccessMessage('Prescription created successfully!');
+        setSuccessMessage('Prescription issued successfully!');
         setShowSuccessMessage(true);
         
         // Hide success message after 3 seconds
@@ -264,7 +297,7 @@ const PrescriptionButton = ({ activeView }) => {
         throw new Error(
           response.data && response.data.error 
             ? response.data.error 
-            : 'Failed to create prescription. Server did not return success status.'
+            : 'Failed to issue prescription. Server did not return success status.'
         );
       }
     } catch (err) {
@@ -280,11 +313,11 @@ const PrescriptionButton = ({ activeView }) => {
               : JSON.stringify(err.response.data.details))
           : '';
         
-        setError(`Failed to create prescription: ${errorMessage}${errorDetails ? ` - ${errorDetails}` : ''}`);
+        setError(`Failed to issue prescription: ${errorMessage}${errorDetails ? ` - ${errorDetails}` : ''}`);
       } else {
         // Handle other errors
         console.error('Error details:', err.message);
-        setError(`Failed to create prescription: ${err.message}`);
+        setError(`Failed to issue prescription: ${err.message}`);
       }
     }
   };
@@ -403,7 +436,7 @@ const PrescriptionButton = ({ activeView }) => {
             authorizeUri: process.env.REACT_APP_ESIGNET_AUTHORIZE_URI,
           },
           buttonConfig: {
-            labelText: 'Verify Patient with eSignet',
+            labelText: 'Verify Another Patient',
             shape: 'rounded',
             theme: 'filled_blue',
             type: 'standard'
@@ -618,6 +651,18 @@ const PrescriptionButton = ({ activeView }) => {
     );
   };
 
+  // Update suggestions reactively when age, diagnosis, or medications change
+  useEffect(() => {
+    const newSuggestions = prescriptionForm.medications.map((med, index) => {
+      // Show suggestions for any medication present in DOSAGE_SUGGESTIONS
+      const medSuggestions = DOSAGE_SUGGESTIONS[med.name];
+      const ageGroup = getAgeGroup(patientAge);
+      const suggestion = medSuggestions ? medSuggestions[ageGroup] : null;
+      return suggestion ? { ...suggestion, index } : null;
+    });
+    setSuggestions(newSuggestions);
+  }, [patientAge, diagnosis, prescriptionForm.medications]);
+
   return (
     <>
       {/* Floating Button - show on all views */}
@@ -639,7 +684,7 @@ const PrescriptionButton = ({ activeView }) => {
           <div className="flex items-center justify-center w-14 h-14 group-hover:w-auto group-hover:px-5">
             <FiPlus className="h-6 w-6 flex-shrink-0" />
             <span className="max-w-0 overflow-hidden group-hover:max-w-xs group-hover:ml-2 transition-all duration-300 ease-in-out whitespace-nowrap font-medium">
-              Create Prescription
+              Issue Prescription
             </span>
           </div>
         </button>
@@ -662,7 +707,7 @@ const PrescriptionButton = ({ activeView }) => {
           <div ref={modalRef} className="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-[800px] max-h-[90vh] overflow-y-auto border border-gray-200 dark:border-gray-700">
             <div className="border-b border-gray-200 dark:border-gray-700 px-8 py-6">
               <div className="flex justify-between items-center">
-                <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Create New Prescription</h3>
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Issue New Prescription</h3>
                 <button 
                   onClick={() => setShowModal(false)}
                   className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 transition-colors"
@@ -705,25 +750,15 @@ const PrescriptionButton = ({ activeView }) => {
                   </div>
                   <div>
                     <label className="block text-xs text-gray-500 dark:text-gray-400">Age</label>
-                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                      {verifiedPatient.birthday && verifiedPatient.birthday !== 'N/A' 
-                        ? calculateAge(verifiedPatient.birthday) + ' years'
-                        : 'N/A'}
-                    </p>
+                    <input
+                      type="number"
+                      min="0"
+                      value={patientAge || (verifiedPatient.birthday && verifiedPatient.birthday !== 'N/A' ? calculateAge(verifiedPatient.birthday) : '')}
+                      onChange={e => setPatientAge(e.target.value)}
+                      className="block w-full px-2 py-1 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-800 dark:text-gray-300 transition-shadow"
+                      placeholder="Enter age"
+                    />
                   </div>
-                </div>
-                <div className="mt-3 flex justify-end">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      clearPatientVerification();
-                      setShowModal(false);
-                      setShowVerificationModal(true);
-                    }}
-                    className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 flex items-center"
-                  >
-                    <span>Verify Different Patient</span>
-                  </button>
                 </div>
               </div>
               
@@ -747,93 +782,120 @@ const PrescriptionButton = ({ activeView }) => {
 
                 {/* Medications */}
                 <div className="space-y-4">
-                  {prescriptionForm.medications.map((med, index) => (
-                    <div 
-                      key={index} 
-                      className="bg-white dark:bg-gray-700 rounded-lg p-4 border border-gray-200 dark:border-gray-600 shadow-sm hover:border-gray-300 dark:hover:border-gray-500 transition-colors relative"
-                    >                      <div className="grid grid-cols-3 gap-4">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                            Medication
-                          </label>                          <div className="relative">
-                            <input
-                              type="text"
-                              value={med.name}
-                              onChange={(e) => handleMedicationChange(index, 'name', e.target.value)}
-                              onClick={() => openMedicationSelector(index)}
-                              className={`block w-full px-3 py-2 border ${
-                                isMedicationSelectedElsewhere(med.name, index)
-                                  ? 'border-yellow-400 bg-yellow-50 dark:bg-yellow-900/20 dark:border-yellow-500'
-                                  : 'border-gray-300 dark:border-gray-600'
-                              } rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-800 dark:text-gray-300 transition-shadow cursor-pointer`}
-                              placeholder="Select medication"
-                              readOnly
-                              required
-                            />
-                            <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                              <FiChevronDown className="h-4 w-4 text-gray-500 dark:text-gray-400" />
-                            </div>
-                            {/* Warning indicator for duplicate medications */}
-                            {isMedicationSelectedElsewhere(med.name, index) && (
-                              <div className="absolute -top-2 -right-2">
-                                <div className="w-4 h-4 bg-yellow-400 rounded-full flex items-center justify-center">
-                                  <span className="text-white text-xs font-bold">!</span>
-                                </div>
+                  {prescriptionForm.medications.map((med, index) => {
+                    const suggestion = suggestions[index];
+                    return (
+                      <div 
+                        key={index} 
+                        className="bg-white dark:bg-gray-700 rounded-lg p-4 border border-gray-200 dark:border-gray-600 shadow-sm hover:border-gray-300 dark:hover:border-gray-500 transition-colors relative"
+                      >                      <div className="grid grid-cols-3 gap-4">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                              Medication
+                            </label>                          <div className="relative">
+                              <input
+                                type="text"
+                                value={med.name}
+                                onChange={(e) => handleMedicationChange(index, 'name', e.target.value)}
+                                onClick={() => openMedicationSelector(index)}
+                                className={`block w-full px-3 py-2 border ${
+                                  isMedicationSelectedElsewhere(med.name, index)
+                                    ? 'border-yellow-400 bg-yellow-50 dark:bg-yellow-900/20 dark:border-yellow-500'
+                                    : 'border-gray-300 dark:border-gray-600'
+                                } rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-800 dark:text-gray-300 transition-shadow cursor-pointer`}
+                                placeholder="Select medication"
+                                readOnly
+                                required
+                              />
+                              <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                                <FiChevronDown className="h-4 w-4 text-gray-500 dark:text-gray-400" />
                               </div>
+                              {/* Warning indicator for duplicate medications */}
+                              {isMedicationSelectedElsewhere(med.name, index) && (
+                                <div className="absolute -top-2 -right-2">
+                                  <div className="w-4 h-4 bg-yellow-400 rounded-full flex items-center justify-center">
+                                    <span className="text-white text-xs font-bold">!</span>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                            {/* Duplicate medication warning */}
+                            {isMedicationSelectedElsewhere(med.name, index) && (
+                              <p className="mt-1 text-xs text-yellow-600 dark:text-yellow-400 flex items-center">
+                                <span className="mr-1">⚠️</span>
+                                This medication is already selected in another field
+                              </p>
                             )}
                           </div>
-                          {/* Duplicate medication warning */}
-                          {isMedicationSelectedElsewhere(med.name, index) && (
-                            <p className="mt-1 text-xs text-yellow-600 dark:text-yellow-400 flex items-center">
-                              <span className="mr-1">⚠️</span>
-                              This medication is already selected in another field
-                            </p>
-                          )}
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                              Dosage
+                            </label>
+                            <input
+                              type="text"
+                              value={med.dosage}
+                              onChange={(e) => handleMedicationChange(index, 'dosage', e.target.value)}
+                              className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-800 dark:text-gray-300 transition-shadow"
+                              placeholder="Enter dosage"
+                              required
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                              Frequency
+                            </label>
+                            <select
+                              value={med.frequency}
+                              onChange={(e) => handleMedicationChange(index, 'frequency', e.target.value)}
+                              className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-800 dark:text-gray-300 transition-shadow"
+                              required
+                            >
+                              <option value="">Select frequency</option>
+                              {FREQUENCY_OPTIONS.map((freq) => (
+                                <option key={freq} value={freq}>
+                                  {freq}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
                         </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                            Dosage
-                          </label>
-                          <input
-                            type="text"
-                            value={med.dosage}
-                            onChange={(e) => handleMedicationChange(index, 'dosage', e.target.value)}
-                            className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-800 dark:text-gray-300 transition-shadow"
-                            placeholder="Enter dosage"
-                            required
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                            Frequency
-                          </label>
-                          <select
-                            value={med.frequency}
-                            onChange={(e) => handleMedicationChange(index, 'frequency', e.target.value)}
-                            className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-800 dark:text-gray-300 transition-shadow"
-                            required
+                        {suggestion && (
+                          <div className="mb-2 flex gap-4">
+                            <div>
+                              <span className="text-xs text-gray-500">Suggested Dosage:</span>
+                              <button
+                                type="button"
+                                className="ml-2 px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs hover:bg-blue-200"
+                                onClick={() => handleMedicationChange(index, 'dosage', suggestion.dosage)}
+                              >
+                                {suggestion.dosage}
+                              </button>
+                            </div>
+                            <div>
+                              <span className="text-xs text-gray-500">Suggested Frequency:</span>
+                              <button
+                                type="button"
+                                className="ml-2 px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs hover:bg-blue-200"
+                                onClick={() => handleMedicationChange(index, 'frequency', suggestion.frequency)}
+                              >
+                                {suggestion.frequency}
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                        {prescriptionForm.medications.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => removeMedication(index)}
+                            className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red-100 hover:bg-red-200 text-red-600 flex items-center justify-center border border-red-200 transition-colors"
+                            title="Remove medication"
                           >
-                            <option value="">Select frequency</option>
-                            {FREQUENCY_OPTIONS.map((freq) => (
-                              <option key={freq} value={freq}>
-                                {freq}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
+                            <span className="text-sm font-medium">−</span>
+                          </button>
+                        )}
                       </div>
-                      {prescriptionForm.medications.length > 1 && (
-                        <button
-                          type="button"
-                          onClick={() => removeMedication(index)}
-                          className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red-100 hover:bg-red-200 text-red-600 flex items-center justify-center border border-red-200 transition-colors"
-                          title="Remove medication"
-                        >
-                          <span className="text-sm font-medium">−</span>
-                        </button>
-                      )}
-                    </div>
-                  ))}
+                    );
+                  })}
                   
                   <button
                     type="button"
@@ -857,10 +919,21 @@ const PrescriptionButton = ({ activeView }) => {
                 </button>
                 <button
                   type="button"
+                  onClick={() => {
+                    handleClearForm();
+                    setShowModal(false);
+                    setShowVerificationModal(true);
+                  }}
+                  className="px-4 py-2 text-sm font-medium text-red-600 bg-red-100 rounded-lg hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all"
+                >
+                  Discard Prescription
+                </button>
+                <button
+                  type="button"
                   onClick={handleSubmitPrescription}
                   className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all"
                 >
-                  Create Prescription
+                  Issue Prescription
                 </button>
               </div>
               {error && (

@@ -216,8 +216,7 @@ export default function Home() {
 
               </div>
             </div>
-          </div>
-        </section
+          </div>        </section>
         {/* Trust Badges */}
         <section className="bg-gray-50 py-8 border-y border-gray-200">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

@@ -4,7 +4,7 @@ import MetricsCard from '../../common/MetricsCard';
 import AppointmentsTable from '../../common/AppointmentsTable';
 import axios from 'axios';
 
-const DashboardContent = ({ onCreatePrescription }) => {
+const DashboardContent = ({ onIssuePrescription }) => {
   const [selectedPrescription, setSelectedPrescription] = useState(null);
   const [showPrescriptionModal, setShowPrescriptionModal] = useState(false);
   const [prescriptions, setPrescriptions] = useState([]);
@@ -240,7 +240,7 @@ const DashboardContent = ({ onCreatePrescription }) => {
       </div>
         {/* Floating Add Button */}
       <button
-        onClick={onCreatePrescription}
+        onClick={onIssuePrescription}
         className="fixed bottom-6 right-6 w-14 h-14 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg flex items-center justify-center transition-colors z-10"
       >
         <FiPlus className="h-6 w-6" />

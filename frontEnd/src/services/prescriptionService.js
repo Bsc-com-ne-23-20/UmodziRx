@@ -17,7 +17,7 @@ const prescriptionService = {
     }
   },
 
-  createPrescription: async (prescriptionData) => {
+  issuePrescription: async (prescriptionData) => {
     try {
       const response = await axios.post(`${API_BASE_URL}/prescriptions`, prescriptionData, {
         headers: {
@@ -26,7 +26,7 @@ const prescriptionService = {
       });
       return response.data;
     } catch (error) {
-      console.error('Error creating prescription:', error);
+      console.error('Error issuing prescription:', error);
       throw error;
     }
   },

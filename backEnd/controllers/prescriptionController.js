@@ -45,7 +45,7 @@ const createClientAssertion = async () => {
 };
 
 class PrescriptionController {
-  static async createPrescription(req, res) {
+  static async issuePrescription(req, res) {
     const { patientId, doctorId, patientName, prescriptions } = req.body;
 
     // Validate request
@@ -582,16 +582,6 @@ class PrescriptionController {
       return res.status(500).json({ 
         success: false,
         error: 'Failed to update prescription',
-        details: error.response?.data || error.message
-      });
-    }
-  }
-
-    } catch (error) {
-      console.error('Error fetching statistics:', error.response?.data || error.message);
-      return res.status(500).json({
-        success: false,
-        error: "Failed to retrieve statistics",
         details: error.response?.data || error.message
       });
     }

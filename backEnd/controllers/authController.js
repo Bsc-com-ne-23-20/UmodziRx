@@ -26,7 +26,7 @@ try {
 // strore value of token expiration in seconds
 let temporaryInfo ={
   code:'',
-  userInfor:'',
+  user:'',
   token:''
 } ;
 
@@ -62,7 +62,6 @@ const getRoleDashboard = (role) => ({
 
 const login = async (req, res) => {
   const { code, state } = req.query;
-  
   try {
     if (!code) throw new Error('Authorization code required');
 
@@ -89,30 +88,41 @@ const login = async (req, res) => {
 
     // Determine user roles
     let role = 'patient';
+    if (userInfo.email === 'doctor@gmail.com') role = 'doctor';
+    if (userInfo.email === 'pharmacy@gmail.com') role = 'pharmacist';
+    if (userInfo.email === 'admin@gmail.com') role = 'admin';
 
-    const dbUser = await staffTable.findUserById(userInfo.phone_number);
-    if (dbUser && !role.includes(dbUser.role)) role =(dbUser.role);
+    const dbUser = await User.findUserByDigitalID(userInfo.phone_number);
+    if (dbUser && !role.includes(dbUser.role)) role = dbUser.role;
 
-    const user ={ 
-      id: userInfo.phone_number, 
-      email: userInfo.email, 
-      name: userInfo.name , 
-      birthday:userInfo.birthdate,
-      role:role  }
+    const user = {
+      id: userInfo.phone_number,
+      email: userInfo.email,
+      name: userInfo.name,
+      birthday: userInfo.birthdate,
+      role: role
+    };
 
-     
     const frontendCode = crypto.randomBytes(32).toString('hex');
-    temporaryInfo ={
-      code:frontendCode, 
-      user:user,
-      role:role
-      };
-     
+    temporaryInfo = {
+      code: frontendCode,
+      user: user,
+      role: role
+    };
 
-    const redirectUrl = new URL(process.env.FRONTEND_CALLBACK_PATH, process.env.FRONTEND_BASE_URL);
+    // Role-based redirect URL
+    let redirectUrl;
+    if (role === 'doctor') {
+      redirectUrl = new URL(process.env.DOCTOR_FRONTEND_URL);
+    } else if (role === 'pharmacist') {
+      redirectUrl = new URL(process.env.PHARMACIST_FRONTEND_URL);
+    } else if (role === 'admin') {
+      redirectUrl = new URL(process.env.FRONTEND_BASE_URL + '/admin');
+    } else {
+      redirectUrl = new URL(process.env.FRONTEND_BASE_URL + '/patient');
+    }
     redirectUrl.searchParams.append('code', frontendCode);
-    redirectUrl.searchParams.append('role', JSON.stringify(role));
- 
+    redirectUrl.searchParams.append('role', role);
 
     return res.redirect(redirectUrl.toString());
   } catch (error) {
@@ -123,18 +133,20 @@ const login = async (req, res) => {
 
 const exchangeCode = async (req, res) => {
   const { code, role } = req.body;
-  console.log("received authorisation request with:",code,role)
+  console.log("received authorisation request with:", code, role);
   try {
-    if (!code || !temporaryInfo.code ===0) throw new Error('Invalid code, correct code expired:');
-    
-    //retrieve valid role in Login
-    const codeData = temporaryInfo.code;
-    
-    // check incoming role validity
-    if (role.length===0||!role==='admin'||!role==='patient'||!role==='phamarcist'||!role==='doctor') {
+    // Validate code
+    if (!code || code !== temporaryInfo.code) {
+      throw new Error('Invalid or expired code');
+    }
+
+    // Validate role
+    const validRoles = ['admin', 'patient', 'pharmacist', 'doctor'];
+    if (!role || !validRoles.includes(role)) {
       throw new Error('Invalid role selection');
     }
 
+    // Issue JWT token
     const token = jwt.sign(
       {
         id: temporaryInfo.user.id,
@@ -145,8 +157,6 @@ const exchangeCode = async (req, res) => {
       { expiresIn: '5m' }
     );
 
-    
-
     return res.json({
       success: true,
       token,
@@ -154,8 +164,9 @@ const exchangeCode = async (req, res) => {
         id: temporaryInfo.user.id,
         email: temporaryInfo.user.email,
         name: temporaryInfo.user.name,
-        birthday:temporaryInfo.user.birthday,
-      },role:temporaryInfo.role
+        birthday: temporaryInfo.user.birthday,
+      },
+      role: role
     });
   } catch (error) {
     console.error('[EXCHANGE] Error:', error);
