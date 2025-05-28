@@ -12,67 +12,9 @@ import Learn from './pages/LearnMore';
 import Contact from './pages/Contact';
 import VerifyPrescriptionPage from './pages/VerifyPrescriptionPage';
 import Dashboard from './pages/Dashboard';
-import FindHealthcare from './components/dashboard/patient/FindHealthcare';
-
 import "./App.css";
 
 function App() {
-  // Set role based on the current URL path
-  useEffect(() => {
-    const updateRoleBasedOnPath = () => {
-      const path = window.location.pathname;
-      let role = '';
-      
-      // Determine role based on URL path
-      if (path.startsWith('/admin')) {
-        role = 'admin';
-      } else if (path.startsWith('/doctor')) {
-        role = 'doctor';
-      } else if (path.startsWith('/patient')) {
-        role = 'patient';
-      } else if (path.startsWith('/pharmacist')) {
-        role = 'pharmacist';
-      } else if (path === '/' || path === '/login') {
-        // Don't change role on home or login page
-        return;
-      } else {
-        // Default role if no specific path matches
-        role = 'patient';
-      }
-      
-      const currentRole = localStorage.getItem('userRole');
-      
-      // Check role needs to be updated
-      const shouldUpdateRole = !currentRole || 
-        (path.includes(`/${role}`) && currentRole !== role);
-      
-      if (shouldUpdateRole) {
-        // Set the role in localStorage
-        localStorage.setItem('userRole', role);
-        localStorage.setItem('userId', `dev-${role}-123`);
-        localStorage.setItem('userName', `${role.charAt(0).toUpperCase() + role.slice(1)} User`);
-        localStorage.setItem('token', `dev-token-${role}-123`);
-        
-        console.log(`Set user role to: ${role} based on path: ${path}`);
-      }
-    };
-
-    // Update role on initial load
-    updateRoleBasedOnPath();
-
-    // Listen for route changes
-    const handleRouteChange = () => {
-      updateRoleBasedOnPath();
-    };
-
-    // Add event listener for popstate (browser back/forward)
-    window.addEventListener('popstate', handleRouteChange);
-
-    return () => {
-      window.removeEventListener('popstate', handleRouteChange);
-    };
-  }, []);
-
   return (
     <AuthProvider>
       <Router>
@@ -81,11 +23,12 @@ function App() {
             {/* Public Routes */}
             <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login />} />
-            <Route path="/session-expired" element={<SessionExpired />} />
-            <Route path="/unauthorized" element={<Unauthorized />} />
+            <Route path="/session-expired" element={<SessionExpired />} />            <Route path="/unauthorized" element={<Unauthorized />} />
             <Route path="/auth/callback" element={<AuthCallback />} />
+            <Route path="/callback" element={<AuthCallback />} />
             <Route path="/learn" element={<Learn />} />
             <Route path="/contact" element={<Contact />} />
+            <Route path="/verify-prescription/:id?" element={<VerifyPrescriptionPage />} />
 
             {/* Protected Routes with Role-Based Access Control */}
             <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>

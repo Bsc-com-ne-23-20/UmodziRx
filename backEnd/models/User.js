@@ -1,53 +1,45 @@
-const { pool } = require('../config/db');
+const { pool } = require('../config/db'); // Use the connection pool from db.js
 
 class User {
   static async create(userData) {
-    const { digitalID, name, role, status = 'Active' } = userData;
+    const { username, password, role } = userData;
     const query = `
-      INSERT INTO staffs (digitalID, name, role, status)
-      VALUES ($1, $2, $3, $4)
-      RETURNING *;
+      INSERT INTO users (username, password, role)
+      VALUES (?, ?, ?);
     `;
-    const values = [digitalID, name, role, status];
-    const result = await pool.query(query, values);
-    return result.rows[0];
+    const values = [username, password, role];
+    const [result] = await pool.query(query, values); // Use pool.query for promise-based queries
+    return result.insertId; // Return the ID of the newly created user
   }
 
   static async findByUsername(username) {
-    const query = 'SELECT * FROM staffs WHERE name = $1';
-    const result = await pool.query(query, [username]);
-    return result.rows[0];
+    const query = 'SELECT * FROM users WHERE username = ?';
+    const [rows] = await pool.query(query, [username]); // Use pool.query
+    return rows[0];
   }
 
   static async findById(userId) {
-    const query = 'SELECT * FROM staffs WHERE digitalID = $1';
-    const result = await pool.query(query, [userId]);
-    return result.rows[0];
+    const query = 'SELECT * FROM users WHERE id = ?';
+    const [rows] = await pool.query(query, [userId]); // Use pool.query
+    return rows[0];
   }
 
   static async update(userId, updateData) {
-    const { name, role, status } = updateData;
+    const { username, password, role } = updateData;
     const query = `
-      UPDATE staffs
-      SET name = $1, role = $2, status = $3
-      WHERE digitalID = $4
-      RETURNING *;
+      UPDATE users
+      SET username = ?, password = ?, role = ?
+      WHERE id = ?;
     `;
-    const values = [name, role, status, userId];
-    const result = await pool.query(query, values);
-    return result.rowCount > 0;
-  }
-
-  static async findUserByDigitalID(digitalID) {
-    const query = 'SELECT * FROM staffs WHERE digitalID = $1';
-    const result = await pool.query(query, [digitalID]);
-    return result.rows[0];
+    const values = [username, password, role, userId];
+    const [result] = await pool.query(query, values); // Use pool.query
+    return result.affectedRows > 0; // Return true if the update was successful
   }
 
   static async delete(userId) {
-    const query = 'DELETE FROM staffs WHERE digitalID = $1 RETURNING *';
-    const result = await pool.query(query, [userId]);
-    return result.rowCount > 0;
+    const query = 'DELETE FROM users WHERE id = ?';
+    const [result] = await pool.query(query, [userId]); // Use pool.query
+    return result.affectedRows > 0; // Return true if the deletion was successful
   }
 }
 
