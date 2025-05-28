@@ -3,7 +3,6 @@ import { FiBarChart2, FiTrendingUp, FiCalendar, FiDownload } from 'react-icons/f
 import MetricsCard from '../../common/MetricsCard';
 import WeeklyStatsChart from '../../WeeklyStatsChart';
 import PrescriptionTrendsChart from '../../PrescriptionTrendsChart';
-import FindHealthcare from './FindHealthcare';
 
 const PatientAnalyticsContent = () => {
   const [activeTab, setActiveTab] = useState('overview');
@@ -148,9 +147,6 @@ const PatientAnalyticsContent = () => {
         </div>
         <WeeklyStatsChart darkMode={darkMode} />
       </div>
-
-      {/* Find Healthcare Functionality */}
-      <FindHealthcare />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Prescription Trends Chart */}

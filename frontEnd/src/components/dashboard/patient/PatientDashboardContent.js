@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { FiPackage, FiCheckSquare, FiTrendingUp, FiX, FiInfo, FiAlertCircle, FiCalendar, FiMapPin } from 'react-icons/fi';
+import { FiPackage, FiCheckSquare, FiTrendingUp, FiX, FiInfo, FiAlertCircle, FiCalendar } from 'react-icons/fi';
 import axios from 'axios';
 import MetricsCard from '../../common/MetricsCard';
 import AppointmentsTable from '../../common/AppointmentsTable';
+import { getRoleSpecificItem } from '../../../utils/storageUtils';
 
 // Skeleton loader for metrics cards
 const MetricsCardSkeleton = () => (
@@ -123,10 +124,9 @@ const PatientDashboardContent = ({ patientInfo }) => {
   const [prescriptions, setPrescriptions] = useState([]);
   const [prescriptionsLoading, setPrescriptionsLoading] = useState(true);
   const [prescriptionsError, setPrescriptionsError] = useState(null);
-  
-  // Use patientInfo prop if available, otherwise fallback to localStorage
-  const patientId = patientInfo?.id || localStorage.getItem('patientId') || 'PID-001';
-  const patientName = patientInfo?.name || localStorage.getItem('patientName') || 'John Banda';
+    // Use patientInfo prop if available, otherwise fallback to role-specific localStorage
+  const patientId = patientInfo?.id || getRoleSpecificItem('patientId', 'patient') || 'PID-001';
+  const patientName = patientInfo?.name || getRoleSpecificItem('patientName', 'patient') || 'John Banda';
   
   // Simulate data loading
   useEffect(() => {
@@ -452,17 +452,6 @@ const PatientDashboardContent = ({ patientInfo }) => {
       <div className="mt-2">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">Patient Dashboard</h1>
         <p className="text-gray-600 dark:text-gray-400">Welcome back! Here's an overview of your medical information</p>
-      </div>
-      
-      {/* Find Healthcare Button */}
-      <div className="flex justify-end mb-4">
-        <button
-          className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition-colors text-base font-medium"
-          onClick={() => window.location.href = '/find-healthcare'}
-        >
-          <FiMapPin className="mr-2 h-5 w-5" />
-          Find Healthcare
-        </button>
       </div>
       
       {/* Metrics Cards */}

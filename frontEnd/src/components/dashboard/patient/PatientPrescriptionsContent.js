@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { FiSearch, FiFilter, FiX, FiDownload, FiCalendar, FiAlertCircle, FiInfo, FiMapPin } from 'react-icons/fi';
+import { FiSearch, FiFilter, FiX, FiDownload, FiCalendar, FiAlertCircle, FiInfo } from 'react-icons/fi';
 import axios from 'axios';
 import AppointmentsTable from '../../common/AppointmentsTable';
 import PrescriptionQRCode from '../../common/PrescriptionQRCode';
+import { getRoleSpecificItem } from '../../../utils/storageUtils';
 
 // Prescription modal component 
 const PrescriptionModal = ({ prescription, onClose }) => {
@@ -366,17 +367,6 @@ const PatientPrescriptionsContent = ({ patientInfo = {} }) => {
       <div className="mt-2">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">Prescriptions History</h1>
         <p className="text-gray-600 dark:text-gray-400">View and manage all your prescription records</p>
-      </div>
-      
-      {/* Find Healthcare Button - New addition */}
-      <div className="flex justify-end mb-4">
-        <button
-          className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition-colors text-base font-medium"
-          onClick={() => window.location.href = '/find-healthcare'}
-        >
-          <FiMapPin className="mr-2 h-5 w-5" />
-          Find Healthcare
-        </button>
       </div>
       
       {/* Prescriptions Table */}
