@@ -42,7 +42,7 @@ const createClientAssertion = async () => {
 };
 
 class PrescriptionController {
-  static async createPrescription(req, res) {
+  static async issuePrescription(req, res) {
     const { patientId, doctorId, patientName, prescriptions } = req.body;
 
     // Validate request
