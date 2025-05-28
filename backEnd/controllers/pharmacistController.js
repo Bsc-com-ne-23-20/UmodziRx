@@ -110,7 +110,6 @@ class PharmacistController {
     }
 
     try {
-
       // Query blockchain for prescriptions using the correct function
       const response = await axios.get(`${process.env.BLOCKCHAIN_API_URL || 'http://localhost:45000'}/query`, {
         params: {
@@ -120,6 +119,7 @@ class PharmacistController {
           args: patientId,
         },
       });
+
       // Log the raw response for debugging
       console.log(`Raw blockchain response for patient ${patientId}:`, response.data);
       
@@ -169,7 +169,7 @@ class PharmacistController {
         });
       }
 
-      // Format prescriptions if they exist
+      // Format prescriptions
       const prescriptions = [];
       let patientName = "N/A";
       let doctorId = "N/A";
@@ -207,7 +207,6 @@ class PharmacistController {
       return res.status(200).json({
         success: true,
         data: {
-
           patientId,
           patientName,
           doctorId,
@@ -215,24 +214,12 @@ class PharmacistController {
           prescriptions
         }
       });
-
     } catch (error) {
-      console.error('Error details:', error.response?.data || error.message);
-      
-      // Handle specific error cases
-      if (error.response?.data && typeof error.response.data === 'string' && 
-          error.response.data.includes('does not exist')) {
-        return res.status(404).json({
-          success: false,
-          error: `No prescriptions found for patient ID: ${patientId}`,
-          details: "Patient has no prescription records on blockchain"
-        });
-      }
-
+      console.error("Error:", error.response?.data || error.message);
       return res.status(500).json({
         success: false,
         error: "Failed to retrieve prescriptions",
-        details: error.response?.data || error.message
+        details: error.response?.data || error.message,
       });
     }
   }
@@ -250,7 +237,6 @@ class PharmacistController {
     const note = req.body.note || req.body.notes || req.body.comment || req.body.dispensingNotes || "";
     
     console.log('EXTRACTED FIELDS:', { patientId, prescriptionId, pharmacistId, note });
-
 
     // Validate request
     if (!patientId || !prescriptionId || !pharmacistId) {

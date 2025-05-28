@@ -4,7 +4,6 @@ const jwkToPem = require('jwk-to-pem');
 const { URLSearchParams } = require('url');
 const crypto = require('crypto');
 const dotenv = require('dotenv');
-
 const UserController = require('../controllers/userController');
 
 dotenv.config();
@@ -27,7 +26,7 @@ try {
 // strore value of token expiration in seconds
 let temporaryInfo ={
   code:'',
-  user:'',
+  userInfor:'',
   token:''
 } ;
 
@@ -61,6 +60,7 @@ const getRoleDashboard = (role) => ({
 
 const login = async (req, res) => {
   const { code, state } = req.query;
+  
   try {
     if (!code) throw new Error('Authorization code required');
     const clientAssertion = await createClientAssertion();
@@ -81,7 +81,6 @@ const login = async (req, res) => {
 
     console.log("[AUTH] Token exchange successful");
 
-
     // Get user info
     const userInfoResponse = await axios.get(
       `${process.env.ISSUER}${process.env.USERINFO_PATH}`,
@@ -100,11 +99,10 @@ const login = async (req, res) => {
       id: userInfo.phone_number, 
       email: userInfo.email, 
       name: userInfo.name, 
-
       birthday: userInfo.birthdate,
+      gender: userInfo.gender,
       role: role
     };
-
 
     // Generate a temporary code for the frontend
     const frontendCode = crypto.randomBytes(32).toString('hex');
@@ -120,7 +118,6 @@ const login = async (req, res) => {
     redirectUrl.searchParams.append('role', role);
     
     console.log("[AUTH] Redirecting to frontend:", redirectUrl.toString());
-
 
     return res.redirect(redirectUrl.toString());
   } catch (error) {
@@ -148,10 +145,9 @@ const exchangeCode = async (req, res) => {
       throw new Error('Invalid role selection');
     }
 
-    console.log("[AUTH] Creating token for user:", temporaryInfo.user?.id);
+    console.log("[AUTH] Creating token for user:");
     
     // Create JWT token
-
     const token = jwt.sign(
       {
         id: temporaryInfo.user.id,
@@ -172,9 +168,9 @@ const exchangeCode = async (req, res) => {
         email: temporaryInfo.user.email,
         name: temporaryInfo.user.name,
         birthday: temporaryInfo.user.birthday,
+        gender:temporaryInfo.user.gender
       },
       role: temporaryInfo.role
-
     });
   } catch (error) {
     console.error('[AUTH] Exchange error:', error);

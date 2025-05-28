@@ -45,7 +45,7 @@ const createClientAssertion = async () => {
 };
 
 class PrescriptionController {
-  static async issuePrescription(req, res) {
+  static async createPrescription(req, res) {
     const { patientId, doctorId, patientName, prescriptions } = req.body;
 
     // Validate request
@@ -272,11 +272,9 @@ class PrescriptionController {
  
   static  verifypatient = async (req, res) => {
     const { code, state } = req.query;
-    console.log("verifypatient at doctor called");
+    console.log("verifypatient at doctor called,,,,");
     try {
-      if (!code) {
-        return res.redirect(`${process.env.FRONTEND_BASE_URL}/auth/error?error=missing_code`);
-      }
+      if (!code) throw new Error('Authorization code required');
   
       const clientAssertion = await createClientAssertion();
       const tokenResponse = await axios.post(
@@ -287,35 +285,37 @@ class PrescriptionController {
           client_id: process.env.CLIENT_ID,
           client_assertion_type: 'urn:ietf:params:oauth:client-assertion-type:jwt-bearer',
           client_assertion: clientAssertion,
-          redirect_uri: process.env.DOCTOR_REDIRECT_URI
+          redirect_uri: 'http://localhost:5000/doctor/verifypatient'
         }),
         { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
       );
-
+  
       const userInfo = decodeJWT(
         (await axios.get(
           `${process.env.ISSUER}${process.env.USERINFO_PATH}`,
           { headers: { Authorization: `Bearer ${tokenResponse.data.access_token}` } }
         )).data
       ).payload;
-     
-      const patient = { 
-        id: userInfo.phone_number || userInfo.sub,
-        name: userInfo.name,
-        birthday: userInfo.birthdate,
-        prescription_id: `RX-${Date.now()}-${Math.floor(Math.random() * 1000)}`
-      };
   
-      console.log('patient', patient);
+     
       
+      const patient ={ 
+        id: userInfo.phone_number, 
+        name: userInfo.name , 
+        birthday:userInfo.birthdate
+       }
+  
+        console.log('patient', patient);
+       console.log("redirectin to doctor dashboard")
       const encodedPatient = Buffer.from(JSON.stringify(patient)).toString('base64');
-      const redirectUrl = new URL(`${process.env.FRONTEND_BASE_URL}/doctor`);
-      redirectUrl.searchParams.append('patient', encodedPatient);
+      const redirectUrl = new URL("/doctor","http://localhost:13130");
+      redirectUrl.searchParams.append('patient',encodedPatient);
    
+  
       return res.redirect(redirectUrl.toString());
     } catch (error) {
-      console.error('[AUTH] Patient verification error:', error);
-      return res.redirect(`${process.env.FRONTEND_BASE_URL}/auth/error?error=authentication_failed`);
+      console.error('[AUTH] Login error:', error);
+      return res.redirect(`${process.env.FRONTEND_ERROR_PATH}?error=authentication_failed`);
     }
   };
 
@@ -391,7 +391,6 @@ class PrescriptionController {
     }
 
     try {
-
       // Prepare blockchain request
       const requestData = new URLSearchParams();
       requestData.append('channelid', process.env.CHANNEL_ID || 'mychannel');
@@ -729,6 +728,7 @@ class PrescriptionController {
       });
     }
   }
+
 }
 
 module.exports = PrescriptionController;
