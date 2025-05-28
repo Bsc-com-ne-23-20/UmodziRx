@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { FiCode, FiX, FiInfo } from 'react-icons/fi';
+import { getCurrentUserRole, getRoleSpecificItem, clearRoleSpecificStorage } from '../utils/storageUtils';
 
 /**
  * Debug component to display current role information
@@ -7,11 +8,47 @@ import { FiCode, FiX, FiInfo } from 'react-icons/fi';
  */
 const DebugRoleInfo = () => {
   const [isOpen, setIsOpen] = useState(false);
+    // Get all relevant information from localStorage
+  const userRole = getCurrentUserRole() || 'Not set';
   
-  // Get all relevant information from localStorage
-  const userRole = localStorage.getItem('userRole') || 'Not set';
-  const userId = localStorage.getItem('userId') || 'Not set';
-  const userName = localStorage.getItem('userName') || 'Not set';
+  // Get role-specific user data
+  let userId = 'Not set';
+  let userName = 'Not set';
+  let userEmail = 'Not set';
+  let userBirthday = 'Not set';
+  let userGender = 'Not set';
+  
+  if (userRole === 'doctor') {
+    userId = getRoleSpecificItem('doctorId', userRole) || getRoleSpecificItem('userId', userRole) || 'Not set';
+    userName = getRoleSpecificItem('doctorName', userRole) || getRoleSpecificItem('userName', userRole) || 'Not set';
+    userEmail = getRoleSpecificItem('doctorEmail', userRole) || getRoleSpecificItem('userEmail', userRole) || 'Not set';
+    userBirthday = getRoleSpecificItem('doctorBirthday', userRole) || getRoleSpecificItem('userBirthday', userRole) || 'Not set';
+    userGender = getRoleSpecificItem('doctorGender', userRole) || getRoleSpecificItem('userGender', userRole) || 'Not set';
+  } else if (userRole === 'pharmacist') {
+    userId = getRoleSpecificItem('pharmaId', userRole) || getRoleSpecificItem('userId', userRole) || 'Not set';
+    userName = getRoleSpecificItem('pharmaName', userRole) || getRoleSpecificItem('userName', userRole) || 'Not set';
+    userEmail = getRoleSpecificItem('pharmaEmail', userRole) || getRoleSpecificItem('userEmail', userRole) || 'Not set';
+    userBirthday = getRoleSpecificItem('pharmaBirthday', userRole) || getRoleSpecificItem('userBirthday', userRole) || 'Not set';
+    userGender = getRoleSpecificItem('pharmaGender', userRole) || getRoleSpecificItem('userGender', userRole) || 'Not set';
+  } else if (userRole === 'patient') {
+    userId = getRoleSpecificItem('patientId', userRole) || getRoleSpecificItem('userId', userRole) || 'Not set';
+    userName = getRoleSpecificItem('patientName', userRole) || getRoleSpecificItem('userName', userRole) || 'Not set';
+    userEmail = getRoleSpecificItem('patientEmail', userRole) || getRoleSpecificItem('userEmail', userRole) || 'Not set';
+    userBirthday = getRoleSpecificItem('patientBirthday', userRole) || getRoleSpecificItem('userBirthday', userRole) || 'Not set';
+    userGender = getRoleSpecificItem('patientGender', userRole) || getRoleSpecificItem('userGender', userRole) || 'Not set';
+  } else if (userRole === 'admin') {
+    userId = getRoleSpecificItem('adminId', userRole) || getRoleSpecificItem('userId', userRole) || 'Not set';
+    userName = getRoleSpecificItem('adminName', userRole) || getRoleSpecificItem('userName', userRole) || 'Not set';
+    userEmail = getRoleSpecificItem('adminEmail', userRole) || getRoleSpecificItem('userEmail', userRole) || 'Not set';
+    userBirthday = getRoleSpecificItem('adminBirthday', userRole) || getRoleSpecificItem('userBirthday', userRole) || 'Not set';
+    userGender = getRoleSpecificItem('adminGender', userRole) || getRoleSpecificItem('userGender', userRole) || 'Not set';
+  } else {
+    userId = getRoleSpecificItem('userId', userRole) || 'Not set';
+    userName = getRoleSpecificItem('userName', userRole) || 'Not set';
+    userEmail = getRoleSpecificItem('userEmail', userRole) || 'Not set';
+    userBirthday = getRoleSpecificItem('userBirthday', userRole) || 'Not set';
+    userGender = getRoleSpecificItem('userGender', userRole) || 'Not set';
+  }
   const currentPath = window.location.pathname;
   
   if (!isOpen) {
@@ -53,25 +90,57 @@ const DebugRoleInfo = () => {
         </div>
         
         <div className="bg-gray-100 dark:bg-gray-700 p-2 rounded">
-          <p className="text-gray-500 dark:text-gray-400">User ID:</p>
+          <p className="text-gray-500 dark:text-gray-400">{userRole === 'doctor' ? 'Doctor ID' : 
+                                                          userRole === 'patient' ? 'Patient ID' : 
+                                                          userRole === 'pharmacist' ? 'Pharmacist ID' : 
+                                                          userRole === 'admin' ? 'Admin ID' : 'User ID'}:</p>
           <p className="font-mono text-gray-800 dark:text-gray-200">{userId}</p>
         </div>
         
         <div className="bg-gray-100 dark:bg-gray-700 p-2 rounded">
-          <p className="text-gray-500 dark:text-gray-400">User Name:</p>
+          <p className="text-gray-500 dark:text-gray-400">{userRole === 'doctor' ? 'Doctor Name' : 
+                                                          userRole === 'patient' ? 'Patient Name' : 
+                                                          userRole === 'pharmacist' ? 'Pharmacist Name' : 
+                                                          userRole === 'admin' ? 'Admin Name' : 'User Name'}:</p>
           <p className="font-mono text-gray-800 dark:text-gray-200">{userName}</p>
         </div>
+        
+        <div className="bg-gray-100 dark:bg-gray-700 p-2 rounded">
+          <p className="text-gray-500 dark:text-gray-400">{userRole === 'doctor' ? 'Doctor Email' : 
+                                                          userRole === 'patient' ? 'Patient Email' : 
+                                                          userRole === 'pharmacist' ? 'Pharmacist Email' : 
+                                                          userRole === 'admin' ? 'Admin Email' : 'User Email'}:</p>
+          <p className="font-mono text-gray-800 dark:text-gray-200">{userEmail}</p>
+        </div>
+        
+        <div className="bg-gray-100 dark:bg-gray-700 p-2 rounded">
+          <p className="text-gray-500 dark:text-gray-400">{userRole === 'doctor' ? 'Doctor Birthday' : 
+                                                          userRole === 'patient' ? 'Patient Birthday' : 
+                                                          userRole === 'pharmacist' ? 'Pharmacist Birthday' : 
+                                                          userRole === 'admin' ? 'Admin Birthday' : 'User Birthday'}:</p>
+          <p className="font-mono text-gray-800 dark:text-gray-200">{userBirthday}</p>
+        </div>
+        
+        <div className="bg-gray-100 dark:bg-gray-700 p-2 rounded">
+          <p className="text-gray-500 dark:text-gray-400">{userRole === 'doctor' ? 'Doctor Gender' : 
+                                                          userRole === 'patient' ? 'Patient Gender' : 
+                                                          userRole === 'pharmacist' ? 'Pharmacist Gender' : 
+                                                          userRole === 'admin' ? 'Admin Gender' : 'User Gender'}:</p>
+          <p className="font-mono text-gray-800 dark:text-gray-200">{userGender}</p>
+        </div>
       </div>
-      
-      <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+        <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
         <button
           onClick={() => {
-            localStorage.clear();
+            const currentRole = getCurrentUserRole();
+            if (currentRole) {
+              clearRoleSpecificStorage(currentRole);
+            }
             window.location.reload();
           }}
           className="w-full bg-red-600 hover:bg-red-700 text-white py-1 px-3 rounded text-sm transition-colors"
         >
-          Clear localStorage & Reload
+          Clear Role Storage & Reload
         </button>
       </div>
     </div>

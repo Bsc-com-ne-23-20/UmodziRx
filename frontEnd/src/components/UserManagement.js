@@ -1,7 +1,7 @@
-
 import React, { useState, useEffect, forwardRef, useImperativeHandle, useRef } from 'react';
 import { FiEdit2, FiTrash2, FiUserPlus, FiChevronLeft, FiChevronRight, FiX } from 'react-icons/fi';
 import axios from 'axios';
+import { getRoleSpecificItem, getCurrentUserRole } from '../utils/storageUtils';
 
 const admin_BASE_URL = process.env.REACT_APP_admin_BASE_URL || "http://localhost:5000";
 
@@ -79,7 +79,7 @@ useEffect(() => {
         url: `${admin_BASE_URL}${endpoint}`, 
         data,
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${getRoleSpecificItem('token', getCurrentUserRole())}`
         }
       });
       return response.data;

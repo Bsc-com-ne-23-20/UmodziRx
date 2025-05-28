@@ -3,6 +3,7 @@ import { isValidPrescriptionQR } from '../../utils/qrUtils';
 import QrScanner from 'react-qr-scanner';
 import axios from 'axios';
 import { FiCheckCircle, FiAlertCircle, FiLoader, FiX } from 'react-icons/fi';
+import { getUserId } from '../../utils/authUtils';
 
 /**
  * A component that allows both camera scanning and manual input of prescription QR codes
@@ -118,10 +119,9 @@ const PrescriptionQRScanner = ({ onScan, isPharmacist = false }) => {
     
     setDispensing(true);
     setDispensingError(null);
-    
-    try {
+      try {
       // Get pharmacist ID from localStorage with fallback
-      const pharmacistId = localStorage.getItem('userId') || '879861538';
+      const pharmacistId = getUserId('pharmaId') || getUserId('userId') || '879861538';
       
       // Prepare dispensing data
       const dispensingData = {
