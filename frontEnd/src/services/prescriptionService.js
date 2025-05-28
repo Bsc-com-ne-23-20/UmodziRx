@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { getAuthToken, getUserId } from '../utils/authUtils';
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000';
 
@@ -7,7 +8,7 @@ const prescriptionService = {
     try {
       const response = await axios.get(`${API_BASE_URL}/prescriptions/patient/${patientId}`, {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${getAuthToken()}`
         }
       });
       return response.data;
@@ -17,16 +18,16 @@ const prescriptionService = {
     }
   },
 
-  issuePrescription: async (prescriptionData) => {
+  createPrescription: async (prescriptionData) => {
     try {
       const response = await axios.post(`${API_BASE_URL}/prescriptions`, prescriptionData, {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${getAuthToken()}`
         }
       });
       return response.data;
     } catch (error) {
-      console.error('Error issuing prescription:', error);
+      console.error('Error creating prescription:', error);
       throw error;
     }
   },
@@ -39,7 +40,7 @@ const prescriptionService = {
           patientId
         },
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${getAuthToken()}`
         }
       });
       return response.data;
@@ -61,7 +62,7 @@ const prescriptionService = {
       
       const response = await axios.post(`${API_BASE_URL}/pharmacist/dispense`, dispensingData, {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${getAuthToken()}`
         }
       });
       
@@ -83,7 +84,7 @@ const prescriptionService = {
       const response = await axios.get(`${API_BASE_URL}/pharmacist/prescriptions`, {
         params: { patientId },
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${getAuthToken()}`
         }
       });
       
@@ -127,13 +128,13 @@ const prescriptionService = {
       const dispensingData = {
         patientId: qrData.patientId,
         prescriptionId: qrData.prescriptionId,
-        pharmacistId: pharmacistId || localStorage.getItem('userId') || '879861538',
+        pharmacistId: pharmacistId || getUserId('pharmaId') || '879861538',
         note: note 
       };
       
       const response = await axios.post(`${API_BASE_URL}/pharmacist/dispense`, dispensingData, {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${getAuthToken()}`
         }
       });
       
