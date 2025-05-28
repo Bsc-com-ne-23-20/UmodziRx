@@ -72,21 +72,21 @@ export default function Contact() {
       </nav>
 
       {/* Contact Form Section */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="text-center mb-12">
-          <h1 className="text-3xl font-extrabold text-gray-900 sm:text-4xl">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+        <div className="text-center mb-8 sm:mb-12">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-gray-900">
             Contact Us
           </h1>
-          <p className="mt-4 text-lg text-gray-500">
+          <p className="mt-3 sm:mt-4 text-base sm:text-lg text-gray-500">
+
             Have questions about UmodziRx? We're here to help.
           </p>
         </div>
-
-        <div className="md:flex md:gap-8 md:items-start">
+        <div className="flex flex-col md:flex-row md:gap-8 md:items-start">
           {/* Form Column */}
           <div className="md:flex-1">
             {submitted ? (
-              <div className="bg-green-50 border border-green-200 rounded-md p-6 mb-6">
+              <div className="bg-green-50 border border-green-200 rounded-md p-4 sm:p-6 mb-6">
                 <div className="flex">
                   <div className="flex-shrink-0">
                     <svg className="h-5 w-5 text-green-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
