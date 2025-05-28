@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { FiPlusCircle, FiUsers, FiX, FiPlus, FiCalendar, FiCheckCircle, FiFileText } from 'react-icons/fi';
 import AppointmentsTable from '../../common/AppointmentsTable';
 import axios from 'axios';
+import { getRoleSpecificItem, setRoleSpecificItem, getCurrentUserRole } from '../../../utils/storageUtils';
 
 const MEDICATION_LIST = [
   'Panado',
@@ -138,9 +139,10 @@ const DoctorContent = ({ activeView, handleNavigation, externalPrescriptionModal
   const [patients] = useState(MOCK_PATIENTS);
   const [showPrescriptionModal, setShowPrescriptionModal] = useState(false);  
   
+  const currentRole = getCurrentUserRole();
   const [verifiedPatient, setVerifiedPatient] = useState({
-    name: localStorage.getItem('patientName') || 'Patient Name',
-    id: localStorage.getItem('patientId') || 'PAT-ID'
+    name: getRoleSpecificItem('patientName', currentRole) || 'Patient Name',
+    id: getRoleSpecificItem('patientId', currentRole) || 'PAT-ID'
   });
   const [prescriptionForm, setPrescriptionForm] = useState({
     diagnosis: '',
@@ -229,8 +231,8 @@ const DoctorContent = ({ activeView, handleNavigation, externalPrescriptionModal
     setError(null);
     
     try {
-      // Get doctor ID from localStorage
-      const doctorId = localStorage.getItem('doctorId');
+      // Get doctor ID using role-specific storage
+      const doctorId = getRoleSpecificItem('doctorId', currentRole);
       
       if (!doctorId) {
         console.warn('No doctor ID found in localStorage');
@@ -554,8 +556,8 @@ const DoctorContent = ({ activeView, handleNavigation, externalPrescriptionModal
             };
             setRetrievedPatient(verifiedPatientData);
             setVerifiedPatient(verifiedPatientData); // Update verifiedPatient state
-            localStorage.setItem('patientName', verifiedPatientData.name);
-            localStorage.setItem('patientId', verifiedPatientData.id);
+            setRoleSpecificItem('patientName', verifiedPatientData.name, currentRole);
+            setRoleSpecificItem('patientId', verifiedPatientData.id, currentRole);
             setIsPatientVerified(true); // Set verification flag
             setShowVerificationModal(false);
             
@@ -1083,7 +1085,7 @@ const DoctorContent = ({ activeView, handleNavigation, externalPrescriptionModal
           <div ref={modalRef} className="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-[800px] max-h-[90vh] overflow-y-auto border border-gray-200 dark:border-gray-700">
             <div className="border-b border-gray-200 dark:border-gray-700 px-8 py-6">
               <div className="flex justify-between items-center">
-                <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Issue Prescription</h3>
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Create New Prescription</h3>
                 <button 
                   onClick={() => setShowPrescriptionModal(false)}
                   className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 transition-colors"
@@ -1240,7 +1242,7 @@ const DoctorContent = ({ activeView, handleNavigation, externalPrescriptionModal
                     }}
                     className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium"
                   >
-                    Issue Prescription
+                    Create Prescription
                   </button>
                 </div>
               </div>

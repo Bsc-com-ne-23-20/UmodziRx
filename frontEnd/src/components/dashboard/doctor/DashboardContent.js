@@ -3,8 +3,9 @@ import { FiPackage, FiCheckSquare, FiTrendingUp, FiX, FiPlus } from 'react-icons
 import MetricsCard from '../../common/MetricsCard';
 import AppointmentsTable from '../../common/AppointmentsTable';
 import axios from 'axios';
+import { getRoleSpecificItem, getCurrentUserRole } from '../../../utils/storageUtils';
 
-const DashboardContent = ({ onIssuePrescription }) => {
+const DashboardContent = ({ onCreatePrescription }) => {
   const [selectedPrescription, setSelectedPrescription] = useState(null);
   const [showPrescriptionModal, setShowPrescriptionModal] = useState(false);
   const [prescriptions, setPrescriptions] = useState([]);
@@ -20,8 +21,9 @@ const DashboardContent = ({ onIssuePrescription }) => {
     setError(null);
     
     try {
-      // Get doctor ID from localStorage
-      const doctorId = localStorage.getItem('doctorId');
+      // Get doctor ID using role-specific storage
+      const currentRole = getCurrentUserRole();
+      const doctorId = getRoleSpecificItem('doctorId', currentRole);
       
       if (!doctorId) {
         console.warn('No doctor ID found in localStorage');
@@ -153,7 +155,7 @@ const DashboardContent = ({ onIssuePrescription }) => {
     {
       id: 'top-medications',
       icon: <FiPackage />,
-      title: 'Top Medication',
+      title: 'Top Prescribed Medication',
       value: calculateMetrics.topMedication.name,
       increase: calculateMetrics.topMedication.count.toString(),
       subtitle: `Prescribed ${calculateMetrics.topMedication.count} times`,
@@ -176,7 +178,7 @@ const DashboardContent = ({ onIssuePrescription }) => {
       title: 'Active Prescriptions',
       value: calculateMetrics.activePrescriptions.toString(),
       increase: Math.round(calculateMetrics.activePrescriptions * 0.1).toString(), // Example increase (10% of active)
-      subtitle: 'In circulation now',
+      subtitle: 'Currently active prescriptions',
       iconColor: 'text-green-600 dark:text-green-400',
       bgColor: 'bg-green-50 dark:bg-green-900/20'
     },
@@ -240,7 +242,7 @@ const DashboardContent = ({ onIssuePrescription }) => {
       </div>
         {/* Floating Add Button */}
       <button
-        onClick={onIssuePrescription}
+        onClick={onCreatePrescription}
         className="fixed bottom-6 right-6 w-14 h-14 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg flex items-center justify-center transition-colors z-10"
       >
         <FiPlus className="h-6 w-6" />

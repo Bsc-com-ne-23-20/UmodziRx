@@ -3,12 +3,14 @@ import { FiBarChart2, FiPieChart, FiTrendingUp, FiCalendar, FiDownload } from 'r
 import MetricsCard from '../../common/MetricsCard';
 import WeeklyStatsChart from '../../WeeklyStatsChart';
 import PrescriptionTrendsChart from '../../PrescriptionTrendsChart';
+import { getRoleSpecificItem, getCurrentUserRole } from '../../../utils/storageUtils';
 
 const AnalyticsContent = () => {  const [activeTab, setActiveTab] = useState('overview');
   const [timeRange, setTimeRange] = useState('30');
-  // Get the dark mode state from local storage or default to false
+  // Get the dark mode state from role-specific storage or default to false
   const darkMode = (() => {
-    const savedDarkMode = localStorage.getItem('darkMode');
+    const currentRole = getCurrentUserRole();
+    const savedDarkMode = getRoleSpecificItem('darkMode', currentRole);
     return savedDarkMode ? JSON.parse(savedDarkMode) : false;
   })();
   
