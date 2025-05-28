@@ -73,7 +73,8 @@ class PrescriptionController {
           PrescriptionId: p.prescriptionId,
           MedicationName: p.medicationName || p.medication || 'Unknown',
           Dosage: p.dosage,
-          Instructions: p.instructions || '',
+          Instructions: p.instructions ,
+          Diagnosis : p.diagnosis ,
           Status: "Active",
           CreatedBy: doctorId,
           TxID: "",
@@ -116,7 +117,8 @@ class PrescriptionController {
             prescriptionId: p.prescriptionId,
             medicationName: p.medicationName || p.medication || 'Unknown',
             dosage: p.dosage,
-            instructions: p.instructions
+            instructions: p.instructions, 
+            diagnosis: p.diagnosis
           })),
           txId: blockchainResponse.data.txId,
           createdAt: new Date().toISOString()
@@ -228,6 +230,7 @@ class PrescriptionController {
             medicationName: prescription.MedicationName || "Unknown",
             dosage: prescription.Dosage || "N/A",
             instructions: prescription.Instructions || "N/A",
+            diagnosis: prescription.Diagnosis || "N/A",
             createdBy: prescription.CreatedBy || asset.DoctorId || "N/A",
             status: prescription.Status || "Active",
             txId: prescription.TxID || "",
@@ -373,85 +376,224 @@ class PrescriptionController {
       });
     }
   }
-
-  // Get doctor's prescription history - returns prescriptions issued by this doctor
-  static async getDoctorPrescriptionHistory(req, res) {
-    const { doctorId } = req.query;
+  
+  // DispensePrescription - allows a pharmacist to dispense a prescription
+  static async dispensePrescription(req, res) {
+    const { patientId, prescriptionId, pharmacistId, note } = req.body;
 
     // Validate request
-    if (!doctorId) {
+    if (!patientId || !prescriptionId || !pharmacistId) {
       return res.status(400).json({
         success: false,
-        error: 'Doctor ID is required'
+        error: 'Missing required fields',
+        details: { patientId, prescriptionId, pharmacistId }
       });
     }
 
     try {
 
-      // Query blockchain
-      const response = await axios.get(process.env.BLOCKCHAIN_API_URL || 'http://localhost:45000/query', {
-        params: {
-          channelid: process.env.CHANNEL_ID || 'mychannel',
-          chaincodeid: process.env.CHAINCODE_ID || 'basic',
-          function: "GetPrescriptionsByDoctor",
-          args: doctorId
-        },
-      });
-
-      // Process response
-      let rawData = response.data;
-      if (typeof rawData === "string" && rawData.startsWith("Response: ")) {
-        rawData = rawData.replace("Response: ", "").trim();
-      }
-
-      let prescriptionsData;
-      try {
-        prescriptionsData = processBlockchainResponse(rawData); // Use helper function
-      } catch (err) {
-        return res.status(500).json({
-          success: false,
-          error: "Failed to parse blockchain response",
-          details: err.message
-        });
-      }
-
-      // Format the prescriptions for the response
-      const doctorPrescriptions = [];
+      // Prepare blockchain request
+      const requestData = new URLSearchParams();
+      requestData.append('channelid', process.env.CHANNEL_ID || 'mychannel');
+      requestData.append('chaincodeid', process.env.CHAINCODE_ID || 'basic');
+      requestData.append('function', 'DispensePrescription');
       
-      // Process prescriptions data
-      if (prescriptionsData && prescriptionsData.Prescriptions) {
-        prescriptionsData.Prescriptions.forEach(prescription => {
-          doctorPrescriptions.push({
-            patientId: prescription.PatientId,
-            patientName: prescriptionsData.PatientName || "N/A",
-            prescriptionId: prescription.PrescriptionId,
-            medicationName: prescription.MedicationName,
-            dosage: prescription.Dosage,
-            instructions: prescription.Instructions,
-            status: prescription.Status,
-            timestamp: prescription.Timestamp,
-            expiryDate: prescription.ExpiryDate,
-            txId: prescription.TxID
-          });
+      // Format dispensation data according to the smartcontract
+      const dispensationData = {
+        patientId: patientId,
+        prescriptionId: prescriptionId,
+        pharmacistId: pharmacistId,
+        note: note || "N/A"
+      };
+      
+      // Log the dispensation data for debugging
+      console.log(`Dispensation data sent to blockchain: ${JSON.stringify(dispensationData)}`);
+      
+      // The args should be the JSON string
+      requestData.append('args', JSON.stringify(dispensationData));
+
+      // Send to blockchain
+      const blockchainResponse = await axios.post(
+        `${process.env.BLOCKCHAIN_API_URL || 'http://localhost:45000'}/invoke`, 
+        requestData,
+        { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
+      );
+
+      // Log the raw blockchain response for debugging
+      console.log(`Raw blockchain response from dispensation: ${JSON.stringify(blockchainResponse.data)}`);
+
+      // Check if the response contains an error
+      if (typeof blockchainResponse.data === 'string' && blockchainResponse.data.includes('Error:')) {
+        console.error('Blockchain error during dispensation:', blockchainResponse.data);
+        return res.status(400).json({
+          success: false,
+          message: 'Failed to dispense prescription',
+          error: blockchainResponse.data,
+          data: { patientId, prescriptionId, pharmacistId }
         });
       }
 
       return res.status(200).json({
         success: true,
+        message: 'Prescription dispensed successfully',
         data: {
-          doctorId,
-          prescriptions: doctorPrescriptions
+          patientId,
+          prescriptionId,
+          pharmacistId,
+          txId: blockchainResponse.data.txId || 'unknown',
+          dispensedAt: new Date().toISOString()
         }
       });
     } catch (error) {
-      console.error('Error:', error.response?.data || error.message);
-      res.status(500).json({
+      console.error('Dispensation error:', error.message);
+      if (error.response) {
+        console.error('Response data:', error.response.data);
+        console.error('Response status:', error.response.status);
+      }
+      return res.status(500).json({ 
         success: false,
-        error: 'Failed to retrieve doctor prescription history',
-        details: error.response?.data || error.message
+        error: 'Failed to dispense prescription',
+        details: error.response?.data || error.message,
+        request: {
+          patientId,
+          prescriptionId,
+          pharmacistId
+        }
       });
     }
   }
+
+  // Get doctor's prescription history - returns prescriptions issued by this doctor
+ static async getDoctorPrescriptionHistory(req, res) {
+    const { doctorId } = req.params;
+
+    if (!doctorId) {
+        return res.status(400).json({ 
+            error: "Doctor ID is required",
+            success: false
+        });
+    }
+
+    try {
+        console.log(`[DOCTOR] Fetching prescription history for doctor ID: ${doctorId}`);
+        
+        const response = await axios.get(`${process.env.BLOCKCHAIN_API_URL || 'http://localhost:45000'}/query`, {
+            params: {
+                channelid: process.env.CHANNEL_ID || 'mychannel',
+                chaincodeid: process.env.CHAINCODE_ID || 'basic',
+                function: "GetPrescriptionsByDoctor",
+                args: doctorId,
+            },
+        });
+
+        // Process the response
+        let prescriptions = [];
+        
+        if (typeof response.data === 'string') {
+            // Handle string response (could be JSON string)
+            try {
+                // First, check if the response starts with "Response:" and extract the actual JSON part
+                let jsonStr = response.data;
+                if (response.data.startsWith('Response:')) {
+                    // Extract the JSON part after "Response:"
+                    jsonStr = response.data.substring('Response:'.length).trim();
+                }
+                prescriptions = JSON.parse(jsonStr);
+            } catch (e) {
+                console.error('[DOCTOR] Failed to parse response as JSON:', e);
+                console.log('[DOCTOR] Response data:', response.data.substring(0, 200)); // Log the beginning of the response
+                
+                // Try to extract JSON from response string - look for array pattern
+                const jsonMatch = response.data.match(/\[.*\]/s); // Add 's' flag to match across lines
+                if (jsonMatch) {
+                    try {
+                        prescriptions = JSON.parse(jsonMatch[0]);
+                    } catch (e) {
+                        console.error('[DOCTOR] Failed to parse extracted JSON:', e);
+                    }
+                } else {
+                    // Try to extract object pattern if array pattern not found
+                    const objectMatch = response.data.match(/\{.*\}/s);
+                    if (objectMatch) {
+                        try {
+                            const obj = JSON.parse(objectMatch[0]);
+                            // If it's an object with a prescriptions array, use that
+                            if (obj.prescriptions && Array.isArray(obj.prescriptions)) {
+                                prescriptions = obj.prescriptions;
+                            } else {
+                                // Otherwise wrap the object in an array
+                                prescriptions = [obj];
+                            }
+                        } catch (e) {
+                            console.error('[DOCTOR] Failed to parse object JSON:', e);
+                        }
+                    }
+                }
+            }
+        } else if (Array.isArray(response.data)) {
+            prescriptions = response.data;
+        } else if (response.data && typeof response.data === 'object') {
+            // Handle if the response is already an object
+            if (response.data.prescriptions && Array.isArray(response.data.prescriptions)) {
+                prescriptions = response.data.prescriptions;
+            } else {
+                // Add the object itself as a single prescription
+                prescriptions = [response.data];
+            }
+        }
+
+        // Ensure we have an array
+        if (!Array.isArray(prescriptions)) {
+            prescriptions = [];
+        }
+
+        // Format the prescriptions consistently
+        const formattedPrescriptions = prescriptions.map(p => ({
+            diagnosis: p.Diagnosis || 'Not specified',
+            dosage: p.Dosage || 'Not specified',
+            expiryDate: p.ExpiryDate || null,
+            instructions: p.Instructions || 'Not specified',
+            medicationName: p.MedicationName || 'Not specified',
+            patientId: p.PatientId || 'Unknown',
+            patientName: p.PatientName || 'Unknown',
+            prescriptionId: p.PrescriptionId || require('crypto').randomBytes(4).toString('hex'),
+            status: p.Status || 'Unknown',
+            timestamp: p.Timestamp || new Date().toISOString(),
+            txId: p.TxID || 'Not available'
+        }));
+
+        return res.status(200).json({
+            success: true,
+            data: {
+                doctorId,
+                prescriptionCount: formattedPrescriptions.length,
+                prescriptions: formattedPrescriptions
+            }
+        });
+
+    } catch (error) {
+        console.error("[DOCTOR] Error retrieving prescription history:", error);
+        
+        // Handle "no prescriptions found" case specially
+        if (error.response?.data?.includes?.('no prescriptions found')) {
+            return res.status(200).json({
+                success: true,
+                data: {
+                    doctorId,
+                    prescriptionCount: 0,
+                    prescriptions: []
+                }
+            });
+        }
+
+        return res.status(500).json({
+            success: false,
+            error: "Failed to retrieve prescription history",
+            details: error.response?.data || error.message,
+        });
+    }
+}
+
 
   // Get all prescriptions
   static async getAllPrescriptions(req, res) {
@@ -525,6 +667,7 @@ class PrescriptionController {
             // Update prescription fields
             if (updates.dosage) assetData.Prescriptions[i].Dosage = updates.dosage;
             if (updates.instructions) assetData.Prescriptions[i].Instructions = updates.instructions;
+            if (updates.diagnosis) assetData.Prescriptions[i].Diagnosis = updates.diagnosis;
             if (updates.medicationName) assetData.Prescriptions[i].MedicationName = updates.medicationName;
             if (updates.expiryDate) assetData.Prescriptions[i].ExpiryDate = updates.expiryDate;
             

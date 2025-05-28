@@ -1,18 +1,16 @@
 const axios = require('axios');
 const crypto = require('crypto');
 
-class PatientController {
+class PatientController { 
   static async getPrescriptions(req, res) {
     const { patientId } = req.query;
 
     if (!patientId) {
-      return res.status(400).json({ 
-        error: "Patient ID is required" 
-      });
+      return res.status(400).json({ error: "Patient ID is required" });
     }
 
     try {
-      // Query blockchain using ReadAsset function
+      // Query blockchain for patient asset
       const response = await axios.get(`${process.env.BLOCKCHAIN_API_URL}/query`, {
         params: {
           channelid: process.env.CHANNEL_ID,
@@ -22,7 +20,6 @@ class PatientController {
         },
       });
 
-      // Check if response contains valid data
       if (!response.data || response.data.error) {
         return res.status(404).json({
           success: false,
@@ -30,79 +27,30 @@ class PatientController {
         });
       }
 
-      let rawData = response.data;
-      
-      // If response is a string starting with "Response: ", extract the JSON part
-      if (typeof rawData === "string" && rawData.startsWith("Response: ")) {
-        rawData = rawData.replace("Response: ", "").trim();
-      }
-
-      let historyData;
-      try {
-        historyData = JSON.parse(rawData);
-      } catch (err) {
-        return res.status(500).json({
+      // Parse blockchain response
+      const asset = PatientController._parseBlockchainResponse(response.data, patientId);
+      if (!asset.success) {
+        return res.status(asset.status).json({
           success: false,
-          error: "Failed to parse blockchain response",
-          details: err.message,
+          error: asset.error,
+          details: asset.details
         });
       }
 
-      // Process prescription data - the returned data should be a single asset object, not an array
-      let asset;
-      if (Array.isArray(historyData)) {
-        // If it's an array (for compatibility), find the correct asset
-        asset = historyData.find(entry => entry.PatientId === patientId);
-        if (!asset) {
-          return res.status(404).json({
-            success: false,
-            error: "No valid prescription found",
-          });
-        }
-      } else if (typeof historyData === 'object') {
-        // If response is a single object
-        asset = historyData;
-      } else {
-        return res.status(500).json({
-          success: false,
-          error: "Unexpected response format from blockchain",
-        });
-      }
-
-      // Extract prescriptions from the asset
-      const prescriptionsForPatient = [];
-      if (asset.Prescriptions && Array.isArray(asset.Prescriptions)) {
-        asset.Prescriptions.forEach(prescription => {
-          prescriptionsForPatient.push({
-            prescriptionId: prescription.PrescriptionId || crypto.randomBytes(8).toString('hex'),
-            medicationName: prescription.MedicationName || "Unknown",
-            dosage: prescription.Dosage || "N/A",
-            instructions: prescription.Instructions || "N/A",
-            createdBy: prescription.CreatedBy || asset.DoctorId || "N/A",
-            status: prescription.Status || "Active",
-            txId: prescription.TxID || "",
-            timestamp: prescription.Timestamp || new Date().toISOString(),
-            expiryDate: prescription.ExpiryDate || "",
-            dispensingPharmacist: prescription.DispensingPharmacist || "",
-            dispensingTimestamp: prescription.DispensingTimestamp || ""
-          });
-        });
-      }
-
-      // Format the response
-      const formattedData = {
-        patientId,
-        patientName: asset.PatientName || "N/A",
-        dateOfBirth: asset.DateOfBirth || "N/A",
-        prescriptions: prescriptionsForPatient,
-      };
+      // Transform prescriptions to API format
+      const prescriptions = PatientController._formatPrescriptions(asset.data);
 
       return res.status(200).json({
         success: true,
-        data: formattedData,
+        data: {
+          patientId,
+          patientName: asset.data.PatientName || "N/A",
+          dateOfBirth: asset.data.DateOfBirth || "N/A",
+          prescriptions,
+        },
       });
     } catch (error) {
-      console.error("Error:", error.response?.data || error.message);
+      console.error("Prescription retrieval error:", error.response?.data || error.message);
       return res.status(500).json({
         success: false,
         error: "Failed to retrieve prescriptions",
@@ -122,7 +70,7 @@ class PatientController {
     }
 
     try {
-      // Query blockchain for prescription history
+      // Query blockchain for asset history
       const response = await axios.get(`${process.env.BLOCKCHAIN_API_URL || 'http://localhost:45000'}/query`, {
         params: {
           channelid: process.env.CHANNEL_ID || 'mychannel',
@@ -132,7 +80,6 @@ class PatientController {
         },
       });
 
-      // Check if response contains valid data
       if (!response.data || response.data.error) {
         return res.status(404).json({
           success: false,
@@ -140,59 +87,109 @@ class PatientController {
         });
       }
 
-      let rawData = response.data;
-      
-      // If response is a string starting with "Response: ", extract the JSON part
-      if (typeof rawData === "string" && rawData.startsWith("Response: ")) {
-        rawData = rawData.replace("Response: ", "").trim();
-      }
-
-      let historyData;
-      try {
-        historyData = JSON.parse(rawData);
-      } catch (err) {
+      // Parse blockchain response
+      const historyData = PatientController._parseBlockchainResponse(response.data);
+      if (!historyData.success) {
         return res.status(500).json({
           success: false,
-          error: "Failed to parse blockchain response",
-          details: err.message,
+          error: historyData.error,
+          details: historyData.details,
         });
       }
 
-      // Format the prescription history
-      const prescriptionHistory = historyData.map(record => ({
+      // Format prescription history
+      const history = historyData.data.map(record => ({
         timestamp: record.timestamp,
         txId: record.txId,
         patientName: record.patientName || "N/A",
         doctorId: record.doctorId,
         lastUpdated: record.lastUpdated,
-        prescriptions: Array.isArray(record.prescriptions) ? record.prescriptions.map(p => ({
-          prescriptionId: p.prescriptionId,
-          medicationName: p.medicationName,
-          dosage: p.dosage,
-          instructions: p.instructions,
-          status: p.status,
-          createdBy: p.createdBy,
-          timestamp: p.timestamp,
-          expiryDate: p.expiryDate || ""
-        })) : []
+        prescriptions: PatientController._formatPrescriptions(record.prescriptions || [])
       }));
 
       return res.status(200).json({
         success: true,
         data: {
           patientId,
-          historyCount: prescriptionHistory.length,
-          history: prescriptionHistory
+          historyCount: history.length,
+          history
         }
       });
     } catch (error) {
-      console.error("Error:", error.response?.data || error.message);
+      console.error("Prescription history retrieval error:", error.response?.data || error.message);
       return res.status(500).json({
         success: false,
         error: "Failed to retrieve prescription history",
         details: error.response?.data || error.message,
       });
     }
+  }
+
+  static _parseBlockchainResponse(rawData, patientId = null) {
+    try {
+      // Extract JSON from prefixed response strings
+      if (typeof rawData === "string" && rawData.startsWith("Response: ")) {
+        rawData = rawData.replace("Response: ", "").trim();
+      }
+
+      const parsedData = typeof rawData === "string" ? JSON.parse(rawData) : rawData;
+
+      // Handle array responses (find specific patient asset)
+      if (Array.isArray(parsedData) && patientId) {
+        const asset = parsedData.find(entry => entry.PatientId === patientId);
+        if (!asset) {
+          return {
+            success: false,
+            status: 404,
+            error: "No valid prescription found"
+          };
+        }
+        return { success: true, data: asset };
+      }
+
+      // Handle single object or array responses
+      if (typeof parsedData === 'object') {
+        return { success: true, data: parsedData };
+      }
+
+      return {
+        success: false,
+        status: 500,
+        error: "Unexpected response format from blockchain"
+      };
+    } catch (err) {
+      return {
+        success: false,
+        status: 500,
+        error: "Failed to parse blockchain response",
+        details: err.message
+      };
+    }
+  }
+
+  static _formatPrescriptions(data) {
+    const prescriptions = data?.Prescriptions || data || [];
+    
+    if (!Array.isArray(prescriptions)) {
+      return [];
+    }
+
+    return prescriptions.map(prescription => ({
+      prescriptionId: prescription.PrescriptionId || 
+                     prescription.prescriptionId || 
+                     crypto.randomBytes(8).toString('hex'),
+      medicationName: prescription.MedicationName || prescription.medicationName || "Unknown",
+      dosage: prescription.Dosage || prescription.dosage || "N/A",
+      instructions: prescription.Instructions || prescription.instructions || "N/A",
+      diagnosis: prescription.Diagnosis || prescription.diagnosis || "N/A",
+      status: prescription.Status || prescription.status || "Active",
+      createdBy: prescription.CreatedBy || prescription.createdBy || "N/A",
+      timestamp: prescription.Timestamp || prescription.timestamp || new Date().toISOString(),
+      expiryDate: prescription.ExpiryDate || prescription.expiryDate || "",
+      dispensingPharmacist: prescription.DispensingPharmacist || prescription.dispensingPharmacist || "",
+      dispensingTimestamp: prescription.DispensingTimestamp || prescription.dispensingTimestamp || "",
+      txId: prescription.TxID || prescription.txId || ""
+    }));
   }
 }
 

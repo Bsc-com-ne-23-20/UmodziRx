@@ -4,7 +4,8 @@ const jwkToPem = require('jwk-to-pem');
 const { URLSearchParams } = require('url');
 const crypto = require('crypto');
 const dotenv = require('dotenv');
-const User = require('../models/User');
+
+const UserController = require('../controllers/userController');
 
 dotenv.config();
 
@@ -29,8 +30,6 @@ let temporaryInfo ={
   user:'',
   token:''
 } ;
-
-
 
 const decodeJWT = (token) => {
   const [header, payload] = token.split('.');
@@ -64,8 +63,9 @@ const login = async (req, res) => {
   const { code, state } = req.query;
   try {
     if (!code) throw new Error('Authorization code required');
-
     const clientAssertion = await createClientAssertion();
+    
+    // Exchange the code for a token
     const tokenResponse = await axios.post(
       `${process.env.ISSUER}${process.env.TOKEN_PATH}`,
       new URLSearchParams({
@@ -79,50 +79,48 @@ const login = async (req, res) => {
       { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
     );
 
-    const userInfo = decodeJWT(
-      (await axios.get(
-        `${process.env.ISSUER}${process.env.USERINFO_PATH}`,
-        { headers: { Authorization: `Bearer ${tokenResponse.data.access_token}` } }
-      )).data
-    ).payload;
+    console.log("[AUTH] Token exchange successful");
 
-    // Determine user roles
-    let role = 'patient';
-    if (userInfo.email === 'doctor@gmail.com') role = 'doctor';
-    if (userInfo.email === 'pharmacy@gmail.com') role = 'pharmacist';
-    if (userInfo.email === 'admin@gmail.com') role = 'admin';
 
-    const dbUser = await User.findUserByDigitalID(userInfo.phone_number);
-    if (dbUser && !role.includes(dbUser.role)) role = dbUser.role;
+    // Get user info
+    const userInfoResponse = await axios.get(
+      `${process.env.ISSUER}${process.env.USERINFO_PATH}`,
+      { headers: { Authorization: `Bearer ${tokenResponse.data.access_token}` } }
+    );
+    
+    const userInfo = decodeJWT(userInfoResponse.data).payload;
 
-    const user = {
-      id: userInfo.phone_number,
-      email: userInfo.email,
-      name: userInfo.name,
+    let role = userInfo.role || 'patient'; 
+
+    // Use UserController instead of staffTable for consistency
+    const dbUser = await UserController.findUserByDigitalID(userInfo.phone_number);
+    if (dbUser && !role.includes(dbUser.role)) role = (dbUser.role);
+
+    const user = { 
+      id: userInfo.phone_number, 
+      email: userInfo.email, 
+      name: userInfo.name, 
+
       birthday: userInfo.birthdate,
       role: role
     };
 
+
+    // Generate a temporary code for the frontend
     const frontendCode = crypto.randomBytes(32).toString('hex');
     temporaryInfo = {
-      code: frontendCode,
+      code: frontendCode, 
       user: user,
       role: role
     };
-
-    // Role-based redirect URL
-    let redirectUrl;
-    if (role === 'doctor') {
-      redirectUrl = new URL(process.env.DOCTOR_FRONTEND_URL);
-    } else if (role === 'pharmacist') {
-      redirectUrl = new URL(process.env.PHARMACIST_FRONTEND_URL);
-    } else if (role === 'admin') {
-      redirectUrl = new URL(process.env.FRONTEND_BASE_URL + '/admin');
-    } else {
-      redirectUrl = new URL(process.env.FRONTEND_BASE_URL + '/patient');
-    }
+     
+    // Create the redirect URL to the frontend
+    const redirectUrl = new URL(process.env.FRONTEND_CALLBACK_PATH, process.env.FRONTEND_BASE_URL);
     redirectUrl.searchParams.append('code', frontendCode);
     redirectUrl.searchParams.append('role', role);
+    
+    console.log("[AUTH] Redirecting to frontend:", redirectUrl.toString());
+
 
     return res.redirect(redirectUrl.toString());
   } catch (error) {
@@ -133,20 +131,27 @@ const login = async (req, res) => {
 
 const exchangeCode = async (req, res) => {
   const { code, role } = req.body;
-  console.log("received authorisation request with:", code, role);
+  console.log("[AUTH] Received authorization request with code:", code, "role:", role);
+  
   try {
-    // Validate code
+    // Check if code exists and matches the stored temporary code
     if (!code || code !== temporaryInfo.code) {
-      throw new Error('Invalid or expired code');
+      console.error("[AUTH] Invalid code received:", code);
+      console.error("[AUTH] Expected code:", temporaryInfo.code);
+      throw new Error('Invalid or expired authorization code');
     }
-
+    
     // Validate role
-    const validRoles = ['admin', 'patient', 'pharmacist', 'doctor'];
+    const validRoles = ['admin', 'doctor', 'patient', 'pharmacist'];
     if (!role || !validRoles.includes(role)) {
+      console.error("[AUTH] Invalid role received:", role);
       throw new Error('Invalid role selection');
     }
 
-    // Issue JWT token
+    console.log("[AUTH] Creating token for user:", temporaryInfo.user?.id);
+    
+    // Create JWT token
+
     const token = jwt.sign(
       {
         id: temporaryInfo.user.id,
@@ -157,6 +162,8 @@ const exchangeCode = async (req, res) => {
       { expiresIn: '5m' }
     );
 
+    console.log("[AUTH] Token created successfully");
+
     return res.json({
       success: true,
       token,
@@ -166,10 +173,11 @@ const exchangeCode = async (req, res) => {
         name: temporaryInfo.user.name,
         birthday: temporaryInfo.user.birthday,
       },
-      role: role
+      role: temporaryInfo.role
+
     });
   } catch (error) {
-    console.error('[EXCHANGE] Error:', error);
+    console.error('[AUTH] Exchange error:', error);
     return res.status(400).json({ error: error.message });
   }
 };
