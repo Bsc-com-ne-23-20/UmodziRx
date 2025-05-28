@@ -3,6 +3,7 @@ import { FiPackage, FiCheckSquare, FiAlertTriangle, FiTrendingUp, FiX, FiInfo } 
 import axios from 'axios';
 import MetricsCard from '../../common/MetricsCard';
 import AppointmentsTable from '../../common/AppointmentsTable';
+import { getUserId } from '../../../utils/authUtils';
 
 const PharmacistDashboardContent = ({ activeView, handleNavigation }) => {
   const initializeMetrics = () => [
@@ -64,13 +65,12 @@ const PharmacistDashboardContent = ({ activeView, handleNavigation }) => {
     setShowPrescriptionModal(false);
     setSelectedPrescription(null);
   };
-
   // Fetch pharmacist's dispense history from blockchain
   const fetchDispenseHistory = async () => {
     setLoading(true);
     setError('');
     try {
-      const pharmacistId = localStorage.getItem('pharmaId');
+      const pharmacistId = getUserId('pharmaId');
       console.log('Fetching dispense history for pharmacist:', pharmacistId);
       
       // Use the blockchain API endpoint for dispense history

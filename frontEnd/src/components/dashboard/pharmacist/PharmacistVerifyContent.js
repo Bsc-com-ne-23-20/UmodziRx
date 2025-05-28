@@ -13,6 +13,7 @@ import {
 import { useLocation } from 'react-router-dom';
 import axios from 'axios';
 import {useNavigate} from 'react-router-dom';
+import { getUserId } from '../../../utils/authUtils';
 
 const PharmacistVerifyContent = ({ activeView, handleNavigation }) => {
   const [verifiedPatient, setVerifiedPatient] = useState(null);
@@ -293,9 +294,8 @@ const PharmacistVerifyContent = ({ activeView, handleNavigation }) => {
       if (!prescription) {
         throw new Error('Prescription not found');
       }
-      
-      // Get pharmacist ID from localStorage
-      const pharmacistId = localStorage.getItem('pharmaId');
+        // Get pharmacist ID from localStorage
+      const pharmacistId = getUserId('pharmaId');
       const patientId = retrievedPatient.id;
       
       // Try the new endpoint first
@@ -369,7 +369,7 @@ const PharmacistVerifyContent = ({ activeView, handleNavigation }) => {
     setError(null);
     try {
       // Get pharmacist ID from localStorage
-      const pharmacistId = localStorage.getItem('pharmaId');
+      const pharmacistId = getUserId('pharmaId');
       patientId = retrievedPatient.id;
       
       // Track successful and failed dispensations
@@ -969,11 +969,10 @@ const PharmacistVerifyContent = ({ activeView, handleNavigation }) => {
                         setDispensingNotes(prev => ({
                           ...prev,
                           [selectedPrescription.prescriptionId]: 'Dispensed via quick action'
-                        }));
-                      }
+                        }));                      }
                       
                       // Use the new endpoint directly
-                      const pharmacistId = localStorage.getItem('pharmaId');
+                      const pharmacistId = getUserId('pharmaId');
                       const patientId = retrievedPatient.id;
                       
                       setDispenseStatus(prev => ({
