@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
+import { getRoleSpecificItem, setRoleSpecificItem, getCurrentUserRole } from '../utils/storageUtils';
 
 const useDarkMode = () => {
   const [darkMode, setDarkMode] = useState(() => {
-    const saved = localStorage.getItem('darkMode');
+    const currentRole = getCurrentUserRole();
+    const saved = getRoleSpecificItem('darkMode', currentRole);
     return saved ? JSON.parse(saved) : false;
   });
 
@@ -12,7 +14,8 @@ const useDarkMode = () => {
     } else {
       document.documentElement.classList.remove('dark');
     }
-    localStorage.setItem('darkMode', JSON.stringify(darkMode));
+    const currentRole = getCurrentUserRole();
+    setRoleSpecificItem('darkMode', JSON.stringify(darkMode), currentRole);
   }, [darkMode]);
 
   const toggleDarkMode = () => {

@@ -1,10 +1,16 @@
-import { Outlet, useNavigate } from "react-router-dom";
+import { Outlet, useNavigate, Navigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useEffect } from "react";
+import { getRoleSpecificItem, getCurrentUserRole } from "../utils/storageUtils";
 
 const ProtectedRoute = ({ allowedRoles }) => {
-  const { loading } = useAuth();
-  const navigate = useNavigate();
+  const { authState, loading, isTokenExpired } = useAuth();
+  const navigate = useNavigate();  
+  // Get user data from auth state or localStorage
+  const currentRole = getCurrentUserRole();
+  const token = authState?.token || getRoleSpecificItem('token', currentRole);
+  const user = authState?.user;
+  const userRole = user?.role || currentRole;
 
   // Store current path for back button handling
   useEffect(() => {
@@ -22,23 +28,23 @@ const ProtectedRoute = ({ allowedRoles }) => {
       window.handleNavigation = undefined;
     };
   }, [navigate]);
-
   if (loading) {
     return <div className="flex justify-center items-center h-screen text-lg">Loading...</div>;
   }
 
   // Check if token exists
-  // if (!token || isTokenExpired()) {
-  //   return <Navigate to="/session-expired" replace />;
-  // }
+  if (!token || isTokenExpired()) {
+    console.log("No token or token expired, redirecting to session expired");
+    return <Navigate to="/session-expired" replace />;
+  }
 
   // Check if user has the required role
-  // First check user object from auth state, then fallback to localStorage for development
-  // const role = user?.role || userRole;
+  const role = user?.role || userRole;
   
-  // if (!role || !allowedRoles.includes(role)) {
-  //   return <Navigate to="/unauthorized" replace />;
-  // }
+  if (!role || !allowedRoles.includes(role)) {
+    console.log(`Access denied. User role: ${role}, Required roles: ${allowedRoles}`);
+    return <Navigate to="/unauthorized" replace />;
+  }
 
   return <Outlet />;
 };
