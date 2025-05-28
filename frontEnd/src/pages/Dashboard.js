@@ -8,7 +8,9 @@ import {
   FiCheckSquare, 
   FiPackage,
   FiSettings,
-  FiUserPlus
+  FiUserPlus,
+  FiMapPin,
+  FiUser
 } from 'react-icons/fi';
 
 import DashboardLayout from '../components/layout/DashboardLayout';
@@ -26,6 +28,8 @@ import PharmacistAnalyticsContent from '../components/dashboard/pharmacist/Pharm
 import PatientDashboardContent from '../components/dashboard/patient/PatientDashboardContent';
 import PatientPrescriptionsContent from '../components/dashboard/patient/PatientPrescriptionsContent';
 import PatientAnalyticsContent from '../components/dashboard/patient/PatientAnalyticsContent';
+import HealthcareLocationsContent from '../components/dashboard/patient/HealthcareLocationsContent';
+import PatientProfileContent from '../components/dashboard/patient/PatientProfileContent';
 import UserManagement from '../components/UserManagement';
 
 /**
@@ -140,6 +144,18 @@ const Dashboard = () => {
             label: 'Analytics',
             id: 'analytics',
             onClick: () => setActiveView('analytics')
+          },
+          {
+            icon: FiMapPin,
+            label: 'Healthcare Locations',
+            id: 'locations',
+            onClick: () => setActiveView('locations')
+          },
+          {
+            icon: FiUser,
+            label: 'My Profile',
+            id: 'profile',
+            onClick: () => setActiveView('profile')
           }
         ];
       case 'admin':
@@ -215,6 +231,12 @@ const Dashboard = () => {
             return <PatientPrescriptionsContent />;
           case 'analytics':
             return <PatientAnalyticsContent />;
+          case 'locations':
+            return <HealthcareLocationsContent />;
+          case 'profile':
+            return <PatientProfileContent />;
+          case 'profile':
+            return <PatientProfileContent />;
           default:
             return <PatientDashboardContent />;
         }
