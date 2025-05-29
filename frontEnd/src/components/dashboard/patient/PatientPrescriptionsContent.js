@@ -3,15 +3,11 @@ import { FiSearch, FiFilter, FiX, FiDownload, FiCalendar, FiAlertCircle, FiInfo 
 import axios from 'axios';
 import AppointmentsTable from '../../common/AppointmentsTable';
 import PrescriptionQRCode from '../../common/PrescriptionQRCode';
-import { getRoleSpecificItem } from '../../../utils/storageUtils';
+import useAuth from '../../../hooks/useAuth';
 
 // Prescription modal component 
 const PrescriptionModal = ({ prescription, onClose }) => {
   if (!prescription) return null;
-  
-  // Debug the prescription object in the modal
-  console.log('Prescription in modal:', prescription);
-  console.log('Diagnosis in modal:', prescription.diagnosis);
   
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4">
@@ -110,15 +106,28 @@ const PatientPrescriptionsContent = ({ patientInfo = {} }) => {
   const [prescriptionsLoading, setPrescriptionsLoading] = useState(true);
   const [prescriptionsError, setPrescriptionsError] = useState(null);
   
-  // Use patientInfo prop if available, otherwise fallback to localStorage
-  const patientId = patientInfo?.id || localStorage.getItem('patientId') || 'PID-001';
-  const patientName = patientInfo?.name || localStorage.getItem('patientName') || 'John Banda';
+  const { getUserInfo } = useAuth();
+  const currentUser = getUserInfo();
   
-  const handlePrescriptionClick = useCallback((prescription) => {
-    // Debug the prescription object before setting it
-    console.log('Clicked prescription:', prescription);
-    console.log('Diagnosis in clicked prescription:', prescription.diagnosis);
-    
+  // Check if we're in "Patient View" mode 
+  const isPatientViewMode = localStorage.getItem('originalRole') && localStorage.getItem('originalRole') !== 'patient';
+  
+  // Use the appropriate ID based on the context
+  // 1. If patientInfo is provided directly, use that
+  // 2. If we're in "Patient View" mode, use the ID that was preserved when switching
+  // 3. Otherwise use the current user's ID
+  const patientId = patientInfo?.id || 
+                   (isPatientViewMode ? localStorage.getItem('originalId') : null) || 
+                   currentUser?.id || 
+                   localStorage.getItem('patientId');
+                   
+  const patientName = patientInfo?.name || 
+                     (isPatientViewMode ? localStorage.getItem('originalName') : null) || 
+                     currentUser?.name || 
+                     localStorage.getItem('patientName') || 
+                     'User';
+  
+  const handlePrescriptionClick = useCallback((prescription) => {   
     // Ensure diagnosis is present
     const prescriptionWithDiagnosis = {
       ...prescription,
@@ -141,31 +150,14 @@ const PatientPrescriptionsContent = ({ patientInfo = {} }) => {
         setPrescriptionsLoading(true);
         setPrescriptionsError(null);
         
-        // Debug the URL being used - using the same endpoint as dashboard
+        // Debug the URL being used 
         const url = `http://localhost:5000/patient/prescriptions?patientId=${patientId}`;
-        console.log('Fetching from URL:', url);
         
         const response = await axios.get(url, {
           headers: {
             'Content-Type': 'application/x-www-form-urlencoded'
           }
         });
-        
-        console.log('API response:', JSON.stringify(response.data, null, 2));
-        
-        // Check if the response contains diagnosis fields
-        if (response.data.data && response.data.data.history) {
-          const hasDiagnosisInResponse = response.data.data.history.some(item => {
-            if (item.prescriptions && Array.isArray(item.prescriptions)) {
-              return item.prescriptions.some(p => p.diagnosis);
-            }
-            if (item.Value && item.Value.prescriptions) {
-              return item.Value.prescriptions.some(p => p.diagnosis || p.Diagnosis);
-            }
-            return false;
-          });
-          console.log('Has diagnosis in API response:', hasDiagnosisInResponse);
-        }
         
         // Check if the request was successful
         if (!response.data.success) {
@@ -207,8 +199,6 @@ const PatientPrescriptionsContent = ({ patientInfo = {} }) => {
                 .filter(item => item.prescriptions && Array.isArray(item.prescriptions))
                 .flatMap(item => {
                   return item.prescriptions.map(prescription => {
-                    // Debug the diagnosis field
-                    console.log('Prescription diagnosis:', prescription.diagnosis);
                     
                     return {
                       id: prescription.prescriptionId,
@@ -266,9 +256,6 @@ const PatientPrescriptionsContent = ({ patientInfo = {} }) => {
                     const dispensingTimestamp = prescription.dispensingTimestamp || prescription.DispensingTimestamp;
                     const createdBy = prescription.createdBy || prescription.CreatedBy;
                     
-                    // Debug the diagnosis field
-                    console.log('Prescription diagnosis (Value format):', diagnosis);
-                    
                     return {
                       id: prescriptionId,
                       patientName: patientName,
@@ -288,12 +275,10 @@ const PatientPrescriptionsContent = ({ patientInfo = {} }) => {
                   });
                 });
             }
-          } 
-          
-          // Handle doctor endpoint format as fallback
-          if (formattedPrescriptions.length === 0 && result.data && result.data.prescriptions) {
+          } else if (result.data && result.data.prescriptions && Array.isArray(result.data.prescriptions)) {
+            // Handle doctor endpoint format
             formattedPrescriptions = result.data.prescriptions.map(prescription => {
-              // Handle different case variations in prescription fields
+              // Extract fields, handling different possible field names
               const prescriptionId = prescription.prescriptionId || prescription.PrescriptionId;
               const timestamp = prescription.timestamp || prescription.Timestamp;
               const medicationName = prescription.medicationName || prescription.MedicationName;
@@ -306,9 +291,6 @@ const PatientPrescriptionsContent = ({ patientInfo = {} }) => {
               const dispensingPharmacist = prescription.dispensingPharmacist || prescription.DispensingPharmacist;
               const dispensingTimestamp = prescription.dispensingTimestamp || prescription.DispensingTimestamp;
               const createdBy = prescription.createdBy || prescription.CreatedBy;
-              
-              // Debug the diagnosis field
-              console.log('Prescription diagnosis (doctor format):', diagnosis);
               
               return {
                 id: prescriptionId,
@@ -332,13 +314,6 @@ const PatientPrescriptionsContent = ({ patientInfo = {} }) => {
           console.error('Error formatting prescription data:', formatError);
         }
         
-        // Debug the formatted prescriptions
-        console.log('Formatted prescriptions:', formattedPrescriptions);
-        
-        // Check if diagnosis is present in the formatted prescriptions
-        const hasDiagnosis = formattedPrescriptions.some(p => p.diagnosis);
-        console.log('Has diagnosis:', hasDiagnosis);
-        
         setPrescriptions(formattedPrescriptions);
       } catch (error) {
         console.error('Error fetching prescriptions:', error);
@@ -351,7 +326,6 @@ const PatientPrescriptionsContent = ({ patientInfo = {} }) => {
       }
     };
     
-    // Only fetch if we have a patientId
     if (patientId) {
       fetchPrescriptions();
     } else {
@@ -359,14 +333,13 @@ const PatientPrescriptionsContent = ({ patientInfo = {} }) => {
     }
   }, [patientId]);
 
-  // No filtering logic needed to match dashboard implementation
+  // Add a header message when in Patient View mode
 
   return (
-    <div className="max-w-7xl mx-auto space-y-8 px-4 sm:px-6">
-      {/* Header Section */}
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 space-y-8">
       <div className="mt-2">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">Prescriptions History</h1>
-        <p className="text-gray-600 dark:text-gray-400">View and manage all your prescription records</p>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">Prescriptions</h1>
+        <p className="text-gray-600 dark:text-gray-400">View and manage your prescription history</p>
       </div>
       
       {/* Prescriptions Table */}
@@ -401,33 +374,19 @@ const PatientPrescriptionsContent = ({ patientInfo = {} }) => {
               <FiInfo className="h-5 w-5 mr-2" />
               <h3 className="font-medium">No Prescriptions Found</h3>
             </div>
-            <p className="text-gray-600 dark:text-gray-400 text-sm">
-              There are no prescriptions available for this patient.
-            </p>
+            <p className="text-gray-600 dark:text-gray-400 text-sm">There are no prescriptions available for this patient.</p>
           </div>
         ) : (
-          <>
-            {/* Debug the prescriptions data */}
-            <div style={{ display: 'none' }}>
-              {prescriptions.map((p, i) => (
-                <div key={i}>
-                  <p>Prescription {i}: {p.medications}</p>
-                  <p>Diagnosis: {p.diagnosis || 'No diagnosis'}</p>
-                </div>
-              ))}
-            </div>
-            
-            <AppointmentsTable 
-              appointments={prescriptions} 
-              isForPrescriptions={true}
-              isPatientView={true}
-              onRowClick={handlePrescriptionClick}
-            />
-          </>
+          <AppointmentsTable 
+            appointments={prescriptions} 
+            isForPrescriptions={true}
+            isPatientView={true}
+            onRowClick={handlePrescriptionClick}
+          />
         )}
       </div>
       
-      {/* Prescription Detail Modal - Using the extracted component */}
+      {/* Prescription Detail Modal */}
       {showPrescriptionModal && selectedPrescription && (
         <PrescriptionModal 
           prescription={selectedPrescription} 

@@ -135,15 +135,14 @@ class PrescriptionController {
           function: "ReadAsset",
           args: patientId
         }, {
-          maxRetries: 6,       // More retries
-          initialDelay: 3000,  // Start with 3 seconds
-          maxDelay: 30000      // Max 30 seconds between retries
+          maxRetries: 6,      
+          initialDelay: 3000, 
+          maxDelay: 30000      
         });
         
         console.log(`✅ Verified prescription creation for patient ${patientId}`);
       } catch (verifyError) {
-        // This won't affect the client response since we're already responded
-        console.error(`⚠️ Could not verify prescription creation: ${verifyError.message}`);
+        console.error(`Could not verify prescription creation: ${verifyError.message}`);
       }
     } catch (error) {
       console.error('Error:', error.response?.data || error.message);
@@ -162,14 +161,12 @@ class PrescriptionController {
     }
 
     try {
-      // Query blockchain with the correct format
-      // Note: The blockchain API expects args to be an array
       const response = await axios.get(`${process.env.BLOCKCHAIN_API_URL || "http://localhost:45000"}/query`, {
         params: {
           channelid: process.env.CHANNEL_ID || "mychannel",
           chaincodeid: process.env.CHAINCODE_ID || "basic",
-          function: "ReadAsset", // Using the correct function from smartcontract.go
-          args: patientId, // This will be sent as args[]=patientId
+          function: "ReadAsset",
+          args: patientId, 
         },
       });
 
@@ -184,7 +181,6 @@ class PrescriptionController {
       let rawData = response.data;
       console.log("processing query", response.data);
       
-      // Check for "does not exist" error in the raw data
       if (typeof rawData === "string" && rawData.includes("does not exist")) {
         // This is not an error - it just means the patient has no prescriptions
         return res.status(200).json({
@@ -200,7 +196,7 @@ class PrescriptionController {
 
       let assetData;
       try {
-        assetData = processBlockchainResponse(rawData); // Use helper function
+        assetData = processBlockchainResponse(rawData); 
       } catch (err) {
         return res.status(500).json({
           success: false,
@@ -239,6 +235,7 @@ class PrescriptionController {
           });
         });
       }
+      console.log("prescriptionsForPatient", prescription);
 
       if (prescriptionsForPatient.length === 0) {
         return res.status(404).json({
@@ -268,8 +265,6 @@ class PrescriptionController {
     }
   }
 
-
- 
   static  verifypatient = async (req, res) => {
     const { code, state } = req.query;
     console.log("verifypatient at doctor called,,,,");
@@ -405,9 +400,6 @@ class PrescriptionController {
         note: note || "N/A"
       };
       
-      // Log the dispensation data for debugging
-      console.log(`Dispensation data sent to blockchain: ${JSON.stringify(dispensationData)}`);
-      
       // The args should be the JSON string
       requestData.append('args', JSON.stringify(dispensationData));
 
@@ -417,9 +409,6 @@ class PrescriptionController {
         requestData,
         { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
       );
-
-      // Log the raw blockchain response for debugging
-      console.log(`Raw blockchain response from dispensation: ${JSON.stringify(blockchainResponse.data)}`);
 
       // Check if the response contains an error
       if (typeof blockchainResponse.data === 'string' && blockchainResponse.data.includes('Error:')) {
@@ -500,10 +489,8 @@ class PrescriptionController {
                 prescriptions = JSON.parse(jsonStr);
             } catch (e) {
                 console.error('[DOCTOR] Failed to parse response as JSON:', e);
-                console.log('[DOCTOR] Response data:', response.data.substring(0, 200)); // Log the beginning of the response
                 
-                // Try to extract JSON from response string - look for array pattern
-                const jsonMatch = response.data.match(/\[.*\]/s); // Add 's' flag to match across lines
+                const jsonMatch = response.data.match(/\[.*\]/s);
                 if (jsonMatch) {
                     try {
                         prescriptions = JSON.parse(jsonMatch[0]);
@@ -545,7 +532,7 @@ class PrescriptionController {
         if (!Array.isArray(prescriptions)) {
             prescriptions = [];
         }
-
+        console.log(`[DOCTOR] Found ${response.data.prescriptions,response.data} prescriptions for doctor ID: ${doctorId}`);
         // Format the prescriptions consistently
         const formattedPrescriptions = prescriptions.map(p => ({
             diagnosis: p.Diagnosis || 'Not specified',
@@ -573,7 +560,6 @@ class PrescriptionController {
     } catch (error) {
         console.error("[DOCTOR] Error retrieving prescription history:", error);
         
-        // Handle "no prescriptions found" case specially
         if (error.response?.data?.includes?.('no prescriptions found')) {
             return res.status(200).json({
                 success: true,
