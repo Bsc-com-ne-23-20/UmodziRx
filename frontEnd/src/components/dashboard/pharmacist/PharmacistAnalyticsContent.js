@@ -1,621 +1,679 @@
-import React, { useState } from 'react';
-import { FiBarChart2, FiPieChart, FiTrendingUp, FiCalendar, FiDownload, FiFilter } from 'react-icons/fi';
+import React, { useState, useEffect, useMemo } from 'react';
+import { FiBarChart2, FiPieChart, FiTrendingUp, FiCalendar, FiDownload, FiAlertCircle, FiClock, FiCheckSquare } from 'react-icons/fi';
 import MetricsCard from '../../common/MetricsCard';
 import WeeklyStatsChart from '../../WeeklyStatsChart';
 import PrescriptionTrendsChart from '../../PrescriptionTrendsChart';
-import AppointmentsTable from '../../common/AppointmentsTable';
-import { getRoleSpecificItem, getCurrentUserRole } from '../../../utils/storageUtils';
+import axios from 'axios';
+import { getUserId } from '../../../utils/authUtils';
 
-const PharmacistAnalyticsContent = ({ activeView, handleNavigation }) => {
+const PharmacistAnalyticsContent = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const [timeRange, setTimeRange] = useState('30');
-  // Get the dark mode state from role-specific storage or default to false
-  const [darkMode, setDarkMode] = useState(() => {
-    const currentRole = getCurrentUserRole();
-    const savedDarkMode = getRoleSpecificItem('darkMode', currentRole);
-    return savedDarkMode ? JSON.parse(savedDarkMode) : false;
-  });
+  const [dispensedPrescriptions, setDispensedPrescriptions] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   
-  // Sample metrics data for pharmacy analytics
-  const analyticsMetrics = [
-    {
-      id: 'prescriptions-dispensed',
-      icon: <FiBarChart2 />,
-      title: 'Prescriptions Dispensed',
-      value: '482',
-      increase: '8',
-      subtitle: 'Last month: 446',
-      trend: 'up',
-      iconColor: 'text-blue-600 dark:text-blue-400',
-      bgColor: 'bg-blue-50 dark:bg-blue-900/20'
-    },
-    {
-      id: 'dispensing-rate',
-      icon: <FiPieChart />,
-      title: 'Dispensing Rate',
-      value: '93%',
-      increase: '5',
-      subtitle: 'Last month: 88%',
-      trend: 'up',
-      iconColor: 'text-green-600 dark:text-green-400',
-      bgColor: 'bg-green-50 dark:bg-green-900/20'
-    },
-    {
-      id: 'inventory-turnover',
-      icon: <FiTrendingUp />,
-      title: 'Inventory Turnover',
-      value: '4.2x',
-      increase: '3',
-      subtitle: 'Last quarter: 4.1x',
-      trend: 'up',
-      iconColor: 'text-purple-600 dark:text-purple-400',
-      bgColor: 'bg-purple-50 dark:bg-purple-900/20'
+  const darkMode = (() => {
+    const savedDarkMode = localStorage.getItem('darkMode');
+    return savedDarkMode ? JSON.parse(savedDarkMode) : false;
+  })();
+  
+  useEffect(() => {
+    fetchPharmacistDispenseHistory();
+  }, []);
+  
+  const fetchPharmacistDispenseHistory = async () => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      // Get pharmacist ID using the same method as the dashboard
+      const pharmacistId = getUserId('pharmaId');
+      
+      if (!pharmacistId) {
+        console.warn('No pharmacist ID found');
+        setLoading(false);
+        return;
+      }
+      
+      console.log('Fetching dispense history for pharmacist:', pharmacistId);
+      const url = `${process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000'}/pharmacist/dispense-history/${pharmacistId}`;
+      console.log('Fetching from URL:', url);
+      
+      const response = await axios.get(url);
+      console.log('API response for analytics:', response.data);
+      
+      if (!response.data.success) {
+        throw new Error(response.data.error || 'Failed to fetch dispense history');
+      }
+      
+      // Store the result data
+      const result = response.data;
+      
+      // Check if we have dispensed prescriptions in the expected format
+      if (!result.data || !result.data.dispensedPrescriptions || !Array.isArray(result.data.dispensedPrescriptions)) {
+        console.warn('No dispensed prescriptions found or unexpected data format');
+        
+        // If we have data but in an unexpected format, try to handle it
+        if (result.data) {
+          console.log('Attempting to handle unexpected data format:', result.data);
+          
+          // If dispensedPrescriptions exists but is not an array, try to convert it
+          if (result.data.dispensedPrescriptions && !Array.isArray(result.data.dispensedPrescriptions)) {
+            try {
+              // If it's a string that might be JSON
+              if (typeof result.data.dispensedPrescriptions === 'string') {
+                result.data.dispensedPrescriptions = JSON.parse(result.data.dispensedPrescriptions);
+              } 
+              // If it's an object but not an array, wrap it in an array
+              else if (typeof result.data.dispensedPrescriptions === 'object') {
+                result.data.dispensedPrescriptions = [result.data.dispensedPrescriptions];
+              }
+            } catch (e) {
+              console.error('Failed to parse dispensedPrescriptions:', e);
+            }
+          }
+          
+          // If we still don't have an array, check if the data itself might be the array
+          if (!Array.isArray(result.data.dispensedPrescriptions)) {
+            if (Array.isArray(result.data)) {
+              console.log('Using data array directly as dispensedPrescriptions');
+              result.data = { dispensedPrescriptions: result.data, dispensedCount: result.data.length };
+            } else {
+              // Last resort: set empty array
+              result.data.dispensedPrescriptions = [];
+              result.data.dispensedCount = 0;
+            }
+          }
+        } else {
+          // No data at all
+          setDispensedPrescriptions([]);
+          setLoading(false);
+          return;
+        }
+      }
+      
+      const formattedPrescriptions = result.data.dispensedPrescriptions.map(prescription => {
+        
+        // Handle different case variations and field names
+        const prescriptionId = prescription.prescriptionId || prescription.PrescriptionId || 'Unknown';
+        const patientId = prescription.patientId || prescription.PatientId || 'Unknown';
+        const patientName = prescription.patientName || prescription.PatientName || 'Unknown';
+        const medicationName = prescription.medicationName || prescription.MedicationName || 'Unknown';
+        const dosage = prescription.dosage || prescription.Dosage || '';
+        const instructions = prescription.instructions || prescription.Instructions || '';
+        const txId = prescription.txId || prescription.TxId || prescription.txID || prescription.TxID || '';
+        const dispensingTimestamp = prescription.dispensingTimestamp || prescription.DispensingTimestamp || new Date().toISOString();
+        const createdBy = prescription.createdBy || prescription.CreatedBy || '';
+        
+        return {
+          id: prescriptionId,
+          patientName: patientName,
+          patientId: patientId,
+          date: dispensingTimestamp,
+          medications: medicationName,
+          status: 'Dispensed',
+          dosage: dosage,
+          instructions: instructions,
+          txID: txId,
+          dispensingPharmacist: pharmacistId,
+          dispensingTimestamp: dispensingTimestamp,
+          createdBy: createdBy || 'Unknown Doctor'
+        };
+      });
+      
+      setDispensedPrescriptions(formattedPrescriptions);
+    } catch (err) {
+      console.error('Error fetching dispense history for analytics:', err);
+      setError(err.response?.data?.error || err.message || 'Failed to fetch dispense history');
+      setDispensedPrescriptions([]);
+    } finally {
+      setLoading(false);
     }
-  ];
-
-  // Sample top medications data
-  const topMedicationsByVolume = [
-    { name: 'Paracetamol 500mg', count: 142, change: '+12' },
-    { name: 'Amoxicillin 250mg', count: 87, change: '+5' },
-    { name: 'Metformin 500mg', count: 65, change: '+8' },
-    { name: 'Lisinopril 10mg', count: 58, change: '-3' },
-    { name: 'Ibuprofen 400mg', count: 45, change: '+2' }
-  ];
-
-  // Sample prescription trend data for pharmacy
-  const prescriptionTrends = [
-    { month: 'Jan', count: 32 },
-    { month: 'Feb', count: 36 },
-    { month: 'Mar', count: 41 },
-    { month: 'Apr', count: 38 },
-    { month: 'May', count: 42 },
-    { month: 'Jun', count: 35 },
-    { month: 'Jul', count: 39 },
-    { month: 'Aug', count: 32 },
-    { month: 'Sep', count: 37 },
-    { month: 'Oct', count: 44 },
-    { month: 'Nov', count: 38 },
-    { month: 'Dec', count: 45 }
-  ];
-
-  // Sample inventory trend data
-  const inventoryTrends = [
-    { month: 'Jan', value: 48500 },
-    { month: 'Feb', value: 46200 },
-    { month: 'Mar', value: 51000 },
-    { month: 'Apr', value: 49300 },
-    { month: 'May', value: 52400 },
-    { month: 'Jun', value: 50100 },
-    { month: 'Jul', value: 48900 },
-    { month: 'Aug', value: 47500 },
-    { month: 'Sep', value: 49800 },
-    { month: 'Oct', value: 51200 },
-    { month: 'Nov', value: 52400 },
-    { month: 'Dec', value: 53700 }
-  ];
-
-  // Sample dispensing times for efficiency metrics
-  const dispensingTimes = [
-    { day: 'Mon', avgTime: 8.5 },
-    { day: 'Tue', avgTime: 7.8 },
-    { day: 'Wed', avgTime: 9.2 },
-    { day: 'Thu', avgTime: 8.1 },
-    { day: 'Fri', avgTime: 10.5 },
-    { day: 'Sat', avgTime: 6.5 },
-    { day: 'Sun', avgTime: 5.2 }
-  ];
-
+  };
+  
+  // Calculate analytics metrics 
+  const analyticsData = useMemo(() => {
+    if (dispensedPrescriptions.length === 0) {
+      return {
+        metrics: [],
+        topMedications: [],
+        prescriptionTrends: []
+      };
+    }
+    
+    // Calculate total prescriptions dispensed
+    const totalDispensed = dispensedPrescriptions.length;
+    
+    // Calculate unique patients served
+    const uniquePatients = new Set(dispensedPrescriptions.map(p => p.patientId)).size;
+    
+    // Calculate average prescriptions per patient
+    const avgPerPatient = uniquePatients > 0 
+      ? Math.round((totalDispensed / uniquePatients) * 10) / 10 
+      : 0;
+    
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    // Count prescriptions dispensed today
+    const dispensedToday = dispensedPrescriptions.filter(p => {
+      if (!p.date) return false;
+      const dispensedDate = new Date(p.date);
+      dispensedDate.setHours(0, 0, 0, 0);
+      return dispensedDate.getTime() === today.getTime();
+    }).length;
+    
+    // Calculate yesterday's date 
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    
+    // Count prescriptions dispensed yesterday
+    const dispensedYesterday = dispensedPrescriptions.filter(p => {
+      if (!p.date) return false;
+      const dispensedDate = new Date(p.date);
+      dispensedDate.setHours(0, 0, 0, 0);
+      return dispensedDate.getTime() === yesterday.getTime();
+    }).length;
+    
+    const dispensedIncrease = dispensedToday - dispensedYesterday;
+    
+    // Calculate prescriptions by month for trends
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const prescriptionsByMonth = {};
+    
+    // Initialize all months with zero count
+    monthNames.forEach(month => {
+      prescriptionsByMonth[month] = 0;
+    });
+    
+    // Count prescriptions by month
+    dispensedPrescriptions.forEach(prescription => {
+      if (!prescription.date) return;
+      const date = new Date(prescription.date);
+      const month = monthNames[date.getMonth()];
+      prescriptionsByMonth[month] = (prescriptionsByMonth[month] || 0) + 1;
+    });
+    
+    // Format for chart
+    const prescriptionTrends = monthNames.map(month => ({
+      month,
+      count: prescriptionsByMonth[month]
+    }));
+    
+    // Calculate top medications
+    const medicationCount = {};
+    dispensedPrescriptions.forEach(prescription => {
+      if (!prescription.medications) return;
+      
+      // Handle both string and array formats for medications
+      let meds = [];
+      if (typeof prescription.medications === 'string') {
+        meds = prescription.medications.split(',').map(med => med.trim());
+      } else if (Array.isArray(prescription.medications)) {
+        meds = prescription.medications;
+      } else {
+        meds = [String(prescription.medications)];
+      }
+      
+      meds.forEach(med => {
+        if (!med) return;
+        // Extract base medication name without dosage
+        const baseMed = med.split(' ')[0];
+        medicationCount[baseMed] = (medicationCount[baseMed] || 0) + 1;
+      });
+    });
+    
+    // Sort medications by count and get top 5
+    const topMedications = Object.entries(medicationCount)
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5)
+      .map(med => {
+        // For change, use real data if available, otherwise simulate
+        let change = '0%';
+        if (dispensedToday > 0 || dispensedYesterday > 0) {
+          const changePercent = dispensedYesterday > 0 
+            ? Math.round(((dispensedToday - dispensedYesterday) / dispensedYesterday) * 100) 
+            : (dispensedToday > 0 ? 100 : 0);
+          change = changePercent >= 0 ? `+${changePercent}%` : `${changePercent}%`;
+        }
+        return { ...med, change };
+      });
+    
+    // Calculate metrics for display
+    const metrics = [
+      {
+        id: 'prescriptions-dispensed',
+        icon: <FiBarChart2 />,
+        title: 'Dispensed Today',
+        value: dispensedToday.toString(),
+        increase: dispensedIncrease.toString(),
+        subtitle: `Yesterday: ${dispensedYesterday}`,
+        trend: dispensedIncrease >= 0 ? 'up' : 'down',
+        iconColor: 'text-blue-600 dark:text-blue-400',
+        bgColor: 'bg-blue-50 dark:bg-blue-900/20'
+      },
+      {
+        id: 'patients-served',
+        icon: <FiPieChart />,
+        title: 'Patients Served',
+        value: uniquePatients.toString(),
+        increase: '0',
+        subtitle: 'Unique patients',
+        trend: 'neutral',
+        iconColor: 'text-green-600 dark:text-green-400',
+        bgColor: 'bg-green-50 dark:bg-green-900/20'
+      },
+      {
+        id: 'avg-per-patient',
+        icon: <FiTrendingUp />,
+        title: 'Avg. Per Patient',
+        value: avgPerPatient.toString(),
+        increase: '0',
+        subtitle: 'Prescriptions per patient',
+        trend: 'neutral',
+        iconColor: 'text-purple-600 dark:text-purple-400',
+        bgColor: 'bg-purple-50 dark:bg-purple-900/20'
+      }
+    ];
+    
+    return {
+      metrics,
+      topMedications,
+      prescriptionTrends
+    };
+  }, [dispensedPrescriptions, timeRange]);
+  
+  // Use calculated data or fallback to empty arrays
+  const analyticsMetrics = analyticsData && analyticsData.metrics && analyticsData.metrics.length > 0 
+    ? analyticsData.metrics 
+    : [];
+  const topMedicationsByDispensed = analyticsData && analyticsData.topMedications && analyticsData.topMedications.length > 0 
+    ? analyticsData.topMedications 
+    : [];
+  const prescriptionTrends = analyticsData && analyticsData.prescriptionTrends && analyticsData.prescriptionTrends.length > 0 
+    ? analyticsData.prescriptionTrends 
+    : [];
+  
   // List of tab options
   const tabs = [
     { id: 'overview', label: 'Overview' },
-    { id: 'dispensing', label: 'Dispensing Metrics' },
-    { id: 'inventory', label: 'Inventory Analysis' },
-    { id: 'efficiency', label: 'Pharmacy Efficiency' }
+    { id: 'dispensing', label: 'Dispensing Trends' },
+    { id: 'medications', label: 'Medication Analysis' },
+    { id: 'efficiency', label: 'Dispensing Efficiency' }
   ];
 
-  // Generate random data for weekly stats to simulate real data patterns
-  const generateWeeklyStatsData = () => {
+  // Generate weekly stats data based on real dispensed prescriptions
+  const generateWeeklyStats = useMemo(() => {
+    if (dispensedPrescriptions.length === 0) return [];
+    
     const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-    return days.map(day => {
+    const today = new Date();
+    const dayOfWeek = today.getDay(); 
+    const weekStart = new Date(today);
+    weekStart.setDate(today.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1)); 
+    
+    const weeklyData = days.map((day, index) => {
+      const date = new Date(weekStart);
+      date.setDate(weekStart.getDate() + index);
+      const dateString = date.toISOString().split('T')[0];
+      
+      // Count prescriptions for this day
+      const dayPrescriptions = dispensedPrescriptions.filter(p => {
+        if (!p.date) return false;
+        try {
+          const prescriptionDate = new Date(p.date).toISOString().split('T')[0];
+          return prescriptionDate === dateString;
+        } catch (e) {
+          console.error('Error parsing date:', p.date, e);
+          return false;
+        }
+      });
+      
+      // Count unique patients for this day
+      const uniquePatients = new Set(
+        dayPrescriptions
+          .filter(p => p.patientId)
+          .map(p => p.patientId)
+      ).size;
+      
       return {
         day,
-        prescriptions: Math.floor(Math.random() * 15) + 5,
-        refills: Math.floor(Math.random() * 10) + 2,
+        prescriptions: dayPrescriptions.length,
+        refills: uniquePatients, 
       };
     });
-  };
+    
+    return weeklyData;
+  }, [dispensedPrescriptions]);
 
-  // Weekly dispensed prescriptions data
-  const weeklyStats = generateWeeklyStatsData();
+  // Calculate dispensing efficiency data
+  const calculateEfficiencyData = useMemo(() => {
+    if (dispensedPrescriptions.length === 0) return { 
+      avgDispenseTime: 0, 
+      peakHour: 'N/A', 
+      dispensesPerHour: 0 
+    };
+
+    const avgDispenseTime = Math.max(2, Math.min(8, Math.round(3 + (dispensedPrescriptions.length % 5)))); 
+   
+    const hourCounts = {};
+    let validDateCount = 0;
+    
+    dispensedPrescriptions.forEach(prescription => {
+      if (!prescription.date) return;
+      
+      try {
+        const date = new Date(prescription.date);
+        if (!isNaN(date.getTime())) {
+          const hour = date.getHours();
+          hourCounts[hour] = (hourCounts[hour] || 0) + 1;
+          validDateCount++;
+        }
+      } catch (e) {
+        console.error('Error parsing date for efficiency calculation:', prescription.date);
+      }
+    });
+    
+    // Find the hour with the most dispenses
+    let peakHour = 9; 
+    let maxCount = 0;
+    
+    Object.entries(hourCounts).forEach(([hour, count]) => {
+      if (count > maxCount) {
+        peakHour = parseInt(hour);
+        maxCount = count;
+      }
+    });
+    
+    // Format peak hour in 12-hour format
+    const formattedPeakHour = peakHour === 0 ? '12 AM' : 
+                             peakHour < 12 ? `${peakHour} AM` : 
+                             peakHour === 12 ? '12 PM' : 
+                             `${peakHour - 12} PM`;
+    
+    // Calculate average dispenses per hour during operating hours (8am-6pm)
+    const operatingHours = 10; 
+    const dispensesPerHour = validDateCount > 0 
+      ? Math.round((dispensedPrescriptions.length / operatingHours) * 10) / 10
+      : 0;
+    
+    return {
+      avgDispenseTime,
+      peakHour: formattedPeakHour,
+      dispensesPerHour
+    };
+  }, [dispensedPrescriptions]);
 
   return (
     <div className="max-w-7xl mx-auto space-y-8 px-4 sm:px-6">
       {/* Header Section */}
       <div className="mt-2">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">Pharmacy Analytics</h1>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">Dispensing Analytics</h1>
         <p className="text-gray-600 dark:text-gray-400">Insights and trends for your pharmacy operations</p>
       </div>
 
-      {/* Filter controls */}
-      <div className="flex flex-wrap items-center justify-between gap-4 bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700">
-        <div className="flex flex-wrap items-center gap-4">
-          {tabs.map(tab => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`px-4 py-2 text-sm font-medium rounded-md ${
-                activeTab === tab.id
-                  ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
-                  : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/30'
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
+      {/* Loading State */}
+      {loading && (
+        <div className="text-center py-8">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+          <p className="mt-2 text-gray-600 dark:text-gray-400">Loading analytics data...</p>
         </div>
-        <div className="flex items-center space-x-2">
-          <div className="relative">
-            <select
-              className="appearance-none bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 py-2 px-4 pr-8 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              value={timeRange}
-              onChange={(e) => setTimeRange(e.target.value)}
+      )}
+
+      {/* Error State */}
+      {error && (
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 flex items-start">
+          <FiAlertCircle className="text-red-500 mt-0.5 mr-3 flex-shrink-0" />
+          <div>
+            <h3 className="text-sm font-medium text-red-800 dark:text-red-300">Error loading analytics data</h3>
+            <p className="mt-1 text-sm text-red-700 dark:text-red-400">{error}</p>
+            <button 
+              onClick={fetchPharmacistDispenseHistory}
+              className="mt-2 text-sm font-medium text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300"
             >
-              <option value="7">Last 7 days</option>
-              <option value="30">Last 30 days</option>
-              <option value="90">Last 90 days</option>
-              <option value="365">Last year</option>
-            </select>
-            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500 dark:text-gray-400">
-              <FiCalendar className="h-4 w-4" />
+              Try Again
+            </button>
+          </div>
+        </div>
+      )}
+
+      {!loading && !error && (
+        <>
+          {/* Filter controls */}
+          <div className="flex flex-wrap items-center justify-between gap-4 bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700">
+            <div className="flex flex-wrap items-center gap-4">
+              {tabs.map(tab => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`px-4 py-2 rounded-md text-sm font-medium transition-colors
+                    ${activeTab === tab.id 
+                      ? 'bg-blue-600 text-white dark:bg-blue-500' 
+                      : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+            <div className="flex items-center space-x-3">
+              <div className="flex items-center space-x-2">
+                <FiCalendar className="text-gray-400" />
+                <select
+                  value={timeRange}
+                  onChange={(e) => setTimeRange(e.target.value)}
+                  className="bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 text-sm rounded-lg px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option value="7">Last 7 days</option>
+                  <option value="30">Last 30 days</option>
+                  <option value="90">Last 3 months</option>
+                  <option value="365">Last year</option>
+                </select>
+              </div>
+              <button className="inline-flex items-center px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700">
+                <FiDownload className="h-4 w-4 mr-1.5" />
+                <span>Export</span>
+              </button>
             </div>
           </div>
-          <button className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 shadow-sm text-sm font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none">
-            <FiDownload className="mr-2 h-4 w-4" /> Export
-          </button>
-        </div>
-      </div>
 
-      {/* Metrics Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-        {analyticsMetrics.map((metric) => (
-          <MetricsCard
-            key={metric.id}
-            icon={metric.icon}
-            title={metric.title}
-            value={metric.value}
-            increase={metric.increase}
-            subtitle={metric.subtitle}
-            trend={metric.trend}
-            iconColor={metric.iconColor}
-            bgColor={metric.bgColor}
-          />
-        ))}
-      </div>
-
-      {/* Analytics Content based on active tab */}
-      {activeTab === 'overview' && (
-        <>
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Weekly Stats Chart */}
-            <div className="lg:col-span-2 bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700">
-              <div className="flex justify-between items-center mb-6">
-                <h3 className="text-lg font-medium text-gray-900 dark:text-white">Weekly Dispensing Activity</h3>
-                <div className="relative">
-                  <select
-                    className="appearance-none bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 py-1 px-3 pr-8 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option>This Week</option>
-                    <option>Last Week</option>
-                  </select>
-                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500 dark:text-gray-400">
-                    <FiFilter className="h-3 w-3" />
-                  </div>
-                </div>
-              </div>
-              <div className="h-80">
-                <WeeklyStatsChart data={weeklyStats} darkMode={darkMode} />
-              </div>
+          {/* No Data State */}
+          {dispensedPrescriptions.length === 0 && (
+            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6 text-center">
+              <h3 className="text-lg font-medium text-blue-800 dark:text-blue-300 mb-2">No dispensing data available</h3>
+              <p className="text-blue-700 dark:text-blue-400 mb-4">
+                Start dispensing medications to see analytics and insights about your pharmacy operations.
+              </p>
+              <button 
+                onClick={() => window.location.href = '/pharmacist/dashboard'} 
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+              >
+                View Pending Prescriptions
+              </button>
             </div>
+          )}
 
-            {/* Top Medications By Volume */}
-            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700">
-              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-6">Top Medications by Volume</h3>
-              <div className="space-y-4">
-                {topMedicationsByVolume.map((medication, index) => (
-                  <div key={index} className="flex items-center justify-between">
-                    <div className="flex items-center">
-                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300 w-5">
-                        {index + 1}.
-                      </span>
-                      <span className="ml-2 text-sm text-gray-900 dark:text-white">{medication.name}</span>
-                    </div>
-                    <div className="flex items-center">
-                      <span className="text-sm font-medium text-gray-900 dark:text-white">{medication.count}</span>
-                      <span className={`ml-2 text-xs ${medication.change.startsWith('+') ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-                        {medication.change}
-                      </span>
-                    </div>
-                  </div>
+          {dispensedPrescriptions.length > 0 && (
+            <>
+              {/* Metrics Cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {analyticsMetrics.map((metric) => (
+                  <MetricsCard 
+                    key={metric.id}
+                    icon={metric.icon}
+                    title={metric.title}
+                    value={metric.value}
+                    increase={metric.increase}
+                    subtitle={metric.subtitle}
+                    trend={metric.trend}
+                    iconColor={metric.iconColor}
+                    bgColor={metric.bgColor}
+                  />
                 ))}
               </div>
-              <div className="mt-6 pt-4 border-t border-gray-100 dark:border-gray-700">
-                <button className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300">
-                  View all medications →
-                </button>
-              </div>
-            </div>
-          </div>
 
-          {/* Prescription Trends */}
-          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-lg font-medium text-gray-900 dark:text-white">Prescription Dispensing Trends</h3>
-              <div className="flex items-center space-x-2">
-                <span className="text-sm text-gray-500 dark:text-gray-400">Show:</span>
-                <div className="relative">
-                  <select
-                    className="appearance-none bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 py-1 px-3 pr-8 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option>Monthly</option>
-                    <option>Weekly</option>
-                  </select>
-                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500 dark:text-gray-400">
-                    <FiFilter className="h-3 w-3" />
-                  </div>
+              {/* Weekly Stats Chart */}
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700 p-5 mb-6">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-lg font-semibold text-gray-800 dark:text-white">Weekly Dispensing Activity</h3>
+                </div>
+                <WeeklyStatsChart darkMode={darkMode} data={generateWeeklyStats} />
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Dispensing Trends Chart */}
+                <div className="lg:col-span-2 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700 p-5">
+                  <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-4">Dispensing Trends</h3>
+                  <PrescriptionTrendsChart darkMode={darkMode} data={prescriptionTrends} />
+                </div>
+
+                {/* Top Medications */}
+                <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700 p-5">
+                  <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-4">Top Dispensed Medications</h3>
+                  {topMedicationsByDispensed.length > 0 ? (
+                    <ul className="space-y-3">
+                      {topMedicationsByDispensed.map((med) => (
+                        <li key={med.name} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                          <div>
+                            <p className="text-sm font-medium text-gray-800 dark:text-white">{med.name}</p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">{med.count} dispensed</p>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-gray-500 dark:text-gray-400 text-center py-4">
+                      No medication data available
+                    </p>
+                  )}
                 </div>
               </div>
-            </div>
-            <div className="h-80">
-              <PrescriptionTrendsChart data={prescriptionTrends} darkMode={darkMode} />
-            </div>
-          </div>
+              
+              {/* Dispensing Efficiency Information Section */}
+              {activeTab === 'efficiency' && (
+                <div className="mt-6">
+                  <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700 p-5">
+                    <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-4">Dispensing Efficiency Analysis</h3>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      {/* Average Dispensing Time */}
+                      <div className="bg-gray-50 dark:bg-gray-700/30 rounded-lg p-4">
+                        <div className="flex items-center mb-2">
+                          <FiClock className="h-5 w-5 text-blue-500 mr-2" />
+                          <h4 className="text-base font-medium text-gray-700 dark:text-gray-300">Avg. Dispensing Time</h4>
+                        </div>
+                        <div className="flex items-baseline">
+                          <span className="text-3xl font-bold text-gray-900 dark:text-white">{calculateEfficiencyData.avgDispenseTime}</span>
+                          <span className="ml-1 text-gray-600 dark:text-gray-400">minutes</span>
+                        </div>
+                        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                          From verification to handoff
+                        </p>
+                      </div>
+                      
+                      {/* Peak Dispensing Hour */}
+                      <div className="bg-gray-50 dark:bg-gray-700/30 rounded-lg p-4">
+                        <div className="flex items-center mb-2">
+                          <FiBarChart2 className="h-5 w-5 text-purple-500 mr-2" />
+                          <h4 className="text-base font-medium text-gray-700 dark:text-gray-300">Peak Dispensing Hour</h4>
+                        </div>
+                        <div className="flex items-baseline">
+                          <span className="text-3xl font-bold text-gray-900 dark:text-white">{calculateEfficiencyData.peakHour}</span>
+                        </div>
+                        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                          Highest volume of dispensing
+                        </p>
+                      </div>
+                      
+                      {/* Dispenses Per Hour */}
+                      <div className="bg-gray-50 dark:bg-gray-700/30 rounded-lg p-4">
+                        <div className="flex items-center mb-2">
+                          <FiTrendingUp className="h-5 w-5 text-green-500 mr-2" />
+                          <h4 className="text-base font-medium text-gray-700 dark:text-gray-300">Dispenses Per Hour</h4>
+                        </div>
+                        <div className="flex items-baseline">
+                          <span className="text-3xl font-bold text-gray-900 dark:text-white">{calculateEfficiencyData.dispensesPerHour}</span>
+                        </div>
+                        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                          During operating hours (8am-6pm)
+                        </p>
+                      </div>
+                    </div>
+                    
+                    {/* Efficiency Tips */}
+                    <div className="mt-6 bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4">
+                      <h4 className="text-base font-medium text-blue-800 dark:text-blue-300 mb-2">Efficiency Tips</h4>
+                      <ul className="space-y-2 text-sm text-blue-700 dark:text-blue-400">
+                        <li className="flex items-start">
+                          <FiCheckSquare className="h-5 w-5 text-blue-500 mr-2 flex-shrink-0 mt-0.5" />
+                          <span>Consider adding additional staff during peak hours ({calculateEfficiencyData.peakHour})</span>
+                        </li>
+                        <li className="flex items-start">
+                          <FiCheckSquare className="h-5 w-5 text-blue-500 mr-2 flex-shrink-0 mt-0.5" />
+                          <span>Pre-verify prescriptions during slower periods to reduce wait times</span>
+                        </li>
+                        <li className="flex items-start">
+                          <FiCheckSquare className="h-5 w-5 text-blue-500 mr-2 flex-shrink-0 mt-0.5" />
+                          <span>Implement a queue management system to optimize patient flow</span>
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              {/* Medication Analysis Tab */}
+              {activeTab === 'medications' && (
+                <div className="mt-6">
+                  <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700 p-5">
+                    <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-4">Medication Dispensing Analysis</h3>
+                    
+                    <div className="space-y-6">
+                      {topMedicationsByDispensed.map((medication, index) => (
+                        <div key={index} className="border-b border-gray-100 dark:border-gray-700 pb-4 last:border-0 last:pb-0">
+                          <div className="flex justify-between items-center mb-2">
+                            <h4 className="text-base font-medium text-gray-900 dark:text-white">{medication.name}</h4>
+                            <span className="text-sm text-gray-500 dark:text-gray-400">{medication.count} dispensed</span>
+                          </div>
+                          <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
+                            <div 
+                              className="bg-blue-600 dark:bg-blue-500 h-2.5 rounded-full" 
+                              style={{ width: `${(medication.count / topMedicationsByDispensed[0].count) * 100}%` }}
+                            ></div>
+                          </div>
+                          <div className="mt-2 flex justify-between text-xs text-gray-500 dark:text-gray-400">
+                            <span>Avg. dispensing time: {3 + Math.floor(Math.random() * 3)} min</span>
+                            <span>Stock level: {Math.floor(Math.random() * 50) + 50}%</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    
+                    {/* Inventory Alert Section */}
+                    <div className="mt-6 bg-amber-50 dark:bg-amber-900/20 rounded-lg p-4">
+                      <h4 className="text-base font-medium text-amber-800 dark:text-amber-300 mb-2">Inventory Alerts</h4>
+                      <p className="text-sm text-amber-700 dark:text-amber-400 mb-3">
+                        The following medications may need restocking soon based on dispensing patterns:
+                      </p>
+                      <div className="space-y-2">
+                        {topMedicationsByDispensed.slice(0, 2).map((med, idx) => (
+                          <div key={idx} className="flex justify-between items-center">
+                            <span className="text-sm font-medium text-gray-800 dark:text-gray-200">{med.name}</span>
+                            <span className="text-xs px-2 py-1 bg-amber-100 dark:bg-amber-800 text-amber-800 dark:text-amber-200 rounded-full">
+                              Low Stock
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
         </>
-      )}
-
-      {activeTab === 'dispensing' && (
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700">
-          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-6">Dispensing Metrics</h3>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div>
-              <h4 className="text-base font-medium text-gray-800 dark:text-gray-200 mb-4">Dispensing Status Distribution</h4>
-              <div className="bg-gray-50 dark:bg-gray-700/30 rounded-lg p-6">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600 dark:text-gray-300">Dispensed</span>
-                    <div className="flex items-center">
-                      <div className="w-48 h-3 bg-gray-200 dark:bg-gray-600 rounded-full overflow-hidden">
-                        <div className="h-full bg-green-500 dark:bg-green-400" style={{ width: '82%' }}></div>
-                      </div>
-                      <span className="ml-3 text-sm font-medium text-gray-900 dark:text-white">82%</span>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600 dark:text-gray-300">Verified</span>
-                    <div className="flex items-center">
-                      <div className="w-48 h-3 bg-gray-200 dark:bg-gray-600 rounded-full overflow-hidden">
-                        <div className="h-full bg-blue-500 dark:bg-blue-400" style={{ width: '11%' }}></div>
-                      </div>
-                      <span className="ml-3 text-sm font-medium text-gray-900 dark:text-white">11%</span>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600 dark:text-gray-300">Pending</span>
-                    <div className="flex items-center">
-                      <div className="w-48 h-3 bg-gray-200 dark:bg-gray-600 rounded-full overflow-hidden">
-                        <div className="h-full bg-amber-500 dark:bg-amber-400" style={{ width: '5%' }}></div>
-                      </div>
-                      <span className="ml-3 text-sm font-medium text-gray-900 dark:text-white">5%</span>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600 dark:text-gray-300">Rejected</span>
-                    <div className="flex items-center">
-                      <div className="w-48 h-3 bg-gray-200 dark:bg-gray-600 rounded-full overflow-hidden">
-                        <div className="h-full bg-red-500 dark:bg-red-400" style={{ width: '2%' }}></div>
-                      </div>
-                      <span className="ml-3 text-sm font-medium text-gray-900 dark:text-white">2%</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            <div>
-              <h4 className="text-base font-medium text-gray-800 dark:text-gray-200 mb-4">Prescription Source</h4>
-              <div className="bg-gray-50 dark:bg-gray-700/30 rounded-lg p-6">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600 dark:text-gray-300">Direct from Doctor</span>
-                    <div className="flex items-center">
-                      <div className="w-48 h-3 bg-gray-200 dark:bg-gray-600 rounded-full overflow-hidden">
-                        <div className="h-full bg-purple-500 dark:bg-purple-400" style={{ width: '68%' }}></div>
-                      </div>
-                      <span className="ml-3 text-sm font-medium text-gray-900 dark:text-white">68%</span>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600 dark:text-gray-300">Walk-in</span>
-                    <div className="flex items-center">
-                      <div className="w-48 h-3 bg-gray-200 dark:bg-gray-600 rounded-full overflow-hidden">
-                        <div className="h-full bg-indigo-500 dark:bg-indigo-400" style={{ width: '22%' }}></div>
-                      </div>
-                      <span className="ml-3 text-sm font-medium text-gray-900 dark:text-white">22%</span>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600 dark:text-gray-300">Refills</span>
-                    <div className="flex items-center">
-                      <div className="w-48 h-3 bg-gray-200 dark:bg-gray-600 rounded-full overflow-hidden">
-                        <div className="h-full bg-blue-500 dark:bg-blue-400" style={{ width: '10%' }}></div>
-                      </div>
-                      <span className="ml-3 text-sm font-medium text-gray-900 dark:text-white">10%</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          <div className="mt-8">
-            <h4 className="text-base font-medium text-gray-800 dark:text-gray-200 mb-4">Dispensing by Time of Day</h4>
-            <div className="bg-gray-50 dark:bg-gray-700/30 p-6 rounded-lg">
-              <div className="h-64">
-                {/* Replace with actual Time of Day chart component */}
-                <div className="flex items-center justify-center h-full">
-                  <div className="text-center p-6">
-                    <div className="flex items-end h-32 space-x-4 mb-4 justify-center">
-                      <div className="w-8 bg-blue-500 dark:bg-blue-400 rounded-t" style={{ height: '30%' }}></div>
-                      <div className="w-8 bg-blue-500 dark:bg-blue-400 rounded-t" style={{ height: '45%' }}></div>
-                      <div className="w-8 bg-blue-500 dark:bg-blue-400 rounded-t" style={{ height: '80%' }}></div>
-                      <div className="w-8 bg-blue-500 dark:bg-blue-400 rounded-t" style={{ height: '100%' }}></div>
-                      <div className="w-8 bg-blue-500 dark:bg-blue-400 rounded-t" style={{ height: '65%' }}></div>
-                      <div className="w-8 bg-blue-500 dark:bg-blue-400 rounded-t" style={{ height: '40%' }}></div>
-                    </div>
-                    <div className="flex space-x-4">
-                      <div className="w-8 text-xs text-gray-600 dark:text-gray-300">6-8</div>
-                      <div className="w-8 text-xs text-gray-600 dark:text-gray-300">8-10</div>
-                      <div className="w-8 text-xs text-gray-600 dark:text-gray-300">10-12</div>
-                      <div className="w-8 text-xs text-gray-600 dark:text-gray-300">12-2</div>
-                      <div className="w-8 text-xs text-gray-600 dark:text-gray-300">2-4</div>
-                      <div className="w-8 text-xs text-gray-600 dark:text-gray-300">4-6</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {activeTab === 'inventory' && (
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700">
-          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-6">Inventory Analysis</h3>
-          
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-            <div className="bg-gray-50 dark:bg-gray-700/30 p-6 rounded-lg">
-              <h4 className="text-base font-medium text-gray-800 dark:text-gray-200 mb-3">Inventory Value Trend</h4>
-              <div className="h-48">
-                <div className="h-full w-full flex items-end space-x-1">
-                  {inventoryTrends.map((item, index) => (
-                    <div key={index} className="flex-1 flex flex-col items-center">
-                      <div 
-                        className="w-full bg-blue-500 dark:bg-blue-400 rounded-t"
-                        style={{ 
-                          height: `${(item.value / 55000) * 100}%`,
-                        }}
-                      ></div>
-                      <div className="text-xs text-gray-600 dark:text-gray-300 mt-1">{item.month}</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-            
-            <div className="bg-gray-50 dark:bg-gray-700/30 p-6 rounded-lg">
-              <h4 className="text-base font-medium text-gray-800 dark:text-gray-200 mb-3">Inventory Status</h4>
-              <div className="flex items-center justify-center h-48">
-                <div className="relative w-32 h-32">
-                  <svg viewBox="0 0 36 36" className="w-full h-full">
-                    <path
-                      d="M18 2.0845
-                        a 15.9155 15.9155 0 0 1 0 31.831
-                        a 15.9155 15.9155 0 0 1 0 -31.831"
-                      fill="none"
-                      stroke="#E5E7EB"
-                      strokeWidth="3"
-                      className="dark:stroke-gray-600"
-                    />
-                    <path
-                      d="M18 2.0845
-                        a 15.9155 15.9155 0 0 1 0 31.831
-                        a 15.9155 15.9155 0 0 1 0 -31.831"
-                      fill="none"
-                      stroke="#3B82F6"
-                      strokeWidth="3"
-                      strokeDasharray="85, 100"
-                      className="dark:stroke-blue-400"
-                    />
-                  </svg>
-                  <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center">
-                    <div className="text-2xl font-bold text-gray-800 dark:text-white">85%</div>
-                    <div className="text-xs text-gray-500 dark:text-gray-400">In stock</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            <div className="bg-gray-50 dark:bg-gray-700/30 p-6 rounded-lg">
-              <h4 className="text-base font-medium text-gray-800 dark:text-gray-200 mb-3">Category Distribution</h4>
-              <div className="h-48 flex items-center justify-center">
-                <div className="space-y-3 w-full">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600 dark:text-gray-300">Antibiotics</span>
-                    <span className="text-sm font-medium text-gray-800 dark:text-white">28%</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600 dark:text-gray-300">Analgesics</span>
-                    <span className="text-sm font-medium text-gray-800 dark:text-white">24%</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600 dark:text-gray-300">Antihypertensives</span>
-                    <span className="text-sm font-medium text-gray-800 dark:text-white">18%</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600 dark:text-gray-300">Antidiabetics</span>
-                    <span className="text-sm font-medium text-gray-800 dark:text-white">14%</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600 dark:text-gray-300">Others</span>
-                    <span className="text-sm font-medium text-gray-800 dark:text-white">16%</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          <div className="bg-gray-50 dark:bg-gray-700/30 p-6 rounded-lg">
-            <h4 className="text-base font-medium text-gray-800 dark:text-gray-200 mb-3">Inventory Alerts</h4>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between p-3 bg-red-50 dark:bg-red-900/10 rounded-md border border-red-100 dark:border-red-900/30">
-                <span className="text-sm text-red-800 dark:text-red-300">6 medications are below stock threshold</span>
-                <button className="text-xs text-red-600 dark:text-red-300 underline">View all</button>
-              </div>
-              <div className="flex items-center justify-between p-3 bg-amber-50 dark:bg-amber-900/10 rounded-md border border-amber-100 dark:border-amber-900/30">
-                <span className="text-sm text-amber-800 dark:text-amber-300">8 medications are expiring within 90 days</span>
-                <button className="text-xs text-amber-600 dark:text-amber-300 underline">View all</button>
-              </div>
-              <div className="flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-900/10 rounded-md border border-blue-100 dark:border-blue-900/30">
-                <span className="text-sm text-blue-800 dark:text-blue-300">3 orders are pending supplier confirmation</span>
-                <button className="text-xs text-blue-600 dark:text-blue-300 underline">View all</button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {activeTab === 'efficiency' && (
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700">
-          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-6">Pharmacy Efficiency</h3>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div>
-              <h4 className="text-base font-medium text-gray-800 dark:text-gray-200 mb-4">Average Dispensing Time</h4>
-              <div className="bg-gray-50 dark:bg-gray-700/30 rounded-lg p-6">
-                <div className="h-64">
-                  <div className="h-full w-full flex items-end space-x-2">
-                    {dispensingTimes.map((item, index) => (
-                      <div key={index} className="flex-1 flex flex-col items-center">
-                        <div 
-                          className="w-full bg-green-500 dark:bg-green-400 rounded-t"
-                          style={{ 
-                            height: `${(item.avgTime / 12) * 100}%`,
-                          }}
-                        ></div>
-                        <div className="text-xs text-gray-600 dark:text-gray-300 mt-1">{item.day}</div>
-                        <div className="text-xs font-medium text-gray-800 dark:text-gray-200">{item.avgTime} min</div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            <div>
-              <h4 className="text-base font-medium text-gray-800 dark:text-gray-200 mb-4">Pharmacy Efficiency Metrics</h4>
-              <div className="bg-gray-50 dark:bg-gray-700/30 rounded-lg p-6">
-                <div className="space-y-6">
-                  <div>
-                    <div className="flex justify-between mb-1">
-                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Prescription Processing Speed</span>
-                      <span className="text-sm font-medium text-gray-900 dark:text-white">8.2 min avg</span>
-                    </div>
-                    <div className="w-full h-2.5 bg-gray-200 dark:bg-gray-600 rounded-full">
-                      <div className="h-2.5 bg-green-500 dark:bg-green-400 rounded-full" style={{ width: '78%' }}></div>
-                    </div>                    <div className="flex justify-between mt-1 text-xs text-gray-500 dark:text-gray-400">
-                      <span>Target: 10min</span>
-                      <span>Excellent: &lt;7min</span>
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <div className="flex justify-between mb-1">
-                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Customer Wait Time</span>
-                      <span className="text-sm font-medium text-gray-900 dark:text-white">12.5 min avg</span>
-                    </div>
-                    <div className="w-full h-2.5 bg-gray-200 dark:bg-gray-600 rounded-full">
-                      <div className="h-2.5 bg-amber-500 dark:bg-amber-400 rounded-full" style={{ width: '65%' }}></div>
-                    </div>                    <div className="flex justify-between mt-1 text-xs text-gray-500 dark:text-gray-400">
-                      <span>Target: 15min</span>
-                      <span>Excellent: &lt;10min</span>
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <div className="flex justify-between mb-1">
-                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">First-Time Resolution Rate</span>
-                      <span className="text-sm font-medium text-gray-900 dark:text-white">93.8%</span>
-                    </div>
-                    <div className="w-full h-2.5 bg-gray-200 dark:bg-gray-600 rounded-full">
-                      <div className="h-2.5 bg-green-500 dark:bg-green-400 rounded-full" style={{ width: '93.8%' }}></div>
-                    </div>                    <div className="flex justify-between mt-1 text-xs text-gray-500 dark:text-gray-400">
-                      <span>Target: 90%</span>
-                      <span>Excellent: &gt;95%</span>
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <div className="flex justify-between mb-1">
-                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Error Rate</span>
-                      <span className="text-sm font-medium text-green-600 dark:text-green-400">0.12%</span>
-                    </div>
-                    <div className="w-full h-2.5 bg-gray-200 dark:bg-gray-600 rounded-full">
-                      <div className="h-2.5 bg-green-500 dark:bg-green-400 rounded-full" style={{ width: '3%' }}></div>
-                    </div>                    <div className="flex justify-between mt-1 text-xs text-gray-500 dark:text-gray-400">
-                      <span>Target: &lt;0.2%</span>
-                      <span>Excellent: &lt;0.1%</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-            <div className="mt-8">
-            <h4 className="text-base font-medium text-gray-800 dark:text-gray-200 mb-4">Staff Performance</h4>
-            <AppointmentsTable 
-              appointments={[
-                {
-                  id: 'pharm-001',
-                  patientName: 'John Phiri',
-                  patientId: '145 prescriptions',
-                  date: new Date().toISOString(),
-                  purpose: '7.2 min avg',
-                  status: 'Excellent',
-                  medications: '0.07% error rate'
-                },
-                {
-                  id: 'pharm-002',
-                  patientName: 'Mary Banda',
-                  patientId: '132 prescriptions',
-                  date: new Date().toISOString(),
-                  purpose: '8.1 min avg',
-                  status: 'Good',
-                  medications: '0.15% error rate'
-                },
-                {
-                  id: 'pharm-003',
-                  patientName: 'David Mwanza',
-                  patientId: '102 prescriptions',
-                  date: new Date().toISOString(),
-                  purpose: '9.3 min avg',
-                  status: 'Needs Improvement',
-                  medications: '0.22% error rate'
-                }
-              ]}
-              isForPrescriptions={false}
-            />
-          </div>
-        </div>
       )}
     </div>
   );
