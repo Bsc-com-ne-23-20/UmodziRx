@@ -3,7 +3,7 @@ import { FiPackage, FiCheckSquare, FiTrendingUp, FiX, FiInfo, FiAlertCircle, FiC
 import axios from 'axios';
 import MetricsCard from '../../common/MetricsCard';
 import AppointmentsTable from '../../common/AppointmentsTable';
-import { getRoleSpecificItem } from '../../../utils/storageUtils';
+import useAuth from '../../../hooks/useAuth';
 
 // Skeleton loader for metrics cards
 const MetricsCardSkeleton = () => (
@@ -116,6 +116,7 @@ const PrescriptionModal = ({ prescription, onClose }) => {
 };
 
 const PatientDashboardContent = ({ patientInfo }) => {
+  const { getUserInfo } = useAuth();
   const [selectedPrescription, setSelectedPrescription] = useState(null);
   const [showPrescriptionModal, setShowPrescriptionModal] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -124,9 +125,37 @@ const PatientDashboardContent = ({ patientInfo }) => {
   const [prescriptions, setPrescriptions] = useState([]);
   const [prescriptionsLoading, setPrescriptionsLoading] = useState(true);
   const [prescriptionsError, setPrescriptionsError] = useState(null);
-    // Use patientInfo prop if available, otherwise fallback to role-specific localStorage
-  const patientId = patientInfo?.id || getRoleSpecificItem('patientId', 'patient') || 'PID-001';
-  const patientName = patientInfo?.name || getRoleSpecificItem('patientName', 'patient') || 'John Banda';
+  
+  // Get current user info - use current user's ID for data loading
+  const currentUser = getUserInfo();
+  
+  // Check if we're in "Patient View" mode (coming from another role)
+  const isPatientViewMode = localStorage.getItem('originalRole') && 
+                           localStorage.getItem('originalRole') !== 'patient';
+  
+  // Use the appropriate ID based on the context
+  // 1. If patientInfo is provided directly, use that
+  // 2. If we're in "Patient View" mode, use the ID that was preserved when switching
+  // 3. Otherwise use the current user's ID
+  const patientId = patientInfo?.id || 
+                   (isPatientViewMode ? localStorage.getItem('originalId') : null) || 
+                   currentUser?.id || 
+                   localStorage.getItem('patientId') || 
+                   'PID-001';
+                   
+  const patientName = patientInfo?.name || 
+                     (isPatientViewMode ? localStorage.getItem('originalName') : null) || 
+                     currentUser?.name || 
+                     localStorage.getItem('patientName') || 
+                     'User';
+  
+  // Log the ID being used for debugging
+  useEffect(() => {
+    console.log('PatientDashboardContent using ID:', patientId);
+    console.log('PatientDashboardContent using name:', patientName);
+    console.log('Is in Patient View mode:', isPatientViewMode);
+    console.log('Original role:', localStorage.getItem('originalRole'));
+  }, [patientId, patientName, isPatientViewMode]);
   
   // Simulate data loading
   useEffect(() => {
@@ -247,12 +276,15 @@ const PatientDashboardContent = ({ patientInfo }) => {
       }
     ];
   }, [prescriptions, prescriptionsLoading, prescriptionsError]);
+  
   // Fetch prescriptions from the blockchain API
   useEffect(() => {
     const fetchPrescriptions = async () => {
       try {
         setPrescriptionsLoading(true);
-        setPrescriptionsError(null);        // Use axios to fetch prescription history
+        setPrescriptionsError(null);
+        
+        // Use axios to fetch prescription history
         console.log('Fetching prescriptions for patient ID:', patientId);
         
         // Debug the URL being used
@@ -290,7 +322,8 @@ const PatientDashboardContent = ({ patientInfo }) => {
           setPrescriptions([]);
           return;
         }
-          // Transform the data to match the expected format for the table
+        
+        // Transform the data to match the expected format for the table
         let formattedPrescriptions = [];
         
         try {
@@ -315,8 +348,8 @@ const PatientDashboardContent = ({ patientInfo }) => {
                       status: prescription.status,
                       dosage: prescription.dosage,
                       instructions: prescription.instructions,
-                      diagnosis: prescription.diagnosis || 'No diagnosis recorded',
-                      txID: item.txId,
+                      diagnosis: prescription.diagnosis,
+                      txID: prescription.txId,
                       expiryDate: prescription.expiryDate,
                       dispensingPharmacist: prescription.dispensingPharmacist,
                       dispensingTimestamp: prescription.dispensingTimestamp,
@@ -324,69 +357,35 @@ const PatientDashboardContent = ({ patientInfo }) => {
                     };
                   });
                 });
-              
-              // If we've processed prescriptions in the direct format, set them and return
-              if (formattedPrescriptions.length > 0) {
-                console.log("Processed prescriptions from direct history format:", formattedPrescriptions.length);
-                setPrescriptions(formattedPrescriptions);
-                setPrescriptionsLoading(false);
-                return;
-              }
-            }
-            
-            // If direct format didn't work, try the old format with Value property
-            const hasExpectedFormat = result.data.history.some(item => 
-              item.Value && (item.Value.prescriptions || item.Value.Prescriptions)
-            );
-            
-            if (hasExpectedFormat) {
+            } else {
+              // Handle the case where prescriptions are in the Value property
               formattedPrescriptions = result.data.history
-                .filter(item => item.Value && (item.Value.prescriptions || item.Value.Prescriptions))
+                .filter(item => item.Value && item.Value.prescriptions && Array.isArray(item.Value.prescriptions))
                 .flatMap(item => {
-                  // Handle different case variations in the API response
-                  const prescriptions = item.Value.prescriptions || item.Value.Prescriptions || [];
-                  const patientName = item.Value.patientName || item.Value.PatientName || 'Unknown';
-                  
-                  return prescriptions.map(prescription => {
-                    // Handle different case variations in prescription fields
-                    const prescriptionId = prescription.prescriptionId || prescription.PrescriptionId;
-                    const timestamp = prescription.timestamp || prescription.Timestamp;
-                    const medicationName = prescription.medicationName || prescription.MedicationName;
-                    const status = prescription.status || prescription.Status;
-                    const dosage = prescription.dosage || prescription.Dosage;
-                    const instructions = prescription.instructions || prescription.Instructions;
-                    const diagnosis = prescription.diagnosis || prescription.Diagnosis || 'No diagnosis recorded';
-                    const txId = prescription.txId || prescription.TxId;
-                    const expiryDate = prescription.expiryDate || prescription.ExpiryDate;
-                    const dispensingPharmacist = prescription.dispensingPharmacist || prescription.DispensingPharmacist;
-                    const dispensingTimestamp = prescription.dispensingTimestamp || prescription.DispensingTimestamp;
-                    const createdBy = prescription.createdBy || prescription.CreatedBy;
-                    
+                  return item.Value.prescriptions.map(prescription => {
                     return {
-                      id: prescriptionId,
-                      patientName: patientName,
+                      id: prescription.prescriptionId,
+                      patientName: item.Value.patientName || result.data.patientName,
                       patientId: result.data.patientId,
-                      date: timestamp,
-                      medications: medicationName,
-                      status: status,
-                      dosage: dosage,
-                      instructions: instructions,
-                      diagnosis: diagnosis,
-                      txID: txId,
-                      expiryDate: expiryDate,
-                      dispensingPharmacist: dispensingPharmacist,
-                      dispensingTimestamp: dispensingTimestamp,
-                      doctorName: createdBy
+                      date: prescription.timestamp,
+                      medications: prescription.medicationName,
+                      status: prescription.status,
+                      dosage: prescription.dosage,
+                      instructions: prescription.instructions,
+                      diagnosis: prescription.diagnosis,
+                      txID: prescription.txId,
+                      expiryDate: prescription.expiryDate,
+                      dispensingPharmacist: prescription.dispensingPharmacist,
+                      dispensingTimestamp: prescription.dispensingTimestamp,
+                      doctorName: prescription.createdBy
                     };
                   });
                 });
             }
-          } 
-          
-          // Handle doctor endpoint format as fallback
-          if (formattedPrescriptions.length === 0 && result.data && result.data.prescriptions) {
+          } else if (result.data && result.data.prescriptions && Array.isArray(result.data.prescriptions)) {
+            // Handle doctor endpoint format
             formattedPrescriptions = result.data.prescriptions.map(prescription => {
-              // Handle different case variations in prescription fields
+              // Extract fields, handling different possible field names
               const prescriptionId = prescription.prescriptionId || prescription.PrescriptionId;
               const timestamp = prescription.timestamp || prescription.Timestamp;
               const medicationName = prescription.medicationName || prescription.MedicationName;
@@ -434,7 +433,8 @@ const PatientDashboardContent = ({ patientInfo }) => {
       } finally {
         setPrescriptionsLoading(false);
       }
-        // Log metrics calculation based on prescriptions
+      
+      // Log metrics calculation based on prescriptions
       console.log('Calculating metrics based on prescriptions:', prescriptions.length);
     };
     
@@ -445,6 +445,7 @@ const PatientDashboardContent = ({ patientInfo }) => {
       console.warn('No patient ID found, cannot fetch prescriptions');
     }
   }, [patientId]); // Added warning when patientId is missing
+
 
   return (
     <div className="max-w-7xl mx-auto space-y-8 px-4 sm:px-6">

@@ -10,7 +10,8 @@ import {
   FiSettings,
   FiUserPlus,
   FiMapPin,
-  FiUser
+  FiUser,
+  FiEye
 } from 'react-icons/fi';
 
 import DashboardLayout from '../components/layout/DashboardLayout';
@@ -50,6 +51,28 @@ const Dashboard = () => {
     }
   };
 
+  // Function to handle patient view navigation
+  const handlePatientViewNavigation = () => {
+    // Preserve the current user's ID when navigating to patient view
+    const currentId = userInfo.id;
+    const currentName = userInfo.name;
+    
+    console.log(`Switching to patient view with ID: ${currentId} and name: ${currentName}`);
+    
+    // Store the original role and ID to be able to return later
+    localStorage.setItem('originalRole', userRole);
+    localStorage.setItem('originalId', currentId);
+    localStorage.setItem('originalName', currentName);
+    
+    // Set patient role but keep the current user's ID
+    localStorage.setItem('userRole', 'patient');
+    localStorage.setItem('patientId', currentId);
+    localStorage.setItem('patientName', currentName);
+    
+    // Navigate to patient view
+    navigate('/patient');
+  };
+
   // Handle role changes and redirects
   useEffect(() => {
     // Redirect if no role is found
@@ -69,20 +92,22 @@ const Dashboard = () => {
       console.log('Found encoded patient data in URL, keeping for PrescriptionButton');
       // We'll let PrescriptionButton handle this data
     }
-    
-    // Check if the current path matches the user role
+      // Check if the current path matches the user role
     const isCorrectPath = path.startsWith(`/${userRole}`);
     
-    // If not on the correct path for the role, redirect to the appropriate dashboard
-    if (!isCorrectPath && userRole) {
+    // Allow navigation to patient view for non-patient users (doctor, admin, pharmacist)
+    const isPatientViewAccess = path.startsWith('/patient') && ['doctor', 'admin', 'pharmacist'].includes(userRole);
+    
+    // If not on the correct path for the role and not accessing patient view, redirect to the appropriate dashboard
+    if (!isCorrectPath && !isPatientViewAccess && userRole) {
       console.log(`Redirecting from ${path} to /${userRole} to match role`);
       navigate(`/${userRole}`);
     }
   }, [userRole, navigate]);
 
   // Define navigation items based on user role
-  const getNavItems = () => {
-    switch (userRole) {
+  const getNavItems = () => {    
+    switch (userRole) {      
       case 'doctor':
         return [
           { 
@@ -102,6 +127,12 @@ const Dashboard = () => {
             label: 'Analytics',
             id: 'analytics',
             onClick: () => setActiveView('analytics')
+          },
+          {
+            icon: FiEye,
+            label: 'Patient View',
+            id: 'patient-view',
+            onClick: handlePatientViewNavigation
           }
         ];
       case 'pharmacist':
@@ -119,10 +150,22 @@ const Dashboard = () => {
             onClick: () => setActiveView('verify')
           },
           {
+            icon: FiPackage,
+            label: 'Inventory',
+            id: 'inventory',
+            onClick: () => setActiveView('inventory')
+          },          
+          {
             icon: FiBarChart2,
             label: 'Analytics',
             id: 'analytics',
             onClick: () => setActiveView('analytics')
+          },
+          {
+            icon: FiEye,
+            label: 'Patient View',
+            id: 'patient-view',
+            onClick: handlePatientViewNavigation
           }
         ];
       case 'patient':
@@ -157,7 +200,7 @@ const Dashboard = () => {
             id: 'profile',
             onClick: () => setActiveView('profile')
           }
-        ];
+        ];      
       case 'admin':
         return [
           { 
@@ -183,12 +226,18 @@ const Dashboard = () => {
             label: 'Analytics',
             id: 'analytics',
             onClick: () => setActiveView('analytics')
-          },
+          },          
           {
             icon: FiSettings,
             label: 'Settings',
             id: 'settings',
             onClick: () => setActiveView('settings')
+          },
+          {
+            icon: FiEye,
+            label: 'Patient View',
+            id: 'patient-view',
+            onClick: handlePatientViewNavigation
           }
         ];
       default:
@@ -198,7 +247,7 @@ const Dashboard = () => {
 
   // Render content based on user role and active view
   const renderContent = () => {
-    switch (userRole) {
+    switch (userRole) {      
       case 'doctor':
         switch (activeView) {
           case 'dashboard':
@@ -209,7 +258,7 @@ const Dashboard = () => {
             return <AnalyticsContent />;
           default:
             return <DashboardContent />;
-        }
+        }      
       case 'pharmacist':
         switch (activeView) {
           case 'dashboard':
@@ -235,11 +284,9 @@ const Dashboard = () => {
             return <HealthcareLocationsContent />;
           case 'profile':
             return <PatientProfileContent />;
-          case 'profile':
-            return <PatientProfileContent />;
           default:
             return <PatientDashboardContent />;
-        }
+        }      
       case 'admin':
         switch (activeView) {
           case 'dashboard':

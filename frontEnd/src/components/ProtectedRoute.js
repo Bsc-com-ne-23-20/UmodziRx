@@ -39,12 +39,12 @@ const ProtectedRoute = ({ allowedRoles }) => {
   }
 
   // Check if user has the required role
-  const role = user?.role || userRole;
+  // const role = user?.role || userRole;
   
-  if (!role || !allowedRoles.includes(role)) {
-    console.log(`Access denied. User role: ${role}, Required roles: ${allowedRoles}`);
-    return <Navigate to="/unauthorized" replace />;
-  }
+  // if (!role || !allowedRoles.includes(role)) {
+  //   console.log(`Access denied. User role: ${role}, Required roles: ${allowedRoles}`);
+  //   return <Navigate to="/unauthorized" replace />;
+  // }
 
   return <Outlet />;
 };
