@@ -8,13 +8,13 @@ Ensure you have the following installed:
 Installing prerequisites
 ```bash
 # Installing git, curl and jq
+sudo apt-get update && sudo apt-get upgrade
 sudo apt install git curl jq
 ```
 
 ```bash
 # Installing Docker
 # Add Docker's official GPG key:
-sudo apt-get update
 sudo apt-get install ca-certificates curl
 sudo install -m 0755 -d /etc/apt/keyrings
 sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
@@ -25,7 +25,6 @@ echo \
   "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
   $(. /etc/os-release && echo "${UBUNTU_CODENAME:-$VERSION_CODENAME}") stable" | \
   sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-sudo apt-get update
 
 sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 ```
@@ -43,6 +42,11 @@ echo -e "export PATH=$GOPATH/bin:$GOROOT/bin:$PATH" >> ~/.bashrc
 source ~/.bashrc
 ```
 
+# Clone the repository
+```bash
+git clone https://github.com/Bsc-com-ne-23-20/fabricNetwork.git
+```
+### make sure you have docker desktop installed and running in your windows if not make sure this is so before proceeding further and enable WSL INTEGRATION in docker settings!
 Navigate to the `fabricNetwork` directory:
 
 ```bash
@@ -91,9 +95,9 @@ To deploy the chaincode, use the following command:
 ```bash
 ./primary-network.sh deployCC -ccn basic -ccp ../asset-transfer-basic/chaincode-go -ccl go
 ```
-
 - Chaincode may be re-deployed without bringing down the network.
 - Several chaincodes may be deployed on a single channel, but each chaincode must be unique to each channel.
+
 
 ## Setup paths and env variables
 
