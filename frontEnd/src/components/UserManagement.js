@@ -1,7 +1,7 @@
 import React, { useState, useEffect, forwardRef, useImperativeHandle, useRef } from 'react';
-import { FiEdit2, FiTrash2, FiUserPlus, FiChevronLeft, FiChevronRight, FiX, FiSearch } from 'react-icons/fi';
+import { FiEdit2, FiTrash2, FiUserPlus, FiChevronLeft, FiChevronRight, FiX } from 'react-icons/fi';
 import axios from 'axios';
-import TableHeader from './TableHeader';
+import { getRoleSpecificItem, getCurrentUserRole } from '../utils/storageUtils';
 
 const admin_BASE_URL = process.env.REACT_APP_admin_BASE_URL || "http://localhost:5000";
 
@@ -27,9 +27,7 @@ const UserManagement = forwardRef((props, ref) => {
     total: 0,
     totalPages: 1,
     hasNextPage: false
-  });
-  const [searchTerm, setSearchTerm] = useState('');
-  const [searchInput, setSearchInput] = useState('');
+  });  const [searchTerm, setSearchTerm] = useState('');
   const [showFloatingButton, setShowFloatingButton] = useState(true);
   const mainContentRef = useRef(null);
 
@@ -70,47 +68,8 @@ useEffect(() => {
   return () => {
     if (contentElement) {
       contentElement.removeEventListener('scroll', handleScroll);
-    }
-  };
+    }  };
 }, []);
-
-  const filterOptions = [
-    { label: 'All Users', value: 'all' },
-    { label: 'Active Users', value: 'active' },
-    { label: 'Inactive Users', value: 'inactive' },
-    { label: 'Doctors', value: 'doctor' },
-    { label: 'Pharmacists', value: 'pharmacist' },
-    { label: 'Admins', value: 'admin' }
-  ];
-
-  const handleSearch = () => {
-    setSearchTerm(searchInput);
-  };
-
-  const handleSearchReset = () => {
-    setSearchTerm('');
-    setSearchInput('');
-  };
-
-  const handleFilter = (filterValue) => {
-    switch (filterValue) {
-      case 'active':
-        setUsers(prevUsers => prevUsers.filter(user => user.status === 'Active'));
-        break;
-      case 'inactive':
-        setUsers(prevUsers => prevUsers.filter(user => user.status === 'Inactive'));
-        break;
-      case 'doctor':
-      case 'pharmacist':
-      case 'admin':
-        setUsers(prevUsers => prevUsers.filter(user => user.role.toLowerCase() === filterValue));
-        break;
-      case 'all':
-      default:
-        fetchUsers(pagination.page);
-        break;
-    }
-  };
 
   // API request helper
   const adminRequest = async (method, endpoint, data = null) => {
@@ -120,7 +79,7 @@ useEffect(() => {
         url: `${admin_BASE_URL}${endpoint}`, 
         data,
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${getRoleSpecificItem('token', getCurrentUserRole())}`
         }
       });
       return response.data;
@@ -149,10 +108,9 @@ useEffect(() => {
       setIsLoading(false);
     }
   };
-
   // Find specific user by ID
   const findUserById = async () => {
-    if (!searchInput.trim()) {
+    if (!searchTerm.trim()) {
       setError('Please enter a Digital ID to search');
       setTimeout(() => setError(""), 3000);
       return;
@@ -160,10 +118,9 @@ useEffect(() => {
 
     setIsLoading(true);
     try {
-      const user = await adminRequest('get', `/admin/users/${searchInput.trim()}`);
+      const user = await adminRequest('get', `/admin/users/${searchTerm.trim()}`);
       if (user) {
         setUsers([user]);
-        setSearchTerm(searchInput.trim());
       } else {
         setError('User not found');
         setTimeout(() => setError(""), 3000);
@@ -173,14 +130,7 @@ useEffect(() => {
       setTimeout(() => setError(""), 3000);
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  // Reset search and show all users
-  const resetSearch = () => {
-    setSearchTerm('');
-    setSearchInput('');
-    fetchUsers(1);
+  }
   };
 
   // Delete user flow
@@ -260,10 +210,10 @@ useEffect(() => {
       fetchUsers(newPage);
     }
   };
-
   // Initial data fetch
   useEffect(() => {
     fetchUsers(1);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Search filtering

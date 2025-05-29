@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import React, { useState, useCallback, useEffect } from "react";
 import prescriptionImage from "./Prescription_medication.jpeg";
+import { setRoleSpecificItem, setCurrentUserRole } from "../utils/storageUtils";
 
 function generateRandomString(length) {
   const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -69,10 +70,48 @@ function Login() {
       }
   
       const data = await response.json();
-      const { token, role } = data;
+      const { token, role, user } = data;
   
-      localStorage.setItem("token", token);
-      localStorage.setItem("userRole", role);
+      // Use role-specific storage
+      setRoleSpecificItem("token", token, role);
+      setCurrentUserRole(role);
+      
+      // Store role-specific user data if available
+      if (user) {
+        // Store with role-specific key names
+        if (role === 'doctor') {
+          if (user.id) setRoleSpecificItem("doctorId", user.id, role);
+          if (user.name) setRoleSpecificItem("doctorName", user.name, role);
+          if (user.email) setRoleSpecificItem("doctorEmail", user.email, role);
+          if (user.birthday) setRoleSpecificItem("doctorBirthday", user.birthday, role);
+          if (user.gender) setRoleSpecificItem("doctorGender", user.gender, role);
+        } else if (role === 'patient') {
+          if (user.id) setRoleSpecificItem("patientId", user.id, role);
+          if (user.name) setRoleSpecificItem("patientName", user.name, role);
+          if (user.email) setRoleSpecificItem("patientEmail", user.email, role);
+          if (user.birthday) setRoleSpecificItem("patientBirthday", user.birthday, role);
+          if (user.gender) setRoleSpecificItem("patientGender", user.gender, role);
+        } else if (role === 'pharmacist') {
+          if (user.id) setRoleSpecificItem("pharmaId", user.id, role);
+          if (user.name) setRoleSpecificItem("pharmaName", user.name, role);
+          if (user.email) setRoleSpecificItem("pharmaEmail", user.email, role);
+          if (user.birthday) setRoleSpecificItem("pharmaBirthday", user.birthday, role);
+          if (user.gender) setRoleSpecificItem("pharmaGender", user.gender, role);
+        } else if (role === 'admin') {
+          if (user.id) setRoleSpecificItem("adminId", user.id, role);
+          if (user.name) setRoleSpecificItem("adminName", user.name, role);
+          if (user.email) setRoleSpecificItem("adminEmail", user.email, role);
+          if (user.birthday) setRoleSpecificItem("adminBirthday", user.birthday, role);
+          if (user.gender) setRoleSpecificItem("adminGender", user.gender, role);
+        }
+        
+        // Also store with generic keys for backward compatibility
+        if (user.id) setRoleSpecificItem("userId", user.id, role);
+        if (user.name) setRoleSpecificItem("userName", user.name, role);
+        if (user.email) setRoleSpecificItem("userEmail", user.email, role);
+        if (user.birthday) setRoleSpecificItem("userBirthday", user.birthday, role);
+        if (user.gender) setRoleSpecificItem("userGender", user.gender, role);
+      }
   
       // Handle different role redirections
       switch(role) {
@@ -98,32 +137,33 @@ function Login() {
   }, [username, password, navigate]);
 
   return (
-    <div className="h-screen overflow-hidden bg-white flex items-center justify-center">
-      <div className="w-full max-w-6xl bg-white overflow-hidden">
-        <div className="md:flex">
-          <div className="md:w-1/2 bg-gradient-to-br from-teal-600 to-blue-600 p-12 flex flex-col items-center justify-center text-white rounded-l-xl">
-            <div className="text-center space-y-6">
+    <div className="min-h-screen bg-white flex items-center justify-center p-4">
+      <div className="w-full max-w-6xl bg-white overflow-hidden shadow-lg rounded-xl">
+        <div className="flex flex-col md:flex-row">
+          {/* Left Side - Brand Banner */}
+          <div className="w-full md:w-1/2 bg-gradient-to-br from-teal-600 to-blue-600 p-6 sm:p-8 md:p-12 flex flex-col items-center justify-center text-white rounded-t-xl md:rounded-t-none md:rounded-l-xl">
+            <div className="text-center space-y-4 sm:space-y-6">
               <img 
                 src={prescriptionImage} 
                 alt="Prescription and Medication" 
-                className="w-48 h-48 object-cover rounded-full border-4 border-white shadow-md mx-auto"
+                className="w-32 h-32 sm:w-40 sm:h-40 md:w-48 md:h-48 object-cover rounded-full border-4 border-white shadow-md mx-auto"
               />
               <div>
-              <h1 className="text-4xl font-bold mb-2">UmodziRx</h1>
-                <p className="text-xl font-light opacity-90">
+                <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-2">UmodziRx</h1>
+                <p className="text-base sm:text-lg md:text-xl font-light opacity-90">
                   Secure Prescription Management
                 </p>
               </div>
-              <div className="pt-6">
+              <div className="pt-4 md:pt-6">
               </div>
             </div>
           </div>
 
           {/* Right Side - Login Form */}
-          <div className="md:w-1/2 p-12 border border-gray-300 rounded-r-xl">
+          <div className="w-full md:w-1/2 p-6 sm:p-8 md:p-12 border-t md:border-t-0 md:border-l border-gray-300 rounded-b-xl md:rounded-b-none md:rounded-r-xl">
             <div className="max-w-md mx-auto">
-              <div className="text-center mb-8">
-                <h2 className="text-3xl font-bold text-gray-800">Welcome Back</h2>
+              <div className="text-center mb-6 sm:mb-8">
+                <h2 className="text-2xl sm:text-3xl font-bold text-gray-800">Welcome Back</h2>
                 <p className="text-gray-600 mt-2">
                   Sign in to access your account
                 </p>
@@ -153,9 +193,9 @@ function Login() {
 
               {/* Secondary Login - Username/Password */}
               {showTraditionalLogin ? (
-                <form onSubmit={handleLoginSubmit} className="space-y-5">
+                <form onSubmit={handleLoginSubmit} className="space-y-4 sm:space-y-5">
                   <div>
-                    <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1">
+                    <label htmlFor="username" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
                       Username
                     </label>
                     <input
@@ -165,14 +205,14 @@ function Login() {
                       aria-required="true"
                       value={username}
                       onChange={(e) => setUsername(e.target.value)}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200"
+                      className="w-full px-3 sm:px-4 py-2.5 sm:py-3 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200"
                       placeholder="Enter your username"
                       required
                     />
                   </div>
 
                   <div>
-                    <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+                    <label htmlFor="password" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
                       Password
                     </label>
                     <div className="relative">
@@ -183,7 +223,7 @@ function Login() {
                         aria-required="true"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200"
+                        className="w-full px-3 sm:px-4 py-2.5 sm:py-3 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200"
                         placeholder="Enter your password"
                         required
                       />
@@ -220,7 +260,7 @@ function Login() {
                   <button
                     type="submit"
                     disabled={loading}
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm sm:text-base py-2.5 sm:py-3 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {loading ? (
                       <span className="flex items-center justify-center">

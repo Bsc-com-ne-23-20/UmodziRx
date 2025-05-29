@@ -211,6 +211,38 @@ class UserController {
       return res.status(500).json({ message: 'Failed to delete user', error: err.message });
     }
   }
+
+  // Add a new method to find user by digitalID
+  static async findUserByDigitalID(digitalID) {
+    try {
+      if (!digitalID) {
+        return null;
+      }
+
+      const digitalIDHash = hashDigitalID(digitalID);
+      const result = await pool.query(
+        'SELECT * FROM staffs WHERE digitalID_hash = $1',
+        [digitalIDHash]
+      );
+
+      if (result.rows.length === 0) {
+        return null;
+      }
+
+      const user = result.rows[0];
+      return {
+        digitalID: await decryptPII(user.digitalid),
+        name: await decryptPII(user.name),
+        role: await decryptPII(user.role),
+        status: await decryptPII(user.status),
+        createdAt: user.createdat,
+        updatedAt: user.updatedat
+      };
+    } catch (err) {
+      console.error('Find user by digitalID error:', err);
+      return null;
+    }
+  }
 }
 
 module.exports = UserController;

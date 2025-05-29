@@ -56,37 +56,37 @@ export default function Contact() {
       {/* Navigation */}
       <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="flex items-center justify-between">
-          <div className="flex items-center">
-            <div className="h-12 w-12 rounded-full bg-blue-600 flex items-center justify-center">
+          <div className="flex items-center space-x-3">
+            <div className="h-8 w-8 rounded-full bg-blue-600 flex items-center justify-center">
               <span className="text-white font-bold text-lg">U</span>
-            </div>
-            <Link to="/">
-              <span className="ml-3 text-xl font-semibold text-gray-800 hover:text-blue-600 transition-colors">UmodziRx</span>
-            </Link>
-          </div>
-          <div className="hidden md:flex space-x-8">
-            <Link to="/learn" className="text-gray-500 hover:text-gray-900 transition-colors">Features</Link>
+              </div>
+              <Link to="/" className="text-xl font-bold text-gray-800 hover:text-blue-600 transition-colors">
+              UmodziRx<span className="text-blue-600"></span>
+              </Link>
+              </div>
+              <div className="hidden md:flex space-x-8">
+                <Link to="/learn" className="text-gray-500 hover:text-gray-900 transition-colors">Features</Link>
             <Link to="/contact" className="text-blue-600 font-medium hover:text-blue-800">Contact Us</Link>
-          </div>
+            </div>
         </div>
       </nav>
 
       {/* Contact Form Section */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="text-center mb-12">
-          <h1 className="text-3xl font-extrabold text-gray-900 sm:text-4xl">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+        <div className="text-center mb-8 sm:mb-12">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-gray-900">
             Contact Us
           </h1>
-          <p className="mt-4 text-lg text-gray-500">
+          <p className="mt-3 sm:mt-4 text-base sm:text-lg text-gray-500">
             Have questions about UmodziRx? We're here to help.
           </p>
         </div>
 
-        <div className="md:flex md:gap-8 md:items-start">
+        <div className="flex flex-col md:flex-row md:gap-8 md:items-start">
           {/* Form Column */}
           <div className="md:flex-1">
             {submitted ? (
-              <div className="bg-green-50 border border-green-200 rounded-md p-6 mb-6">
+              <div className="bg-green-50 border border-green-200 rounded-md p-4 sm:p-6 mb-6">
                 <div className="flex">
                   <div className="flex-shrink-0">
                     <svg className="h-5 w-5 text-green-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
@@ -210,7 +210,7 @@ export default function Contact() {
           <div className="md:flex md:justify-between md:items-center">
             <div className="text-center md:text-left mb-2 md:mb-0">
               <p className="text-gray-500 text-s">
-                &copy; 2025 UmodziRx. All rights reserved.
+                2025 UmodziRx.
               </p>
             </div>
             <div className="flex justify-center md:justify-end space-x-6">

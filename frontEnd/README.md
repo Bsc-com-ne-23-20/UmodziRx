@@ -6,65 +6,103 @@ UmodziRx is a web application designed to provide a seamless experience for mana
 ## Installation
 To install the project, clone the repository and install the required dependencies using the following commands:
 
-1. Clone the repository:
-
-git clone https://github.com/Bsc-com-ne-23-20/UmodziRx.git
-
-2. Navigate to the project directory:
-cd UmodziRx/frontEnd
-
-3. Install all required dependencies:
-npm install
-
-This command will install all required dependencies, including both regular and development dependencies listed in the package.json file.
-
-npm install
-
-
+```bash
 git clone https://github.com/Bsc-com-ne-23-20/UmodziRx.git
 cd UmodziRx/frontEnd
 npm install
-
+```
 
 ## Usage
 To run the application, use the following command:
 
+```bash
 npm start
-
+```
 
 This will start the development server and open the application in your default web browser.
 
-## Project Structure
+## Project Structure (Updated)
 
-frontEnd/
-├── src/
-│   ├── App.js                # Main application component
-│   ├── App.css               # Styles for the main application
-│   ├── index.js              # Entry point for the application
-│   ├── pages/                # Contains all page components
-│   │   ├── Auth.js           # Authentication page
-│   │   ├── Dashboard.js       # Dashboard page
-│   │   ├── DoctorDashboard.js  # Doctor's dashboard page
-│   │   ├── Home.js           # Home page
-│   │   ├── LearnMore.js      # Learn more page
-│   │   ├── Login.js          # Login page
-│   │   ├── PatientPrescriptions.js # Patient prescriptions page
-│   │   ├── PharmacistDashboard.js # Pharmacist's dashboard page
-│   │   └── Verify.js         # Verification page
-│   ├── components/           # Reusable components
-│   │   └── Navbar.js         # Navigation bar component
-│   ├── services/             # API service files
-│   │   └── mosipAuth.js      # Authentication service
-│   └── mocks/                # Mock data for testing
-│       └── server.js         # Mock server setup
-└── package.json              # Project dependencies and scripts
+The project has been reorganized to follow best practices for React applications:
 
+```
+src/
+├── components/
+│   ├── common/         # Reusable UI components
+│   │   ├── LoadingSpinner.js
+│   │   ├── StatusIndicator.js
+│   │   └── PrescriptionQRScanner.js
+│   ├── dashboard/      # Dashboard-specific components
+│   │   ├── PharmacistVerifyContent.js
+│   │   └── ...
+│   ├── forms/          # Form components
+│   ├── layout/         # Layout components
+│   │   └── DashboardLayout.js
+│   └── charts/         # Chart and data visualization components
+├── context/            # React context providers
+│   └── AuthContext.js
+├── hooks/              # Custom React hooks
+│   ├── useDarkMode.js
+│   └── useAuth.js
+├── pages/              # Page components
+│   ├── Dashboard.js    # Unified dashboard page
+│   ├── Home.js
+│   ├── Login.js
+│   └── ...
+├── services/           # API services
+│   ├── prescriptionService.js
+│   ├── patientService.js
+│   └── ...
+├── styles/             # Global styles
+└── utils/              # Utility functions
+    └── auth/           # Authentication utilities
+```
 
-## Code Documentation
-- **App.js**: The main component that sets up routing and renders the application.
-- **Navbar.js**: A reusable navigation bar component for navigating between pages.
-- **mosipAuth.js**: Contains functions for handling authentication with the MOSIP API.
-- **Each page component**: Represents a different view in the application, handling specific functionalities.
+## Component Organization
+
+### Common Components
+
+Reusable UI components that can be used across the application:
+
+- `LoadingSpinner.js` - A loading spinner component
+- `StatusIndicator.js` - A component for displaying status (verified, pending, etc.)
+- `PrescriptionQRScanner.js` - A component for scanning QR codes
+
+### Layout Components
+
+Components that define the layout of the application:
+
+- `DashboardLayout.js` - A layout component for dashboard pages
+
+### Dashboard Components
+
+Components specific to dashboard functionality:
+
+- `PharmacistVerifyContent.js` - Content for the pharmacist verification page
+- Other dashboard content components
+
+## Custom Hooks
+
+Reusable logic extracted into custom hooks:
+
+- `useDarkMode.js` - Hook for managing dark mode
+- `useAuth.js` - Hook for authentication functionality
+
+## Services
+
+API services for interacting with the backend:
+
+- `prescriptionService.js` - Service for prescription-related API calls
+- `patientService.js` - Service for patient-related API calls
+
+## Best Practices Implemented
+
+1. **Component Reuse**: Extracted common functionality into reusable components
+2. **Custom Hooks**: Extracted reusable logic into custom hooks
+3. **API Services**: Centralized API calls in service modules
+4. **Consistent Naming**: Used consistent naming conventions
+5. **Folder Structure**: Organized code by feature and type
+6. **Documentation**: Documented components and functions with JSDoc comments
 
 ## License
-This project is licensed under the MIT License. The MIT License is a permissive free software license that allows for reuse within proprietary software, as long as the license is included with that software. It is a simple and easy-to-understand license that places very few restrictions on reuse, making it a popular choice for open source projects.
+This project is licensed under the MIT License. The MIT License is a permissive free software license that allows for reuse within proprietary software, as long as the license is included with that software.
