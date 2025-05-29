@@ -24,10 +24,21 @@ ChartJS.register(
   Filler
 );
 
-const WeeklyStatsChart = ({ darkMode }) => {
-  const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-    // Sample data - this would come from your backend in a real application
-  const prescriptionsData = [12, 19, 15, 25, 22, 14, 10];
+const WeeklyStatsChart = ({ darkMode, data: weeklyData = [] }) => {
+  // Extract data from props or use fallback
+  const chartData = weeklyData.length > 0 ? weeklyData : [
+    { day: 'Mon', prescriptions: 0, refills: 0 },
+    { day: 'Tue', prescriptions: 0, refills: 0 },
+    { day: 'Wed', prescriptions: 0, refills: 0 },
+    { day: 'Thu', prescriptions: 0, refills: 0 },
+    { day: 'Fri', prescriptions: 0, refills: 0 },
+    { day: 'Sat', prescriptions: 0, refills: 0 },
+    { day: 'Sun', prescriptions: 0, refills: 0 }
+  ];
+
+  const days = chartData.map(item => item.day);
+  const prescriptionsData = chartData.map(item => item.prescriptions);
+  const refillsData = chartData.map(item => item.refills || 0);
   
   const data = {
     labels: days,
@@ -39,6 +50,17 @@ const WeeklyStatsChart = ({ darkMode }) => {
         backgroundColor: 'rgba(59, 130, 246, 0.1)',
         borderWidth: 2,
         pointBackgroundColor: '#3b82f6',
+        tension: 0.4,
+        fill: false,
+        yAxisID: 'y'
+      },
+      {
+        label: 'Dispensed',
+        data: refillsData,
+        borderColor: '#10b981', // emerald-500
+        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+        borderWidth: 2,
+        pointBackgroundColor: '#10b981',
         tension: 0.4,
         fill: false,
         yAxisID: 'y'
