@@ -12,6 +12,7 @@ import Learn from './pages/LearnMore';
 import Contact from './pages/Contact';
 import VerifyPrescriptionPage from './pages/VerifyPrescriptionPage';
 import Dashboard from './pages/Dashboard';
+import FindHealthcare from './components/dashboard/patient/FindHealthcare';
 import "./App.css";
 
 function App() {
