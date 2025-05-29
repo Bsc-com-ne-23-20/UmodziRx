@@ -105,6 +105,7 @@ function App() {
 
             <Route element={<ProtectedRoute allowedRoles={["patient"]} />}>
               <Route path="/patient/*" element={<Dashboard />} />
+              <Route path="/find-healthcare" element={<FindHealthcare />} />
             </Route>
 
             {/* Fallback routes */}
