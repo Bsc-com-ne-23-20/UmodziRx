@@ -22,7 +22,7 @@ const app = express();
 const allowedOrigins = [
   'http://umodzirx.com',
   'http://www.umodzirx.com',
-  'http://31.97.36.57',
+  'http://139.162.149.103',
   'http://localhost:3000' // For local development
 ];
 
