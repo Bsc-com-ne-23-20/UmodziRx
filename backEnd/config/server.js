@@ -18,13 +18,38 @@ const prescriptionEndpoints = require('../routes/prescriptionEndpoints'); // Add
 const app = express();
 
 // Middleware
+// Updated CORS configuration (place this right after app initialization)
+const allowedOrigins = [
+  'http://umodzirx.com',
+  'http://www.umodzirx.com',
+  'http://139.162.149.103',
+  'http://localhost:3000' // For local development
+];
+
 app.use(cors({
-  origin: process.env.FRONTEND_BASE_URL,
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or Postman)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.some(allowedOrigin => 
+      origin === allowedOrigin || 
+      origin.startsWith(`${allowedOrigin}:`) // Handle ports
+    )) {
+      callback(null, true);
+    } else {
+      console.warn('Blocked by CORS:', origin);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true,
-  maxAge: 86400
+  maxAge: 86400,
+  exposedHeaders: ['Content-Length', 'Authorization'] // Optional
 }));
+
+// Explicitly handle OPTIONS requests for all routes
+app.options('*', cors()); // Keep this line
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
